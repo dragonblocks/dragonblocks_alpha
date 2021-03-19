@@ -15,7 +15,7 @@ BinsearchResult binsearch(void *search, void **array, size_t size, BinsearchComp
 
 		if (state == 0)
 			return (BinsearchResult) {true, mid};
-		else if (state < 0)
+		else if (state > 0)
 			max = mid;
 		else
 			min = mid;

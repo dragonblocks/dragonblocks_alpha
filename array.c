@@ -22,7 +22,7 @@ void array_insert(Array *array, void *elem, size_t idx)
 	array_alloc(array, 1);
 
 	void **iptr = array->ptr + idx;
-	memmove(iptr + 1, iptr, oldsiz - idx);
+	memmove(iptr + 1, iptr, (oldsiz - idx) * sizeof(void *));
 	*iptr = elem;
 }
 
