@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
+#include <endian.h>
+#include <unistd.h>
 #include "map.h"
 #include "binsearch.h"
 
@@ -64,6 +66,42 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 
 	array_insert(&sector->blocks, block, res.index);
 
+	return block;
+}
+
+void map_create_block(Map *map, v3s32 pos, MapBlock *block)
+{
+	block->pos = pos;
+
+	MapSector *sector = map_get_sector(map, (v2s32) {pos.x, pos.z}, true);
+	BinsearchResult res = binsearch(&pos.y, sector->blocks.ptr, sector->blocks.siz, &block_compare);
+	if (res.success) {
+		map_raw_delete_block(sector->blocks.ptr[res.index]);
+		sector->blocks.ptr[res.index] = block;
+	} else {
+		array_insert(&sector->blocks, block, res.index);
+	}
+}
+
+void map_serialize_block(int fd, MapBlock *block)
+{
+	ITERATE_MAPBLOCK {
+		u32 encoded_type = htobe32((u32) block->data[x][y][z].type);
+		write(fd, &encoded_type, 4);
+	}
+}
+
+MapBlock *map_deserialize_block(int fd)
+{
+	MapBlock *block = malloc(sizeof(MapBlock));
+	ITERATE_MAPBLOCK {
+		u32 encoded_type;
+		read(fd, &encoded_type, 4);
+		Node type = be32toh(encoded_type);
+		if (type >= MAX_NODES)
+			type = NODE_INVALID;
+		block->data[x][y][z] = map_node_create(type);
+	}
 	return block;
 }
 

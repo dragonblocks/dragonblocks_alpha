@@ -1,21 +1,54 @@
 #include <assert.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
 #include "map.h"
+#include "util.h"
 
-int main()
+int main(int argc, char **argv)
 {
+	program_name = argv[0];
+
+	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+	if (sockfd == -1)
+		syscall_error("socket");
+
+	struct sockaddr_in srv_addr = {
+		.sin_family = AF_INET,
+		.sin_port = get_port_from_args(argc, argv, 1),
+		.sin_addr = {.s_addr = INADDR_ANY},
+	};
+
+	int flag = 1;
+
+	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &flag, 4) == -1)
+		syscall_error("setsockopt");
+
+	if (bind(sockfd, (struct sockaddr *) &srv_addr, sizeof(srv_addr)) == -1)
+		syscall_error("bind");
+
+	if (listen(sockfd, 3) == -1)
+		syscall_error("listen");
+
 	Map *map = map_create(NULL);
 	map_set_node(map, (v3s32) {0, 0, 0}, map_node_create(NODE_STONE));
-	printf("test 1 passed\n");
-	map_set_node(map, (v3s32) {0, 5, 89}, map_node_create(NODE_DIRT));
-	printf("test 2 passed\n");
-	map_set_node(map, (v3s32) {321, 0, 89}, map_node_create(NODE_GRASS));
-	printf("test 3 passed\n");
-	map_set_node(map, (v3s32) {3124, 99, 2}, map_node_create(NODE_GRASS));
-	printf("test 4 passed\n");
+
+	struct sockaddr_in cli_addr_buf;
+	socklen_t cli_addrlen_buf;
+
+	int fd = accept(sockfd, (struct sockaddr *) &cli_addr_buf, &cli_addrlen_buf);
+
+	if (fd == -1)
+		syscall_error("accept");
+
 	MapBlock *block = map_get_block(map, (v3s32) {0, 0, 0}, false);
 	assert(block);
-	printf("(0 | 0 | 0) Block dump:\n");
-	ITERATE_MAPBLOCK printf("%d", block->data[x][y][z].type);
+	map_serialize_block(fd, block);
+	close(fd);
+
+	shutdown(sockfd, SHUT_RDWR);
+	close(sockfd);
 
 	map_delete(map);
 }

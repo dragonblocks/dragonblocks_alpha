@@ -39,8 +39,8 @@ MapSector *map_get_sector(Map *map, v2s32 pos, bool create);
 MapBlock *map_get_block(Map *map, v3s32 pos, bool create);
 void map_create_block(Map *map, v3s32 pos, MapBlock *block);
 
-void map_serialize_block(int fd, MapBlock *); // ToDo
-MapBlock *map_deserialize_block(int fd); // ToDo
+void map_serialize_block(int fd, MapBlock *);
+MapBlock *map_deserialize_block(int fd);
 
 void map_delete_block(MapBlock *); // ToDo
 void map_unload_block(MapBlock *); // ToDo
