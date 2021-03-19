@@ -4,7 +4,10 @@ SERVER = $(COMMON) server.o
 all: DragonblocksServer
 
 DragonblocksServer: $(SERVER)
-	gcc -o DragonblocksServer $(SERVER)
+	gcc -g -o DragonblocksServer $(SERVER)
 
 %.o: %.c
-	gcc -c -o $@ -Wall -Wextra -Wpedantic $<
+	gcc -c -g -o $@ -Wall -Wextra -Wpedantic $<
+
+clean:
+	rm *.o
