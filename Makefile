@@ -14,4 +14,7 @@ DragonblocksServer: $(SERVER)
 	gcc -c -g -o $@ -Wall -Wextra -Wpedantic -Werror $<
 
 clean:
-	rm *.o
+	rm -rf *.o
+
+clobber: clean
+	rm -rf Dragonblocks DragonblocksServer
