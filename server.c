@@ -34,8 +34,8 @@ int main(int argc, char **argv)
 	Map *map = map_create(NULL);
 	map_set_node(map, (v3s32) {0, 0, 0}, map_node_create(NODE_STONE));
 
-	struct sockaddr_in cli_addr_buf;
-	socklen_t cli_addrlen_buf;
+	struct sockaddr_in cli_addr_buf = {0};
+	socklen_t cli_addrlen_buf = 0;
 
 	int fd = accept(sockfd, (struct sockaddr *) &cli_addr_buf, &cli_addrlen_buf);
 

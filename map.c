@@ -96,9 +96,12 @@ MapBlock *map_deserialize_block(int fd)
 	MapBlock *block = malloc(sizeof(MapBlock));
 	ITERATE_MAPBLOCK {
 		u32 encoded_type;
-		read(fd, &encoded_type, 4);
+		if (read(fd, &encoded_type, 4) == -1) {
+			free(block);
+			return NULL;
+		}
 		Node type = be32toh(encoded_type);
-		if (type >= MAX_NODES)
+		if (type > NODE_INVALID)
 			type = NODE_INVALID;
 		block->data[x][y][z] = map_node_create(type);
 	}

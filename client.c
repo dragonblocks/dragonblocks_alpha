@@ -34,7 +34,10 @@ int main(int argc, char **argv)
 	Map *map = map_create(NULL);
 
 	MapBlock *block = map_deserialize_block(sockfd);
-	map_create_block(map, (v3s32) {0, 0, 0}, block);
+	if (block)
+		map_create_block(map, (v3s32) {0, 0, 0}, block);
+	else
+		internal_error("invalid block recieved");
 
 	MapNode node = map_get_node(map, (v3s32) {0, 0, 0});
 	printf("%d\n", node.type);
