@@ -5,13 +5,13 @@ CLIENT = $(COMMON) client.o
 all: Dragonblocks DragonblocksServer
 
 Dragonblocks: $(CLIENT)
-	gcc -g -o Dragonblocks $(CLIENT)
+	cc -g -o Dragonblocks $(CLIENT)
 
 DragonblocksServer: $(SERVER)
-	gcc -g -o DragonblocksServer $(SERVER)
+	cc -g -o DragonblocksServer $(SERVER)
 
 %.o: %.c
-	gcc -c -g -o $@ -Wall -Wextra -Wpedantic -Werror $<
+	cc -c -g -o $@ -Wall -Wextra -Wpedantic -Werror $<
 
 clean:
 	rm -rf *.o
