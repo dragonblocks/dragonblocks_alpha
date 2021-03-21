@@ -1,0 +1,16 @@
+#ifndef _SERVER_COMMAND_H_
+#define _SERVER_COMMAND_H_
+
+#define NAME_MAX 64
+
+typedef enum
+{
+	SERVER_COMMAND_NULL,
+	SC_DISCONNECT,
+	SC_AUTH,
+	SC_GETBLOCK,
+	SC_SETNODE,
+	SERVER_COMMAND_COUNT,
+} ServerCommand;
+
+#endif

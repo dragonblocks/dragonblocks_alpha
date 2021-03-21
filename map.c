@@ -1,13 +1,12 @@
 #include <stdlib.h>
 #include <stdbool.h>
-#include <endian.h>
-#include <unistd.h>
-#include "map.h"
 #include "binsearch.h"
+#include "map.h"
+#include "util.h"
 
 #define CMPBOUNDS(x) x == 0 ? 0 : x > 0 ? 1 : -1
 
-static void map_raw_delete_block(MapBlock *block)
+static void raw_delete_block(MapBlock *block)
 {
 	ITERATE_MAPBLOCK map_node_clear(&block->data[x][y][z]);
 	free(block);
@@ -76,34 +75,46 @@ void map_create_block(Map *map, v3s32 pos, MapBlock *block)
 	MapSector *sector = map_get_sector(map, (v2s32) {pos.x, pos.z}, true);
 	BinsearchResult res = binsearch(&pos.y, sector->blocks.ptr, sector->blocks.siz, &block_compare);
 	if (res.success) {
-		map_raw_delete_block(sector->blocks.ptr[res.index]);
+		raw_delete_block(sector->blocks.ptr[res.index]);
 		sector->blocks.ptr[res.index] = block;
 	} else {
 		array_insert(&sector->blocks, block, res.index);
 	}
 }
 
-void map_serialize_block(int fd, MapBlock *block)
+bool map_deserialize_node(int fd, MapNode *node)
+{
+	Node type;
+
+	if (! read_u32(fd, &type))
+		return false;
+
+	if (type > NODE_INVALID)
+		type = NODE_INVALID;
+
+	*node = map_node_create(type);
+
+	return true;
+}
+
+bool map_serialize_block(int fd, MapBlock *block)
 {
 	ITERATE_MAPBLOCK {
-		u32 encoded_type = htobe32((u32) block->data[x][y][z].type);
-		write(fd, &encoded_type, 4);
+		if (! write_u32(fd, block->data[x][y][z].type))
+			return false;
 	}
+
+	return true;
 }
 
 MapBlock *map_deserialize_block(int fd)
 {
 	MapBlock *block = malloc(sizeof(MapBlock));
 	ITERATE_MAPBLOCK {
-		u32 encoded_type;
-		if (read(fd, &encoded_type, 4) == -1) {
+		if (! map_deserialize_node(fd, &block->data[x][y][z])) {
 			free(block);
 			return NULL;
 		}
-		Node type = be32toh(encoded_type);
-		if (type > NODE_INVALID)
-			type = NODE_INVALID;
-		block->data[x][y][z] = map_node_create(type);
 	}
 	return block;
 }
@@ -148,7 +159,7 @@ void map_delete(Map *map)
 	for (size_t s = 0; s < map->sectors.siz; s++) {
 		MapSector *sector = map->sectors.ptr[s];
 		for (size_t b = 0; b < sector->blocks.siz; b++)
-			map_raw_delete_block(sector->blocks.ptr[b]);
+			raw_delete_block(sector->blocks.ptr[b]);
 		if (sector->blocks.ptr)
 			free(sector->blocks.ptr);
 		free(sector);

@@ -2,10 +2,26 @@
 #define _TYPES_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
-#define DEFVEC(type) typedef struct {type x, y;} v2 ## type; typedef struct {type x, y, z;} v3 ## type;
-#define DEFTYP(from, to) typedef from to; DEFVEC(to)
-#define DEFTYPES(bytes) DEFTYP(int ## bytes ## _t, s ## bytes) DEFTYP(uint ## bytes ## _t, u ## bytes)
+#define DEFRW(type) \
+	bool read_ ## type(int fd, type *ptr); \
+	bool write_ ## type(int fd, type val);
+
+#define DEFVEC(type) \
+	typedef struct {type x, y;} v2 ## type; \
+	DEFRW(v2 ## type) \
+	typedef struct {type x, y, z;} v3 ## type; \
+	DEFRW(v3 ## type)
+
+#define DEFTYP(from, to) \
+	typedef from to; \
+	DEFRW(to) \
+	DEFVEC(to)
+
+#define DEFTYPES(bits) \
+	DEFTYP(int ## bits ## _t, s ## bits) \
+	DEFTYP(uint ## bits ## _t, u ## bits)
 
 DEFTYPES(8)
 DEFTYPES(16)
@@ -21,6 +37,7 @@ DEFVEC(f64)
 typedef v2f32 v2f;
 typedef v3f32 v3f;
 
+#undef DEFRW
 #undef DEFVEC
 #undef DEFTYP
 #undef DEFTYPES
