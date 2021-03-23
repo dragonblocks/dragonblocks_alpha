@@ -8,6 +8,7 @@ typedef enum
 	SC_AUTH,
 	SC_GETBLOCK,
 	SC_SETNODE,
+	SC_KICK,
 	SERVER_COMMAND_COUNT,
 } ServerCommand;
 

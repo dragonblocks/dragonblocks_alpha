@@ -1,3 +1,5 @@
+#include <poll.h>
+
 bool send_command(Client *client, RemoteCommand cmd)
 {
 	pthread_mutex_lock(&client->mtx);
@@ -8,6 +10,28 @@ bool send_command(Client *client, RemoteCommand cmd)
 
 static void handle_packets(Client *client) {
 	while (client->state != CS_DISCONNECTED) {
+		struct pollfd pfd = {
+			.fd = client->fd,
+			.events = POLLIN,
+			.revents = 0,
+		};
+
+		int pstate = poll(&pfd, 1, 0);
+
+		if (pstate == -1) {
+			perror("poll");
+			return;
+		}
+
+		if (client->state == CS_DISCONNECTED)
+			return;
+
+		if (pstate == 0)
+			continue;
+
+		if (! (pfd.revents & POLLIN))
+			return;
+
 		HostCommand command;
 		if (! read_u32(client->fd, &command))
 			return;
@@ -24,7 +48,7 @@ static void handle_packets(Client *client) {
 			if (! handler->func(client, good))
 				return;
 		} else {
-			printf("Recieved invalid command %d (max = %d)\n", command, HOST_COMMAND_COUNT);
+			printf("Recieved invalid command %d\n", command);
 		}
 	}
 }

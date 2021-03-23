@@ -58,3 +58,11 @@ void linked_list_delete(LinkedList *list, const char *key)
 		}
 	}
 }
+
+void *linked_list_get(LinkedList *list, const char *key)
+{
+	for (LinkedListPair *pair = list->first; pair != NULL; pair = pair->next)
+		if (strcmp(pair->key, key) == 0)
+			return pair->value;
+	return NULL;
+}

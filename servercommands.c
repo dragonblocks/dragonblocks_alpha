@@ -52,8 +52,6 @@ static bool getblock_handler(Client *client, bool good)
 
 	MapBlock *block = map_get_block(client->server->map, pos, false);
 	if (block) {
-		printf("Sending block %d %d %d\n", pos.x, pos.y, pos.z);
-
 		pthread_mutex_lock(&client->mtx);
 		bool ret = write_u32(client->fd, CC_BLOCK) && map_serialize_block(client->fd, block);
 		pthread_mutex_unlock(&client->mtx);
@@ -82,10 +80,28 @@ static bool setnode_handler(Client *client, bool good)
 	return true;
 }
 
+static bool kick_handler(Client *client, bool good)
+{
+	char *target_name = read_string(client->fd, NAME_MAX);
+
+	if (! target_name)
+		return false;
+
+	if (good) {
+		Client *target = linked_list_get(&client->server->clients, target_name);
+		if (target)
+			server_disconnect_client(target, 0, "kicked");
+	}
+
+	free(target_name);
+	return true;
+}
+
 CommandHandler command_handlers[SERVER_COMMAND_COUNT] = {
 	{0},
 	{&disconnect_handler, "DISCONNECT", CS_CREATED | CS_ACTIVE},
 	{&auth_handler, "AUTH", CS_CREATED},
 	{&getblock_handler, "GETBLOCK", CS_ACTIVE},
 	{&setnode_handler, "SETNODE", CS_ACTIVE},
+	{&kick_handler, "KICK", CS_ACTIVE},
 };

@@ -12,16 +12,16 @@
 
 void client_disconnect(Client *client, bool send, const char *detail)
 {
-	client->state = CS_DISCONNECTED;
-
-	if (send)
-		send_command(client, SC_DISCONNECT);
-
 	pthread_mutex_lock(&client->mtx);
-	close(client->fd);
-	pthread_mutex_unlock(&client->mtx);
+	if (client->state != CS_DISCONNECTED) {
+		if (send)
+			write_u32(client->fd, SC_DISCONNECT);
 
-	printf("Disconnected %s%s%s\n", INBRACES(detail));
+		client->state = CS_DISCONNECTED;
+		printf("Disconnected %s%s%s\n", INBRACES(detail));
+		close(client->fd);
+	}
+	pthread_mutex_unlock(&client->mtx);
 }
 
 static void *reciever_thread(void *cliptr)
@@ -30,12 +30,10 @@ static void *reciever_thread(void *cliptr)
 
 	handle_packets(client);
 
-	if (client->state != CS_DISCONNECTED) {
-		if (errno == EINTR)
-			client_disconnect(client, true, NULL);
-		else
-			client_disconnect(client, false, "network error");
-	}
+	if (errno == EINTR)
+		client_disconnect(client, true, NULL);
+	else
+		client_disconnect(client, false, "network error");
 
 	if (client->name)
 		free(client->name);
@@ -127,6 +125,14 @@ static void client_loop(Client *client)
 						break;
 				}
 				printf("%s\n", nodename);
+			} else if (strcmp(buffer, "kick") == 0) {
+				char target_name[NAME_MAX];
+				if (scanf("%s", target_name) == EOF)
+					return;
+				pthread_mutex_lock(&client->mtx);
+				if (write_u32(client->fd, SC_KICK))
+					write(client->fd, target_name, strlen(target_name) + 1);
+				pthread_mutex_unlock(&client->mtx);
 			} else {
 				printf("Invalid command: %s\n", buffer);
 			}
@@ -179,10 +185,8 @@ int main(int argc, char **argv)
 	pthread_create(&recv_thread, NULL, &reciever_thread, &client);
 
 	client_loop(&client);
-	perror("client_loop");
 
-	if (client.state != CS_DISCONNECTED)
-		client_disconnect(&client, true, NULL);
+	client_disconnect(&client, true, NULL);
 
 	pthread_join(recv_thread, NULL);
 }

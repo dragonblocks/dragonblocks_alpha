@@ -123,14 +123,11 @@ bool map_deserialize_block(int fd, Map *map)
 	return true;
 }
 
-#include <stdio.h>
-
 
 v3s32 map_node_to_block_pos(v3s32 pos, v3u8 *offset)
 {
 	if (offset)
 		*offset = (v3u8) {(u32) pos.x % 16, (u32) pos.y % 16, (u32) pos.z % 16};
-	printf("%d %d %d [ %d %d %d ]\n", pos.x, pos.y, pos.z, offset ? offset->x : 0, offset ? offset->y : 0, offset ? offset->z : 0);
 	return (v3s32) {floor((double) pos.x / 16), floor((double) pos.y / 16), floor((double) pos.z / 16)};
 }
 
