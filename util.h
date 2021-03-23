@@ -3,6 +3,9 @@
 
 #include "types.h"
 
+#define ever (;;)
+#define INBRACES(str) str ? "(" : "", str ? str : "", str ? ")" : ""
+
 extern const char *program_name;
 
 void syscall_error(const char *err);

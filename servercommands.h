@@ -1,8 +1,6 @@
 #ifndef _SERVER_COMMAND_H_
 #define _SERVER_COMMAND_H_
 
-#define NAME_MAX 64
-
 typedef enum
 {
 	SERVER_COMMAND_NULL,
@@ -12,5 +10,14 @@ typedef enum
 	SC_SETNODE,
 	SERVER_COMMAND_COUNT,
 } ServerCommand;
+
+#ifdef _CLIENT_H_
+typedef ServerCommand RemoteCommand;
+#endif
+
+#ifdef _SERVER_H_
+typedef ServerCommand HostCommand;
+#define HOST_COMMAND_COUNT SERVER_COMMAND_COUNT
+#endif
 
 #endif

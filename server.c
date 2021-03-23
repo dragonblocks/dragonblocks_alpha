@@ -1,29 +1,19 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <assert.h>
-#include <signal.h>
 #include <errno.h>
 #include <endian.h>
 #include <pthread.h>
 #include "linkedlist.h"
-#include "map.h"
 #include "server.h"
-#include "server_commands.h"
-#include "server_command_handlers.h"
+#include "servercommands.h"
+#include "signal.h"
 #include "util.h"
-#define ever (;;)
 
-bool server_send_command(Client *client, ClientCommand command)
-{
-	pthread_mutex_lock(&client->mtx);
-	bool ret = write_s32(client->fd, command);
-	pthread_mutex_unlock(&client->mtx);
-	return ret;
-}
+#include "network.c"
 
 char *server_get_client_name(Client *client)
 {
@@ -36,16 +26,16 @@ void server_disconnect_client(Client *client, int flags, const char *detail)
 		linked_list_delete(&client->server->clients, client->name);
 
 	if (! (flags & DISCO_NO_MESSAGE))
-		printf("Disconnected %s %s%s%s\n", server_get_client_name(client), detail ? "(" : "", detail ? detail : "", detail ? ")" : "");
+		printf("Disconnected %s %s%s%s\n", server_get_client_name(client), INBRACES(detail));
 
 	if (! (flags & DISCO_NO_SEND))
-		server_send_command(client, CC_DISCONNECT);
+		send_command(client, CC_DISCONNECT);
+
+	client->state = CS_DISCONNECTED;
 
 	pthread_mutex_lock(&client->mtx);
 	close(client->fd);
 	pthread_mutex_unlock(&client->mtx);
-
-	client->state = CS_DISCONNECTED;
 }
 
 void server_shutdown(Server *srv)
@@ -63,35 +53,14 @@ void server_shutdown(Server *srv)
 	exit(EXIT_SUCCESS);
 }
 
-static void *client_handler_thread(void *clientptr)
+static void *reciever_thread(void *clientptr)
 {
 	Client *client = clientptr;
 
-	while (client->state != CS_DISCONNECTED) {
-
-		ServerCommand command;
-		if (! read_u32(client->fd, &command))
-			break;
-
-		ServerCommandHandler *handler = NULL;
-
-		if (command < SERVER_COMMAND_COUNT)
-			handler = &server_command_handlers[command];
-
-		if (handler && handler->func) {
-			if (client->state & handler->state_flags) {
-				if (! handler->func(client))
-					break;
-			} else {
-				printf("Recieved %s command from client %s, but client is in invalid state: %d\n", handler->name, server_get_client_name(client), client->state);
-			}
-		} else {
-			printf("Recieved invalid command %d from client %s\n", command, server_get_client_name(client));
-		}
-	}
+	handle_packets(client);
 
 	if (client->state != CS_DISCONNECTED)
-		server_disconnect_client(client, DISCO_NO_SEND, "connection error");
+		server_disconnect_client(client, DISCO_NO_SEND, "network error");
 
 	if (client->name)
 		free(client->name);
@@ -125,17 +94,7 @@ static void accept_client(Server *srv)
 	pthread_mutex_init(&client->mtx, NULL);
 
 	pthread_t thread;
-	pthread_create(&thread, NULL, &client_handler_thread, client);
-}
-
-static void interrupt_handler(int sig)
-{
-	fprintf(stderr, "%s\n", strsignal(sig));
-}
-
-static void silent_handler(int sig)
-{
-	(void) sig;
+	pthread_create(&thread, NULL, &reciever_thread, client);
 }
 
 int main(int argc, char **argv)
@@ -170,14 +129,7 @@ int main(int argc, char **argv)
 	if (listen(server.sockfd, 3) == -1)
 		syscall_error("listen");
 
-	struct sigaction sigact_interrupt = {0};
-	sigact_interrupt.sa_handler = &interrupt_handler;
-	sigaction(SIGINT, &sigact_interrupt, NULL);
-	sigaction(SIGTERM, &sigact_interrupt, NULL);
-
-	struct sigaction sigact_silent = {0};
-	sigact_silent.sa_handler = &silent_handler;
-	sigaction(SIGPIPE, &sigact_silent, NULL);
+	init_signal_handlers();
 
 	server.map = map_create(NULL);
 

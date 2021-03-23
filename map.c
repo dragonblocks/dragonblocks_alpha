@@ -68,20 +68,6 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 	return block;
 }
 
-void map_create_block(Map *map, v3s32 pos, MapBlock *block)
-{
-	block->pos = pos;
-
-	MapSector *sector = map_get_sector(map, (v2s32) {pos.x, pos.z}, true);
-	BinsearchResult res = binsearch(&pos.y, sector->blocks.ptr, sector->blocks.siz, &block_compare);
-	if (res.success) {
-		raw_delete_block(sector->blocks.ptr[res.index]);
-		sector->blocks.ptr[res.index] = block;
-	} else {
-		array_insert(&sector->blocks, block, res.index);
-	}
-}
-
 bool map_deserialize_node(int fd, MapNode *node)
 {
 	Node type;
@@ -99,6 +85,9 @@ bool map_deserialize_node(int fd, MapNode *node)
 
 bool map_serialize_block(int fd, MapBlock *block)
 {
+	if (! write_v3s32(fd, block->pos))
+		return false;
+
 	ITERATE_MAPBLOCK {
 		if (! write_u32(fd, block->data[x][y][z].type))
 			return false;
@@ -107,16 +96,30 @@ bool map_serialize_block(int fd, MapBlock *block)
 	return true;
 }
 
-MapBlock *map_deserialize_block(int fd)
+bool map_deserialize_block(int fd, Map *map)
 {
 	MapBlock *block = malloc(sizeof(MapBlock));
+
+	if (! read_v3s32(fd, &block->pos))
+		return false;
+
 	ITERATE_MAPBLOCK {
 		if (! map_deserialize_node(fd, &block->data[x][y][z])) {
 			free(block);
-			return NULL;
+			return false;
 		}
 	}
-	return block;
+
+	MapSector *sector = map_get_sector(map, (v2s32) {block->pos.x, block->pos.z}, true);
+	BinsearchResult res = binsearch(&block->pos.y, sector->blocks.ptr, sector->blocks.siz, &block_compare);
+	if (res.success) {
+		raw_delete_block(sector->blocks.ptr[res.index]);
+		sector->blocks.ptr[res.index] = block;
+	} else {
+		array_insert(&sector->blocks, block, res.index);
+	}
+
+	return true;
 }
 
 MapNode map_get_node(Map *map, v3s32 pos)
@@ -145,10 +148,9 @@ void map_node_clear(MapNode *node)
 	linked_list_clear(&node->meta);
 }
 
-Map *map_create(FILE *file)
+Map *map_create()
 {
 	Map *map = malloc(sizeof(Map));
-	map->file = file;
 	map->sectors = array_create();
 
 	return map;

@@ -1,7 +1,6 @@
 #ifndef _MAP_H_
 #define _MAP_H_
 
-#include <stdio.h>
 #include <stdbool.h>
 #include "array.h"
 #include "linkedlist.h"
@@ -32,16 +31,14 @@ typedef struct
 typedef struct
 {
 	Array sectors;
-	FILE *file;
 } Map;
 
 MapSector *map_get_sector(Map *map, v2s32 pos, bool create);
 MapBlock *map_get_block(Map *map, v3s32 pos, bool create);
-void map_create_block(Map *map, v3s32 pos, MapBlock *block);
 
 bool map_deserialize_node(int fd, MapNode *buf);
-bool map_serialize_block(int fd, MapBlock *);
-MapBlock *map_deserialize_block(int fd);
+bool map_serialize_block(int fd, MapBlock *block);
+bool map_deserialize_block(int fd, Map *map);
 
 void map_delete_block(MapBlock *); // ToDo
 void map_unload_block(MapBlock *); // ToDo
@@ -51,7 +48,7 @@ void map_set_node(Map *map, v3s32 pos, MapNode node);
 MapNode map_node_create(Node type);
 void map_node_clear(MapNode *node);
 
-Map *map_create(FILE *file);
+Map *map_create();
 void map_delete(Map *map);
 
 #endif

@@ -1,11 +1,11 @@
-COMMON = array.o binsearch.o linkedlist.o map.o util.o types.o
-SERVER = $(COMMON) server.o server_command_handlers.o
-CLIENT = $(COMMON) client.o
+COMMON = array.o binsearch.o linkedlist.o map.o signal.o util.o types.o
+SERVER = $(COMMON) server.o servercommands.o
+CLIENT = $(COMMON) client.o clientcommands.o
 
 all: Dragonblocks DragonblocksServer
 
 Dragonblocks: $(CLIENT)
-	cc -g -o Dragonblocks $(CLIENT)
+	cc -g -o Dragonblocks $(CLIENT) -pthread
 
 DragonblocksServer: $(SERVER)
 	cc -g -o DragonblocksServer $(SERVER) -pthread
