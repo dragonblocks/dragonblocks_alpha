@@ -2,6 +2,7 @@
 #define _SERVER_H_
 
 #include <pthread.h>
+#include <netinet/in.h>
 #include "clientcommands.h"
 #include "servercommands.h"
 #include "linkedlist.h"
@@ -19,6 +20,7 @@ typedef struct Client
 {
 	int fd;
 	char *name;
+	char *address;
 	Server *server;
 	ClientState state;
 	pthread_mutex_t mtx;

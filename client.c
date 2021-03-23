@@ -1,13 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <errno.h>
-#include <signal.h>
-#include <sched.h>
 #include "client.h"
 #include "signal.h"
 #include "util.h"
@@ -16,11 +12,12 @@
 
 void client_disconnect(Client *client, bool send, const char *detail)
 {
+	client->state = CS_DISCONNECTED;
+
 	if (send)
 		send_command(client, SC_DISCONNECT);
 
 	pthread_mutex_lock(&client->mtx);
-	client->state = CS_DISCONNECTED;
 	close(client->fd);
 	pthread_mutex_unlock(&client->mtx);
 
@@ -101,7 +98,7 @@ static void client_loop(Client *client)
 					return;
 				pthread_mutex_lock(&client->mtx);
 				if (write_u32(client->fd, SC_GETBLOCK))
-					write_v3s32(client->fd, (v3s32) {pos.x / 16, pos.y / 16, pos.z / 16});
+					write_v3s32(client->fd, map_node_to_block_pos(pos, NULL));
 				pthread_mutex_unlock(&client->mtx);
 			} else if (strcmp(buffer, "printnode") == 0) {
 				v3s32 pos;
@@ -182,6 +179,7 @@ int main(int argc, char **argv)
 	pthread_create(&recv_thread, NULL, &reciever_thread, &client);
 
 	client_loop(&client);
+	perror("client_loop");
 
 	if (client.state != CS_DISCONNECTED)
 		client_disconnect(&client, true, NULL);

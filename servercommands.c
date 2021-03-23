@@ -22,17 +22,15 @@ static bool auth_handler(Client *client, bool good)
 		return true;
 	}
 
-	u8 success;
+	u8 success = linked_list_put(&client->server->clients, name, client);
 
-	if (linked_list_put(&client->server->clients, name, client)) {
+	printf("Authentication %s: %s -> %s\n", success ? "success" : "failure", client->address, name);
+
+	if (success) {
 		client->name = name;
 		client->state = CS_ACTIVE;
-		printf("Auth success: %s\n", server_get_client_name(client));
-		success = 1;
 	} else {
-		printf("Auth failure: %s\n", server_get_client_name(client));
 		free(name);
-		success = 0;
 	}
 
 	pthread_mutex_lock(&client->mtx);
@@ -54,8 +52,10 @@ static bool getblock_handler(Client *client, bool good)
 
 	MapBlock *block = map_get_block(client->server->map, pos, false);
 	if (block) {
+		printf("Sending block %d %d %d\n", pos.x, pos.y, pos.z);
+
 		pthread_mutex_lock(&client->mtx);
-		bool ret = write_s32(client->fd, CC_BLOCK) && map_serialize_block(client->fd, block);
+		bool ret = write_u32(client->fd, CC_BLOCK) && map_serialize_block(client->fd, block);
 		pthread_mutex_unlock(&client->mtx);
 
 		return ret;

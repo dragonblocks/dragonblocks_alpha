@@ -1,6 +1,7 @@
 #ifndef _UTIL_H_
 #define _UTIL_H_
 
+#include <arpa/inet.h>
 #include "types.h"
 
 #define ever (;;)
@@ -12,5 +13,6 @@ void syscall_error(const char *err);
 void internal_error(const char *err);
 u16 get_port_from_args(int argc, char **argv, int index);
 char *read_string(int fd, size_t bufsiz);
+char *address_string(struct sockaddr_in *addr);
 
 #endif

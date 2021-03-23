@@ -43,6 +43,8 @@ bool map_deserialize_block(int fd, Map *map);
 void map_delete_block(MapBlock *); // ToDo
 void map_unload_block(MapBlock *); // ToDo
 
+v3s32 map_node_to_block_pos(v3s32 pos, v3u8 *offset);
+
 MapNode map_get_node(Map *map, v3s32 pos);
 void map_set_node(Map *map, v3s32 pos, MapNode node);
 MapNode map_node_create(Node type);

@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
+#include <math.h>
 #include "binsearch.h"
 #include "map.h"
 #include "util.h"
@@ -40,7 +41,7 @@ MapSector *map_get_sector(Map *map, v2s32 pos, bool create)
 
 static s8 block_compare(void *level, void *block)
 {
-	s32 d = *((s32 *) level) - ((MapSector *) block)->pos.y;
+	s32 d = *((s32 *) level) - ((MapBlock *) block)->pos.y;
 	return CMPBOUNDS(d);
 }
 
@@ -122,18 +123,33 @@ bool map_deserialize_block(int fd, Map *map)
 	return true;
 }
 
+#include <stdio.h>
+
+
+v3s32 map_node_to_block_pos(v3s32 pos, v3u8 *offset)
+{
+	if (offset)
+		*offset = (v3u8) {(u32) pos.x % 16, (u32) pos.y % 16, (u32) pos.z % 16};
+	printf("%d %d %d [ %d %d %d ]\n", pos.x, pos.y, pos.z, offset ? offset->x : 0, offset ? offset->y : 0, offset ? offset->z : 0);
+	return (v3s32) {floor((double) pos.x / 16), floor((double) pos.y / 16), floor((double) pos.z / 16)};
+}
+
+
 MapNode map_get_node(Map *map, v3s32 pos)
 {
-	MapBlock *block = map_get_block(map, (v3s32) {pos.x / 16, pos.y / 16, pos.z / 16}, false);
+	v3u8 offset;
+	v3s32 blockpos = map_node_to_block_pos(pos, &offset);
+	MapBlock *block = map_get_block(map, blockpos, false);
 	if (! block)
 		return map_node_create(NODE_UNLOADED);
-	return block->data[pos.x % 16][pos.y % 16][pos.z % 16];
+	return block->data[offset.x][offset.y][offset.z];
 }
 
 void map_set_node(Map *map, v3s32 pos, MapNode node)
 {
-	MapBlock *block = map_get_block(map, (v3s32) {pos.x / 16, pos.y / 16, pos.z / 16}, true);
-	MapNode *current_node = &block->data[pos.x % 16][pos.y % 16][pos.z % 16];
+	v3u8 offset;
+	MapBlock *block = map_get_block(map, map_node_to_block_pos(pos, &offset), true);
+	MapNode *current_node = &block->data[offset.x][offset.y][offset.z];
 	map_node_clear(current_node);
 	*current_node = node;
 }

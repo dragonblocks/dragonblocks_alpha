@@ -5,10 +5,10 @@ CLIENT = $(COMMON) client.o clientcommands.o
 all: Dragonblocks DragonblocksServer
 
 Dragonblocks: $(CLIENT)
-	cc -g -o Dragonblocks $(CLIENT) -pthread
+	cc -g -o Dragonblocks $(CLIENT) -pthread -lm
 
 DragonblocksServer: $(SERVER)
-	cc -g -o DragonblocksServer $(SERVER) -pthread
+	cc -g -o DragonblocksServer $(SERVER) -pthread -lm
 
 %.o: %.c
 	cc -c -g -o $@ -Wall -Wextra -Wpedantic -Werror $<

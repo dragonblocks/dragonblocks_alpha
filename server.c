@@ -1,15 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <assert.h>
 #include <errno.h>
-#include <endian.h>
-#include <pthread.h>
-#include "linkedlist.h"
 #include "server.h"
-#include "servercommands.h"
 #include "signal.h"
 #include "util.h"
 
@@ -17,11 +10,13 @@
 
 char *server_get_client_name(Client *client)
 {
-	return client->name ? client->name : "<unauthenticated client>";
+	return client->name ? client->name : client->address;
 }
 
 void server_disconnect_client(Client *client, int flags, const char *detail)
 {
+	client->state = CS_DISCONNECTED;
+
 	if (client->name && ! (flags & DISCO_NO_REMOVE))
 		linked_list_delete(&client->server->clients, client->name);
 
@@ -30,8 +25,6 @@ void server_disconnect_client(Client *client, int flags, const char *detail)
 
 	if (! (flags & DISCO_NO_SEND))
 		send_command(client, CC_DISCONNECT);
-
-	client->state = CS_DISCONNECTED;
 
 	pthread_mutex_lock(&client->mtx);
 	close(client->fd);
@@ -65,6 +58,8 @@ static void *reciever_thread(void *clientptr)
 	if (client->name)
 		free(client->name);
 
+	free(client->address);
+
 	pthread_mutex_destroy(&client->mtx);
 	free(client);
 
@@ -73,10 +68,10 @@ static void *reciever_thread(void *clientptr)
 
 static void accept_client(Server *srv)
 {
-	struct sockaddr_in cli_addr_buf = {0};
-	socklen_t cli_addrlen_buf = 0;
+	struct sockaddr_in client_addr_buf = {0};
+	socklen_t client_addrlen = sizeof(client_addr_buf);
 
-	int fd = accept(srv->sockfd, (struct sockaddr *) &cli_addr_buf, &cli_addrlen_buf);
+	int fd = accept(srv->sockfd, (struct sockaddr *) &client_addr_buf, &client_addrlen);
 
 	if (fd == -1) {
 		if (errno == EINTR)
@@ -90,6 +85,9 @@ static void accept_client(Server *srv)
 	client->state = CS_CREATED;
 	client->fd = fd;
 	client->name = NULL;
+	client->address = address_string(&client_addr_buf);
+
+	printf("Connected %s\n", client->address);
 
 	pthread_mutex_init(&client->mtx, NULL);
 

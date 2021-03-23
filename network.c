@@ -10,7 +10,7 @@ static void handle_packets(Client *client) {
 	while (client->state != CS_DISCONNECTED) {
 		HostCommand command;
 		if (! read_u32(client->fd, &command))
-			break;
+			return;
 
 		CommandHandler *handler = NULL;
 
@@ -22,7 +22,7 @@ static void handle_packets(Client *client) {
 			if (! good)
 				printf("Recieved %s command, but client is in invalid state: %d\n", handler->name, client->state);
 			if (! handler->func(client, good))
-				break;
+				return;
 		} else {
 			printf("Recieved invalid command %d (max = %d)\n", command, HOST_COMMAND_COUNT);
 		}

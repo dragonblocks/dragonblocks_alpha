@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
-#include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>
 #include "util.h"
@@ -50,4 +49,14 @@ char *read_string(int fd, size_t bufsiz)
 			break;
 	}
 	return strdup(buf);
+}
+
+char *address_string(struct sockaddr_in *addr)
+{
+	char *str_addr = inet_ntoa(addr->sin_addr);
+	char str_port[5];
+	sprintf(str_port, "%d", ntohs(addr->sin_port));
+	char *address = malloc(strlen(str_addr) + 1 + strlen(str_port) + 1);
+	sprintf(address, "%s:%s", str_addr, str_port);
+	return address;
 }
