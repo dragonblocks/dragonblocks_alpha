@@ -8,6 +8,7 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
+#include <linmath.h/linmath.h>
 #include "client.h"
 #include "signal.h"
 #include "util.h"

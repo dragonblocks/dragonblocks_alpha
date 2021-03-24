@@ -1,6 +1,22 @@
 # Building instructions
 
-The code and the Makefile are located in the src/ directory
+GNU make is used for compiling. The code and the Makefile are located in the src/ directory.
+
+## Dependencies
+To build anything you need g++ and GNU make.
+```bash
+sudo apt install build-essential make
+```
+
+The development versions OpenGL, GLFW3, GLEW are required to build the client.
+```bash
+sudo apt install libgl1-mesa-dev libglfw3-dev libglew-dev
+```
+
+When building the client, don't forget to pull the submodules before building.
+``bash
+git submodule update --init
+```
 
 ## Available targets
 - `all` (default)
@@ -9,9 +25,9 @@ The code and the Makefile are located in the src/ directory
 - `clean`
 - `clobber`
 
-Debug flag (`-g`) is set by default.
+The debug flag (`-g`) is set by default (RELEASE=TRUE will disable it).
 
-## Release Build
+## Release
 ```bash
 ./release.sh
 ```

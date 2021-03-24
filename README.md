@@ -26,3 +26,10 @@ All positions are signed integers (`s32`)
 - `invalid`: unknown nodes received from server
 
 Interrupt handlers for SIGINT und SIGTERM are implemented.
+
+## Dependencies
+
+The client depends on GLFW3, OpenGL and GLEW.
+```bash
+sudo apt install libgl1-mesa-dri libglfw3 libglew2.1
+```

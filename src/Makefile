@@ -18,7 +18,7 @@ DragonblocksServer: $(SERVER)
 	cc $(FLAGS) -o DragonblocksServer $(SERVER) $(LIBRARIES)
 
 %.o: %.c
-	cc $(FLAGS) -o $@ -c -Wall -Wextra -Wpedantic -Werror $<
+	cc $(FLAGS) -o $@ -c -Wall -Wextra -Wpedantic -Werror -isystem ../deps $<
 
 clean:
 	rm -rf *.o
