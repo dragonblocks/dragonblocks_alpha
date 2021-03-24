@@ -5,6 +5,9 @@
 #include <unistd.h>
 #include <errno.h>
 #include <netdb.h>
+#include <GL/glew.h>
+#include <GL/gl.h>
+#include <GLFW/glfw3.h>
 #include "client.h"
 #include "signal.h"
 #include "util.h"
@@ -47,97 +50,78 @@ static void *reciever_thread(void *cliptr)
 
 static void client_loop(Client *client)
 {
-	while (client->state != CS_DISCONNECTED) {
-		if (client->state == CS_CREATED) {
-			printf("Enter name: ");
-			fflush(stdout);
-			char name[NAME_MAX];
-			if (scanf("%s", name) == EOF)
-				return;
-			client->name = strdup(name);
-			pthread_mutex_lock(&client->mtx);
-			if (write_u32(client->fd, SC_AUTH) && write(client->fd, client->name, strlen(name) + 1)) {
-				client->state = CS_AUTH;
-				printf("Authenticating...\n");
-			}
-			pthread_mutex_unlock(&client->mtx);
-		} else if (client->state == CS_ACTIVE) {
-			printf("%s: ", client->name);
-			fflush(stdout);
-			char buffer[BUFSIZ] = {0};
-			if (scanf("%s", buffer) == EOF)
-				return;
-			if (strcmp(buffer, "disconnect") == 0) {
-				return;
-			} else if (strcmp(buffer, "setnode") == 0) {
-				v3s32 pos;
-				char node[BUFSIZ] = {0};
-				if (scanf("%d %d %d %s", &pos.x, &pos.y, &pos.z, node) == EOF)
-					return;
-				Node node_type = NODE_INVALID;
-				if (strcmp(node, "air") == 0)
-					node_type = NODE_AIR;
-				else if (strcmp(node, "grass") == 0)
-					node_type = NODE_GRASS;
-				else if (strcmp(node, "dirt") == 0)
-					node_type = NODE_DIRT;
-				else if (strcmp(node, "stone") == 0)
-					node_type = NODE_STONE;
-				if (node_type == NODE_INVALID) {
-					printf("Invalid node\n");
-				} else {
-					pthread_mutex_lock(&client->mtx);
-					(void) (write_u32(client->fd, SC_SETNODE) && write_v3s32(client->fd, pos) && write_u32(client->fd, node_type));
-					pthread_mutex_unlock(&client->mtx);
-				}
-			} else if (strcmp(buffer, "getnode") == 0) {
-				v3s32 pos;
-				if (scanf("%d %d %d", &pos.x, &pos.y, &pos.z) == EOF)
-					return;
-				pthread_mutex_lock(&client->mtx);
-				(void) (write_u32(client->fd, SC_GETBLOCK) && write_v3s32(client->fd, map_node_to_block_pos(pos, NULL)));
-				pthread_mutex_unlock(&client->mtx);
-			} else if (strcmp(buffer, "printnode") == 0) {
-				v3s32 pos;
-				if (scanf("%d %d %d", &pos.x, &pos.y, &pos.z) == EOF)
-					return;
-				MapNode node = map_get_node(client->map, pos);
-				const char *nodename;
-				switch (node.type) {
-					case NODE_UNLOADED:
-						nodename = "unloaded";
-						break;
-					case NODE_AIR:
-						nodename = "air";
-						break;
-					case NODE_GRASS:
-						nodename = "grass";
-						break;
-					case NODE_DIRT:
-						nodename = "dirt";
-						break;
-					case NODE_STONE:
-						nodename = "stone";
-						break;
-					case NODE_INVALID:
-						nodename = "invalid";
-						break;
-				}
-				printf("%s\n", nodename);
-			} else if (strcmp(buffer, "kick") == 0) {
-				char target_name[NAME_MAX];
-				if (scanf("%s", target_name) == EOF)
-					return;
-				pthread_mutex_lock(&client->mtx);
-				(void) (write_u32(client->fd, SC_KICK) && write(client->fd, target_name, strlen(target_name) + 1) != -1);
-				pthread_mutex_unlock(&client->mtx);
-			} else {
-				printf("Invalid command: %s\n", buffer);
-			}
-		} else {
-			sched_yield();
+	if(! glfwInit()) {
+		printf("Failed to initialize GLFW\n");
+		return;
+	}
+
+	glfwWindowHint(GLFW_SAMPLES, 8);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+	GLFWwindow *window = glfwCreateWindow(1024, 768, "Dragonblocks", NULL, NULL);
+
+	if (! window) {
+		printf("Failed to create window\n");
+		glfwTerminate();
+		return;
+	}
+
+	glfwMakeContextCurrent(window);
+	if (glewInit() != GLEW_OK) {
+		printf("Failed to initialize GLEW\n");
+		return;
+	}
+
+	while (! glfwWindowShouldClose(window) && client->state != CS_DISCONNECTED && ! interrupted) {
+		glClear(GL_COLOR_BUFFER_BIT);
+		glClearColor(0.52941176470588, 0.8078431372549, 0.92156862745098, 1.0);
+
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
+}
+
+static bool client_name_prompt(Client *client)
+{
+	printf("Enter name: ");
+	fflush(stdout);
+	char name[NAME_MAX];
+	if (scanf("%s", name) == EOF)
+		return false;
+	client->name = strdup(name);
+	pthread_mutex_lock(&client->mtx);
+	if (write_u32(client->fd, SC_AUTH) && write(client->fd, client->name, strlen(name) + 1)) {
+		client->state = CS_AUTH;
+		printf("Authenticating...\n");
+	}
+	pthread_mutex_unlock(&client->mtx);
+	return true;
+}
+
+static bool client_authenticate(Client *client)
+{
+	for ever {
+		switch (client->state) {
+			case CS_CREATED:
+				if (client_name_prompt(client))
+					break;
+				else
+					return false;
+			case CS_AUTH:
+				if (interrupted)
+					return false;
+				else
+					sched_yield();
+				break;
+			case CS_ACTIVE:
+				return true;
+			case CS_DISCONNECTED:
+				return false;
 		}
 	}
+	return false;
 }
 
 int main(int argc, char **argv)
@@ -191,7 +175,8 @@ int main(int argc, char **argv)
 	pthread_t recv_thread;
 	pthread_create(&recv_thread, NULL, &reciever_thread, &client);
 
-	client_loop(&client);
+	if (client_authenticate(&client))
+		client_loop(&client);
 
 	client_disconnect(&client, true, NULL);
 

@@ -1,9 +1,13 @@
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
+#include "signal.h"
+
+bool interrupted = false;
 
 static void interrupt_handler(int sig)
 {
+	interrupted = true;
 	fprintf(stderr, "%s\n", strsignal(sig));
 }
 
