@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <netdb.h>
+#include <fcntl.h>
 #include "server.h"
 #include "signal.h"
 #include "util.h"
@@ -36,6 +37,17 @@ void server_shutdown(Server *srv)
 
 	shutdown(srv->sockfd, SHUT_RDWR);
 	close(srv->sockfd);
+
+	FILE *mapfile = fopen("map", "w");
+	if (mapfile) {
+		if (map_serialize(fileno(mapfile), srv->map))
+			printf("Saved map\n");
+		else
+			perror("map_serialize");
+		fclose(mapfile);
+	} else {
+		perror("fopen");
+	}
 
 	map_delete(srv->map);
 
@@ -143,6 +155,14 @@ int main(int argc, char **argv)
 	init_signal_handlers();
 
 	server.map = map_create(NULL);
+
+	FILE *mapfile = fopen("map", "r");
+	if (mapfile) {
+		map_deserialize(fileno(mapfile), server.map);
+		fclose(mapfile);
+	} else if (errno != ENOENT) {
+		perror("fopen");
+	}
 
 	for ever accept_client(&server);
 }

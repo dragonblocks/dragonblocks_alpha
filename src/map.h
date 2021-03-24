@@ -43,6 +43,8 @@ void map_add_block(Map *map, MapBlock *block);
 bool map_deserialize_node(int fd, MapNode *buf);
 bool map_serialize_block(int fd, MapBlock *block);
 MapBlock *map_deserialize_block(int fd);
+bool map_serialize(int fd, Map *map);
+void map_deserialize(int fd, Map *map);
 
 v3s32 map_node_to_block_pos(v3s32 pos, v3u8 *offset);
 

@@ -138,6 +138,25 @@ MapBlock *map_deserialize_block(int fd)
 	return block;
 }
 
+bool map_serialize(int fd, Map *map)
+{
+	for (size_t s = 0; s < map->sectors.siz; s++) {
+		MapSector *sector = map->sectors.ptr[s];
+		for (size_t b = 0; b < sector->blocks.siz; b++)
+			if (! map_serialize_block(fd, sector->blocks.ptr[b]))
+				return false;
+	}
+	return true;
+}
+
+void map_deserialize(int fd, Map *map)
+{
+	MapBlock *block;
+
+	while ((block = map_deserialize_block(fd)) != NULL)
+		map_add_block(map, block);
+}
+
 v3s32 map_node_to_block_pos(v3s32 pos, v3u8 *offset)
 {
 	if (offset)
