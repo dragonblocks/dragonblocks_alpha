@@ -31,8 +31,16 @@ static bool auth_handler(Client *client, bool good)
 
 static bool block_handler(Client *client, bool good)
 {
+	MapBlock *block = map_deserialize_block(client->fd);
+
+	if (! block)
+		return false;
+
 	if (good)
-		return map_deserialize_block(client->fd, client->map);
+		map_add_block(client->map, block);
+	else
+		map_free_block(block);
+
 	return true;
 }
 

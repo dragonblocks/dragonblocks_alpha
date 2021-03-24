@@ -7,12 +7,6 @@
 
 #define CMPBOUNDS(x) x == 0 ? 0 : x > 0 ? 1 : -1
 
-static void raw_delete_block(MapBlock *block)
-{
-	ITERATE_MAPBLOCK map_node_clear(&block->data[x][y][z]);
-	free(block);
-}
-
 static s8 sector_compare(void *hash, void *sector)
 {
 	s64 d = *((u64 *) hash) - ((MapSector *) sector)->hash;
@@ -69,6 +63,32 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 	return block;
 }
 
+void map_add_block(Map *map, MapBlock *block)
+{
+	MapSector *sector = map_get_sector(map, (v2s32) {block->pos.x, block->pos.z}, true);
+	BinsearchResult res = binsearch(&block->pos.y, sector->blocks.ptr, sector->blocks.siz, &block_compare);
+	if (res.success) {
+		map_free_block(sector->blocks.ptr[res.index]);
+		sector->blocks.ptr[res.index] = block;
+	} else {
+		array_insert(&sector->blocks, block, res.index);
+	}
+}
+
+void map_clear_block(MapBlock *block, v3u8 init_state)
+{
+	for (u8 x = 0; x <= init_state.x; x++)
+		for (u8 y = 0; y <= init_state.y; y++)
+			for (u8 z = 0; z <= init_state.z; z++)
+				map_node_clear(&block->data[x][y][z]);
+}
+
+void map_free_block(MapBlock *block)
+{
+	map_clear_block(block, (v3u8) {15, 15, 15});
+	free(block);
+}
+
 bool map_deserialize_node(int fd, MapNode *node)
 {
 	Node type;
@@ -97,40 +117,33 @@ bool map_serialize_block(int fd, MapBlock *block)
 	return true;
 }
 
-bool map_deserialize_block(int fd, Map *map)
+MapBlock *map_deserialize_block(int fd)
 {
-	MapBlock *block = malloc(sizeof(MapBlock));
+	v3s32 pos;
 
-	if (! read_v3s32(fd, &block->pos))
-		return false;
+	if (! read_v3s32(fd, &pos))
+		return NULL;
+
+	MapBlock *block = malloc(sizeof(MapBlock));
+	block->pos = pos;
 
 	ITERATE_MAPBLOCK {
 		if (! map_deserialize_node(fd, &block->data[x][y][z])) {
+			map_clear_block(block, (v3u8) {x, y, z});
 			free(block);
-			return false;
+			return NULL;
 		}
 	}
 
-	MapSector *sector = map_get_sector(map, (v2s32) {block->pos.x, block->pos.z}, true);
-	BinsearchResult res = binsearch(&block->pos.y, sector->blocks.ptr, sector->blocks.siz, &block_compare);
-	if (res.success) {
-		raw_delete_block(sector->blocks.ptr[res.index]);
-		sector->blocks.ptr[res.index] = block;
-	} else {
-		array_insert(&sector->blocks, block, res.index);
-	}
-
-	return true;
+	return block;
 }
-
 
 v3s32 map_node_to_block_pos(v3s32 pos, v3u8 *offset)
 {
 	if (offset)
 		*offset = (v3u8) {(u32) pos.x % 16, (u32) pos.y % 16, (u32) pos.z % 16};
-	return (v3s32) {floor((double) pos.x / 16), floor((double) pos.y / 16), floor((double) pos.z / 16)};
+	return (v3s32) {floor((double) pos.x / 16.0), floor((double) pos.y / 16.0), floor((double) pos.z / 16.0)};
 }
-
 
 MapNode map_get_node(Map *map, v3s32 pos)
 {
@@ -174,7 +187,7 @@ void map_delete(Map *map)
 	for (size_t s = 0; s < map->sectors.siz; s++) {
 		MapSector *sector = map->sectors.ptr[s];
 		for (size_t b = 0; b < sector->blocks.siz; b++)
-			raw_delete_block(sector->blocks.ptr[b]);
+			map_free_block(sector->blocks.ptr[b]);
 		if (sector->blocks.ptr)
 			free(sector->blocks.ptr);
 		free(sector);
