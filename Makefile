@@ -1,17 +1,23 @@
 COMMON = array.o binsearch.o linkedlist.o map.o signal.o util.o types.o
 SERVER = $(COMMON) server.o servercommands.o
 CLIENT = $(COMMON) client.o clientcommands.o
+LIBRARIES = -lpthread -lm
+FLAGS = -g
+
+ifdef RELEASE
+FLAGS = -O3
+endif
 
 all: Dragonblocks DragonblocksServer
 
 Dragonblocks: $(CLIENT)
-	cc -g -o Dragonblocks $(CLIENT) -pthread -lm
+	cc $(FLAGS) -o Dragonblocks $(CLIENT) $(LIBRARIES)
 
 DragonblocksServer: $(SERVER)
-	cc -g -o DragonblocksServer $(SERVER) -pthread -lm
+	cc $(FLAGS) -o DragonblocksServer $(SERVER) $(LIBRARIES)
 
 %.o: %.c
-	cc -c -g -o $@ -Wall -Wextra -Wpedantic -Werror $<
+	cc $(FLAGS) -o $@ -c -Wall -Wextra -Wpedantic -Werror $<
 
 clean:
 	rm -rf *.o

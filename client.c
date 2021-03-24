@@ -87,8 +87,7 @@ static void client_loop(Client *client)
 					printf("Invalid node\n");
 				} else {
 					pthread_mutex_lock(&client->mtx);
-					if (write_u32(client->fd, SC_SETNODE) && write_v3s32(client->fd, pos))
-						write_u32(client->fd, node_type);
+					(void) (write_u32(client->fd, SC_SETNODE) && write_v3s32(client->fd, pos) && write_u32(client->fd, node_type));
 					pthread_mutex_unlock(&client->mtx);
 				}
 			} else if (strcmp(buffer, "getnode") == 0) {
@@ -96,8 +95,7 @@ static void client_loop(Client *client)
 				if (scanf("%d %d %d", &pos.x, &pos.y, &pos.z) == EOF)
 					return;
 				pthread_mutex_lock(&client->mtx);
-				if (write_u32(client->fd, SC_GETBLOCK))
-					write_v3s32(client->fd, map_node_to_block_pos(pos, NULL));
+				(void) (write_u32(client->fd, SC_GETBLOCK) && write_v3s32(client->fd, map_node_to_block_pos(pos, NULL)));
 				pthread_mutex_unlock(&client->mtx);
 			} else if (strcmp(buffer, "printnode") == 0) {
 				v3s32 pos;
@@ -131,8 +129,7 @@ static void client_loop(Client *client)
 				if (scanf("%s", target_name) == EOF)
 					return;
 				pthread_mutex_lock(&client->mtx);
-				if (write_u32(client->fd, SC_KICK))
-					write(client->fd, target_name, strlen(target_name) + 1);
+				(void) (write_u32(client->fd, SC_KICK) && write(client->fd, target_name, strlen(target_name) + 1) != -1);
 				pthread_mutex_unlock(&client->mtx);
 			} else {
 				printf("Invalid command: %s\n", buffer);

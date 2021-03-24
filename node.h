@@ -8,7 +8,7 @@ typedef enum
 	NODE_GRASS,
 	NODE_DIRT,
 	NODE_STONE,
-	NODE_INVALID,		// Used for invalid nodes sent by server (caused by outdated clients)
+	NODE_INVALID,		// Used for invalid nodes received from server (caused by outdated clients)
 } Node;
 
 #endif
