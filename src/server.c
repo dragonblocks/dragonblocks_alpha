@@ -9,11 +9,6 @@
 
 #include "network.c"
 
-char *server_get_client_name(Client *client)
-{
-	return client->name ? client->name : client->address;
-}
-
 void server_disconnect_client(Client *client, int flags, const char *detail)
 {
 	client->state = CS_DISCONNECTED;
@@ -22,7 +17,7 @@ void server_disconnect_client(Client *client, int flags, const char *detail)
 		linked_list_delete(&client->server->clients, client->name);
 
 	if (! (flags & DISCO_NO_MESSAGE))
-		printf("Disconnected %s %s%s%s\n", server_get_client_name(client), INBRACES(detail));
+		printf("Disconnected %s %s%s%s\n", client->name, INBRACES(detail));
 
 	if (! (flags & DISCO_NO_SEND))
 		send_command(client, CC_DISCONNECT);
@@ -56,7 +51,7 @@ static void *reciever_thread(void *clientptr)
 	if (client->state != CS_DISCONNECTED)
 		server_disconnect_client(client, DISCO_NO_SEND, "network error");
 
-	if (client->name)
+	if (client->name != client->address)
 		free(client->name);
 
 	free(client->address);
@@ -85,8 +80,8 @@ static void accept_client(Server *srv)
 	client->server = srv;
 	client->state = CS_CREATED;
 	client->fd = fd;
-	client->name = NULL;
 	client->address = address_string((struct sockaddr_in6 *) &client_address);
+	client->name = client->address;
 
 	printf("Connected %s\n", client->address);
 

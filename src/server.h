@@ -33,7 +33,6 @@ typedef enum
 	DISCO_NO_MESSAGE = 0x04,
 } DiscoFlag;
 
-char *server_get_client_name(Client *client);
 void server_disconnect_client(Client *client, int flags, const char *detail);
 void server_shutdown(Server *srv);
 
