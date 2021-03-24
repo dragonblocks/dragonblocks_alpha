@@ -1,5 +1,7 @@
 # Building instructions
 
+The code and the Makefile are located in the src/ directory
+
 ## Available targets
 - `all` (default)
 - `Dragonblocks`
