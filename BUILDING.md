@@ -13,5 +13,6 @@ Debug flag (`-g`) is set by default.
 
 ## Release Build
 ```bash
-make clobber && make all RELEASE=TRUE -j$(nproc) && make clean
+./release.sh
 ```
+This script will create a release zipfile.
