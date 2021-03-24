@@ -72,7 +72,7 @@ static void accept_client(Server *srv)
 	struct sockaddr_storage client_address = {0};
 	socklen_t client_addrlen = sizeof(client_address);
 
-	int fd = accept(srv->sockfd, (struct sockaddr *)&client_address, &client_addrlen);
+	int fd = accept(srv->sockfd, (struct sockaddr *) &client_address, &client_addrlen);
 
 	if (fd == -1) {
 		if (errno == EINTR)
@@ -138,6 +138,10 @@ int main(int argc, char **argv)
 
 	if (listen(server.sockfd, 3) == -1)
 		syscall_error("listen");
+
+	char *addrstr = address_string((struct sockaddr_in6 *) info->ai_addr);
+	printf("Listening on %s\n", addrstr);
+	free(addrstr);
 
 	freeaddrinfo(info);
 

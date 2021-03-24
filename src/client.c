@@ -178,6 +178,10 @@ int main(int argc, char **argv)
 	if (connect(client.fd, info->ai_addr, info->ai_addrlen) == -1)
 		syscall_error("connect");
 
+	char *addrstr = address_string((struct sockaddr_in6 *) info->ai_addr);
+	printf("Connected to %s\n", addrstr);
+	free(addrstr);
+
 	freeaddrinfo(info);
 
 	init_signal_handlers();
