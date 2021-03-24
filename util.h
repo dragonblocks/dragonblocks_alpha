@@ -11,8 +11,7 @@ extern const char *program_name;
 
 void syscall_error(const char *err);
 void internal_error(const char *err);
-u16 get_port_from_args(int argc, char **argv, int index);
 char *read_string(int fd, size_t bufsiz);
-char *address_string(struct sockaddr_in *addr);
+char *address_string(struct sockaddr_in6 *addr);
 
 #endif

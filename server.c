@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <netdb.h>
 #include "server.h"
 #include "signal.h"
 #include "util.h"
@@ -68,10 +69,10 @@ static void *reciever_thread(void *clientptr)
 
 static void accept_client(Server *srv)
 {
-	struct sockaddr_in client_addr_buf = {0};
-	socklen_t client_addrlen = sizeof(client_addr_buf);
+	struct sockaddr_storage client_address = {0};
+	socklen_t client_addrlen = sizeof(client_address);
 
-	int fd = accept(srv->sockfd, (struct sockaddr *) &client_addr_buf, &client_addrlen);
+	int fd = accept(srv->sockfd, (struct sockaddr *)&client_address, &client_addrlen);
 
 	if (fd == -1) {
 		if (errno == EINTR)
@@ -85,7 +86,7 @@ static void accept_client(Server *srv)
 	client->state = CS_CREATED;
 	client->fd = fd;
 	client->name = NULL;
-	client->address = address_string(&client_addr_buf);
+	client->address = address_string((struct sockaddr_in6 *) &client_address);
 
 	printf("Connected %s\n", client->address);
 
@@ -99,33 +100,46 @@ int main(int argc, char **argv)
 {
 	program_name = argv[0];
 
+	if (argc < 2)
+		internal_error("missing port");
+
+	struct addrinfo hints = {
+		.ai_family = AF_INET6,
+		.ai_socktype = SOCK_STREAM,
+		.ai_protocol = 0,
+		.ai_flags = AI_NUMERICSERV | AI_PASSIVE,
+	};
+
+	struct addrinfo *info = NULL;
+
+	int gai_state = getaddrinfo(NULL, argv[1], &hints, &info);
+
+	if (gai_state != 0)
+		internal_error(gai_strerror(gai_state));
+
 	Server server = {
 		.sockfd = -1,
 		.map = NULL,
 		.clients = linked_list_create(),
 	};
 
-	server.sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	server.sockfd = socket(info->ai_family, info->ai_socktype, 0);
 
 	if (server.sockfd == -1)
 		syscall_error("socket");
-
-	struct sockaddr_in srv_addr = {
-		.sin_family = AF_INET,
-		.sin_port = get_port_from_args(argc, argv, 1),
-		.sin_addr = {.s_addr = INADDR_ANY},
-	};
 
 	int flag = 1;
 
 	if (setsockopt(server.sockfd, SOL_SOCKET, SO_REUSEADDR, &flag, 4) == -1)
 		syscall_error("setsockopt");
 
-	if (bind(server.sockfd, (struct sockaddr *) &srv_addr, sizeof(srv_addr)) == -1)
+	if (bind(server.sockfd, info->ai_addr, info->ai_addrlen) == -1)
 		syscall_error("bind");
 
 	if (listen(server.sockfd, 3) == -1)
 		syscall_error("listen");
+
+	freeaddrinfo(info);
 
 	init_signal_handlers();
 

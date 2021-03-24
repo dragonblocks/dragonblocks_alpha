@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <limits.h>
 #include <unistd.h>
 #include <string.h>
 #include "util.h"
@@ -17,20 +16,6 @@ void internal_error(const char *err)
 {
 	fprintf(stderr, "%s: %s\n", program_name, err);
 	exit(EXIT_FAILURE);
-}
-
-
-unsigned short get_port_from_args(int argc, char **argv, int index)
-{
-	if (argc <= index)
-		internal_error("missing port");
-
-	unsigned int port = atoi(argv[index]);
-
-	if (port == 0 || port > USHRT_MAX)
-		internal_error("invalid port");
-
-	return htons(port);
 }
 
 char *read_string(int fd, size_t bufsiz)
@@ -51,12 +36,16 @@ char *read_string(int fd, size_t bufsiz)
 	return strdup(buf);
 }
 
-char *address_string(struct sockaddr_in *addr)
+char *address_string(struct sockaddr_in6 *addr)
 {
-	char *str_addr = inet_ntoa(addr->sin_addr);
-	char str_port[5];
-	sprintf(str_port, "%d", ntohs(addr->sin_port));
-	char *address = malloc(strlen(str_addr) + 1 + strlen(str_port) + 1);
-	sprintf(address, "%s:%s", str_addr, str_port);
-	return address;
+	char address[INET6_ADDRSTRLEN] = {0};
+	char port[6] = {0};
+
+	if (inet_ntop(addr->sin6_family, &addr->sin6_addr, address, INET6_ADDRSTRLEN) == NULL)
+		perror("inet_ntop");
+	sprintf(port, "%d", ntohs(addr->sin6_port));
+
+	char *result = malloc(strlen(address) + 1 + strlen(port) + 1);
+	sprintf(result, "%s:%s", address, port);
+	return result;
 }

@@ -4,6 +4,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <errno.h>
+#include <netdb.h>
 #include "client.h"
 #include "signal.h"
 #include "util.h"
@@ -146,6 +147,23 @@ int main(int argc, char **argv)
 {
 	program_name = argv[0];
 
+	if (argc < 3)
+		internal_error("missing address or port");
+
+	struct addrinfo hints = {
+		.ai_family = AF_UNSPEC,			// support both IPv4 and IPv6
+		.ai_socktype = SOCK_STREAM,
+		.ai_protocol = 0,
+		.ai_flags = AI_NUMERICSERV,
+	};
+
+	struct addrinfo *info = NULL;
+
+	int gai_state = getaddrinfo(argv[1], argv[2], &hints, &info);
+
+	if (gai_state != 0)
+		internal_error(gai_strerror(gai_state));
+
 	Client client = {
 		.fd = -1,
 		.map = NULL,
@@ -155,27 +173,15 @@ int main(int argc, char **argv)
 
 	pthread_mutex_init(&client.mtx, NULL);
 
-	client.fd = socket(AF_INET, SOCK_STREAM, 0);
+	client.fd = socket(info->ai_family, info->ai_socktype, info->ai_protocol);
 
 	if (client.fd == -1)
 		syscall_error("socket");
 
-	if (argc <= 1)
-		internal_error("missing address");
-
-	struct in_addr addr_buf;
-
-	if (inet_aton(argv[1], &addr_buf) == 0)
-		internal_error("invalid address");
-
-	struct sockaddr_in addr = {
-		.sin_family = AF_INET,
-		.sin_port = get_port_from_args(argc, argv, 2),
-		.sin_addr = addr_buf,
-	};
-
-	if (connect(client.fd, (struct sockaddr *) &addr, sizeof(addr)) == -1)
+	if (connect(client.fd, info->ai_addr, info->ai_addrlen) == -1)
 		syscall_error("connect");
+
+	freeaddrinfo(info);
 
 	init_signal_handlers();
 
