@@ -36,10 +36,12 @@ static bool block_handler(Client *client, bool good)
 	if (! block)
 		return false;
 
-	if (good)
+	if (good) {
+		client_mapblock_changed(client, block->pos);
 		map_add_block(client->map, block);
-	else
+	} else {
 		map_free_block(block);
+	}
 
 	return true;
 }

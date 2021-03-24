@@ -5,7 +5,7 @@
 #include <netinet/in.h>
 #include "clientcommands.h"
 #include "servercommands.h"
-#include "linkedlist.h"
+#include "list.h"
 #include "map.h"
 #include "network.h"
 
@@ -13,7 +13,7 @@ typedef struct
 {
 	int sockfd;
 	Map *map;
-	LinkedList clients;
+	List clients;
 } Server;
 
 typedef struct Client
@@ -23,7 +23,8 @@ typedef struct Client
 	char *address;
 	Server *server;
 	ClientState state;
-	pthread_mutex_t mtx;
+	pthread_mutex_t *write_mtx;
+	pthread_mutex_t mutex;
 } Client;
 
 typedef enum

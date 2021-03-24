@@ -22,7 +22,7 @@ static bool auth_handler(Client *client, bool good)
 		return true;
 	}
 
-	u8 success = linked_list_put(&client->server->clients, name, client);
+	u8 success = list_put(&client->server->clients, name, client);
 
 	printf("Authentication %s: %s -> %s\n", success ? "success" : "failure", client->address, name);
 
@@ -33,9 +33,9 @@ static bool auth_handler(Client *client, bool good)
 		free(name);
 	}
 
-	pthread_mutex_lock(&client->mtx);
+	pthread_mutex_lock(client->write_mtx);
 	bool ret = write_u32(client->fd, CC_AUTH) && write_u8(client->fd, success);
-	pthread_mutex_unlock(&client->mtx);
+	pthread_mutex_unlock(client->write_mtx);
 
 	return ret;
 }
@@ -52,9 +52,9 @@ static bool getblock_handler(Client *client, bool good)
 
 	MapBlock *block = map_get_block(client->server->map, pos, false);
 	if (block) {
-		pthread_mutex_lock(&client->mtx);
+		pthread_mutex_lock(client->write_mtx);
 		bool ret = write_u32(client->fd, CC_BLOCK) && map_serialize_block(client->fd, block);
-		pthread_mutex_unlock(&client->mtx);
+		pthread_mutex_unlock(client->write_mtx);
 
 		return ret;
 	}
@@ -88,7 +88,7 @@ static bool kick_handler(Client *client, bool good)
 		return false;
 
 	if (good) {
-		Client *target = linked_list_get(&client->server->clients, target_name);
+		Client *target = list_get(&client->server->clients, target_name);
 		if (target)
 			server_disconnect_client(target, 0, "kicked");
 	}

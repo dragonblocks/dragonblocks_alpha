@@ -39,6 +39,14 @@ static s8 block_compare(void *level, void *block)
 	return CMPBOUNDS(d);
 }
 
+static void allocate_block(v3s23 pos)
+{
+	MapBlock *block = malloc(sizeof(MapBlock));
+	block->pos = pos;
+	block->extra = NULL;
+	return block;
+}
+
 MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 {
 	MapSector *sector = map_get_sector(map, (v2s32) {pos.x, pos.z}, create);
@@ -52,8 +60,7 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 	if (! create)
 		return NULL;
 
-	MapBlock *block = malloc(sizeof(MapBlock));
-	block->pos = pos;
+	MapBlock *block = allocate_block(pos);
 
 	MapNode air = map_node_create(NODE_AIR);
 	ITERATE_MAPBLOCK block->data[x][y][z] = air;
@@ -124,8 +131,7 @@ MapBlock *map_deserialize_block(int fd)
 	if (! read_v3s32(fd, &pos))
 		return NULL;
 
-	MapBlock *block = malloc(sizeof(MapBlock));
-	block->pos = pos;
+	MapBlock *block = allocate_block(pos);
 
 	ITERATE_MAPBLOCK {
 		if (! map_deserialize_node(fd, &block->data[x][y][z])) {
@@ -185,12 +191,12 @@ void map_set_node(Map *map, v3s32 pos, MapNode node)
 
 MapNode map_node_create(Node type)
 {
-	return (MapNode) {type, linked_list_create()};
+	return (MapNode) {type, list_create(&list_compare_string)};
 }
 
 void map_node_clear(MapNode *node)
 {
-	linked_list_clear(&node->meta);
+	list_clear(&node->meta);
 }
 
 Map *map_create()

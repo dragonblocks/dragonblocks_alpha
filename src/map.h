@@ -19,6 +19,7 @@ typedef struct
 {
 	MapNode data[16][16][16];
 	v3s32 pos;
+	void *extra;
 } MapBlock;
 
 typedef struct

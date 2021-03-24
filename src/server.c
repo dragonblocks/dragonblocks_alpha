@@ -8,14 +8,12 @@
 #include "signal.h"
 #include "util.h"
 
-#include "network.c"
-
 void server_disconnect_client(Client *client, int flags, const char *detail)
 {
 	client->state = CS_DISCONNECTED;
 
 	if (client->name && ! (flags & DISCO_NO_REMOVE))
-		linked_list_delete(&client->server->clients, client->name);
+		list_delete(&client->server->clients, client->name);
 
 	if (! (flags & DISCO_NO_MESSAGE))
 		printf("Disconnected %s %s%s%s\n", client->name, INBRACES(detail));
@@ -23,17 +21,17 @@ void server_disconnect_client(Client *client, int flags, const char *detail)
 	if (! (flags & DISCO_NO_SEND))
 		send_command(client, CC_DISCONNECT);
 
-	pthread_mutex_lock(&client->mtx);
+	pthread_mutex_lock(client->write_mtx);
 	close(client->fd);
-	pthread_mutex_unlock(&client->mtx);
+	pthread_mutex_unlock(client->write_mtx);
 }
 
 void server_shutdown(Server *srv)
 {
 	printf("Shutting down\n");
 
-	ITERATE_LINKEDLIST(&srv->clients, pair) server_disconnect_client(pair->value, DISCO_NO_REMOVE | DISCO_NO_MESSAGE, "");
-	linked_list_clear(&srv->clients);
+	ITERATE_LIST(&srv->clients, pair) server_disconnect_client(pair->value, DISCO_NO_REMOVE | DISCO_NO_MESSAGE, "");
+	list_clear(&srv->clients);
 
 	shutdown(srv->sockfd, SHUT_RDWR);
 	close(srv->sockfd);
@@ -54,6 +52,8 @@ void server_shutdown(Server *srv)
 	exit(EXIT_SUCCESS);
 }
 
+#include "network.c"
+
 static void *reciever_thread(void *clientptr)
 {
 	Client *client = clientptr;
@@ -68,7 +68,7 @@ static void *reciever_thread(void *clientptr)
 
 	free(client->address);
 
-	pthread_mutex_destroy(&client->mtx);
+	pthread_mutex_destroy(client->write_mtx);
 	free(client);
 
 	return NULL;
@@ -97,7 +97,8 @@ static void accept_client(Server *srv)
 
 	printf("Connected %s\n", client->address);
 
-	pthread_mutex_init(&client->mtx, NULL);
+	client->write_mtx = &client->mutex;
+	pthread_mutex_init(client->write_mtx, NULL);
 
 	pthread_t thread;
 	pthread_create(&thread, NULL, &reciever_thread, client);
@@ -127,7 +128,7 @@ int main(int argc, char **argv)
 	Server server = {
 		.sockfd = -1,
 		.map = NULL,
-		.clients = linked_list_create(),
+		.clients = list_create(&list_compare_string),
 	};
 
 	server.sockfd = socket(info->ai_family, info->ai_socktype, 0);
