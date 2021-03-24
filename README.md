@@ -6,6 +6,8 @@
 ./Dragonblocks <address> <port>
 ```
 
+The server will save the map to a file named "map" in the directory it is run in. It will also load the map from there at startup, given that the file exists.
+
 ## Client commands:
 - `setnode <x> <y> <z> <node>`: set a node somewhere
 - `getnode <x> <y> <z>`: download the mapblock containing the node at x y z from server
