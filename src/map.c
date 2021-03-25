@@ -1,15 +1,29 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <math.h>
-#include "binsearch.h"
 #include "map.h"
 #include "util.h"
 
-Map *map_create()
+#define CMPBOUNDS(x) x == 0 ? 0 : x > 0 ? 1 : -1
+
+static s8 sector_compare(void *hash, void *sector)
 {
-	Map *map = malloc(sizeof(Map));
-	map->sectors = array_create(sizeof(MapSector *));
-	return map;
+	s64 d = *((u64 *) hash) - ((MapSector *) sector)->hash;
+	return CMPBOUNDS(d);
+}
+
+static s8 block_compare(void *level, void *block)
+{
+	s32 d = *((s32 *) level) - ((MapBlock *) block)->pos.y;
+	return CMPBOUNDS(d);
+}
+
+static MapBlock *allocate_block(v3s32 pos)
+{
+	MapBlock *block = malloc(sizeof(MapBlock));
+	block->pos = pos;
+	block->extra = NULL;
+	return block;
 }
 
 static MapBlock **get_block_ptr(MapSector *sector, size_t idx)
@@ -20,6 +34,14 @@ static MapBlock **get_block_ptr(MapSector *sector, size_t idx)
 static MapSector **get_sector_ptr(Map *map, size_t idx)
 {
 	return (MapSector **) map->sectors.ptr + idx;
+}
+
+Map *map_create()
+{
+	Map *map = malloc(sizeof(Map));
+	map->sectors = array_create(sizeof(MapSector *));
+	map->sectors.cmp = &sector_compare;
+	return map;
 }
 
 void map_delete(Map *map)
@@ -37,18 +59,10 @@ void map_delete(Map *map)
 	free(map);
 }
 
-#define CMPBOUNDS(x) x == 0 ? 0 : x > 0 ? 1 : -1
-
-static s8 sector_compare(void *hash, void *sector)
-{
-	s64 d = *((u64 *) hash) - ((MapSector *) sector)->hash;
-	return CMPBOUNDS(d);
-}
-
 MapSector *map_get_sector(Map *map, v2s32 pos, bool create)
 {
 	u64 hash = ((u64) pos.x << 32) + (u64) pos.y;
-	BinsearchResult res = binsearch(&hash, map->sectors.ptr, map->sectors.siz, &sector_compare);
+	ArraySearchResult res = array_search(&map->sectors, &hash);
 
 	if (res.success)
 		return *get_sector_ptr(map, res.index);
@@ -59,24 +73,11 @@ MapSector *map_get_sector(Map *map, v2s32 pos, bool create)
 	sector->pos = pos;
 	sector->hash = hash;
 	sector->blocks = array_create(sizeof(MapBlock *));
+	sector->blocks.cmp = &block_compare;
 
 	array_insert(&map->sectors, &sector, res.index);
 
 	return sector;
-}
-
-static s8 block_compare(void *level, void *block)
-{
-	s32 d = *((s32 *) level) - ((MapBlock *) block)->pos.y;
-	return CMPBOUNDS(d);
-}
-
-static MapBlock *allocate_block(v3s32 pos)
-{
-	MapBlock *block = malloc(sizeof(MapBlock));
-	block->pos = pos;
-	block->extra = NULL;
-	return block;
 }
 
 MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
@@ -85,7 +86,7 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 	if (! sector)
 		return NULL;
 
-	BinsearchResult res = binsearch(&pos.y, sector->blocks.ptr, sector->blocks.siz, &block_compare);
+	ArraySearchResult res = array_search(&sector->blocks, &pos.y);
 
 	MapBlock *block = NULL;
 
@@ -108,7 +109,7 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 void map_add_block(Map *map, MapBlock *block)
 {
 	MapSector *sector = map_get_sector(map, (v2s32) {block->pos.x, block->pos.z}, true);
-	BinsearchResult res = binsearch(&block->pos.y, sector->blocks.ptr, sector->blocks.siz, &block_compare);
+	ArraySearchResult res = array_search(&sector->blocks, &block->pos.y);
 	if (res.success) {
 		MapBlock **ptr = get_block_ptr(sector, res.index);
 		map_free_block(*ptr);

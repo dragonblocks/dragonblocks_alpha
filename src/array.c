@@ -1,6 +1,19 @@
+#include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 #include "array.h"
+
+Array array_create(size_t membsiz)
+{
+	return (Array) {
+		.membsiz = membsiz,
+		.siz = 0,
+		.cap = 0,
+		.ptr = NULL,
+		.cmp = NULL,
+	};
+}
+
 
 static void array_realloc(Array *array)
 {
@@ -34,12 +47,27 @@ void array_append(Array *array, void *elem)
 	memcpy((char *) array->ptr + oldsiz * array->membsiz, elem, array->membsiz);
 }
 
-Array array_create(size_t membsiz)
+ArraySearchResult array_search(Array *array, void *search)
 {
-	return (Array) {
-		.membsiz = membsiz,
-		.siz = 0,
-		.cap = 0,
-		.ptr = NULL,
-	};
+	assert(array->cmp);
+	size_t min, max, index;
+
+	min = index = 0;
+	max = array->siz;
+
+	while (min < max) {
+		index = min;
+
+		size_t mid = (max + min) / 2;
+		s8 state = array->cmp(search, (char *) array->ptr + mid * array->membsiz);
+
+		if (state == 0)
+			return (ArraySearchResult) {true, mid};
+		else if (state > 0)
+			max = mid;
+		else
+			min = mid;
+	}
+
+	return (ArraySearchResult) {false, index};
 }
