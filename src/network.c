@@ -2,14 +2,14 @@
 
 bool send_command(Client *client, RemoteCommand cmd)
 {
-	pthread_mutex_lock(client->write_mtx);
+	pthread_mutex_lock(&client->mtx);
 	bool ret = write_u32(client->fd, cmd);
-	pthread_mutex_unlock(client->write_mtx);
+	pthread_mutex_unlock(&client->mtx);
 	return ret;
 }
 
 static void handle_packets(Client *client) {
-	while (client->state != CS_DISCONNECTED) {
+	while (client->state != CS_DISCONNECTED || ! interrupted) {
 		struct pollfd pfd = {
 			.fd = client->fd,
 			.events = POLLIN,
@@ -23,11 +23,10 @@ static void handle_packets(Client *client) {
 			return;
 		}
 
-		if (client->state == CS_DISCONNECTED)
-			return;
-
-		if (pstate == 0)
+		if (pstate == 0) {
+			sched_yield();
 			continue;
+		}
 
 		if (! (pfd.revents & POLLIN))
 			return;

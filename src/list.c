@@ -1,13 +1,13 @@
 #include <stdlib.h>
 #include <string.h>
-#include "List.h"
+#include "list.h"
 
-int list_compare_default(void *v1, void *v2)
+bool list_compare_default(void *v1, void *v2)
 {
 	return v1 == v2;
 }
 
-int list_compare_string(void *v1, void *v2)
+bool list_compare_string(void *v1, void *v2)
 {
 	return strcmp(v1, v2) == 0;
 }
@@ -15,7 +15,7 @@ int list_compare_string(void *v1, void *v2)
 List list_create(ListComparator cmp)
 {
 	return (List) {
-		.cmp = cmp ? cmp : list_compare_default;
+		.cmp = cmp ? cmp : list_compare_default,
 		.first = NULL,
 	};
 }

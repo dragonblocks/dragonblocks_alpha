@@ -4,8 +4,10 @@
 
 static bool disconnect_handler(Client *client, bool good)
 {
+	(void) client;
+
 	if (good)
-		client_disconnect(client, false, NULL);
+		client_disconnect(false, NULL);
 	return true;
 }
 
@@ -37,7 +39,7 @@ static bool block_handler(Client *client, bool good)
 		return false;
 
 	if (good) {
-		client_mapblock_changed(client, block->pos);
+		//mapblock_meshgen_enqueue(client->mapblock_meshgen, block->pos);
 		map_add_block(client->map, block);
 	} else {
 		map_free_block(block);

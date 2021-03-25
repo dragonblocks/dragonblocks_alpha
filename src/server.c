@@ -3,17 +3,18 @@
 #include <unistd.h>
 #include <errno.h>
 #include <netdb.h>
-#include <fcntl.h>
 #include "server.h"
 #include "signal.h"
 #include "util.h"
+
+Server server;
 
 void server_disconnect_client(Client *client, int flags, const char *detail)
 {
 	client->state = CS_DISCONNECTED;
 
 	if (client->name && ! (flags & DISCO_NO_REMOVE))
-		list_delete(&client->server->clients, client->name);
+		list_delete(&server.clients, client->name);
 
 	if (! (flags & DISCO_NO_MESSAGE))
 		printf("Disconnected %s %s%s%s\n", client->name, INBRACES(detail));
@@ -21,40 +22,14 @@ void server_disconnect_client(Client *client, int flags, const char *detail)
 	if (! (flags & DISCO_NO_SEND))
 		send_command(client, CC_DISCONNECT);
 
-	pthread_mutex_lock(client->write_mtx);
+	pthread_mutex_lock(&client->mtx);
 	close(client->fd);
-	pthread_mutex_unlock(client->write_mtx);
-}
-
-void server_shutdown(Server *srv)
-{
-	printf("Shutting down\n");
-
-	ITERATE_LIST(&srv->clients, pair) server_disconnect_client(pair->value, DISCO_NO_REMOVE | DISCO_NO_MESSAGE, "");
-	list_clear(&srv->clients);
-
-	shutdown(srv->sockfd, SHUT_RDWR);
-	close(srv->sockfd);
-
-	FILE *mapfile = fopen("map", "w");
-	if (mapfile) {
-		if (map_serialize(fileno(mapfile), srv->map))
-			printf("Saved map\n");
-		else
-			perror("map_serialize");
-		fclose(mapfile);
-	} else {
-		perror("fopen");
-	}
-
-	map_delete(srv->map);
-
-	exit(EXIT_SUCCESS);
+	pthread_mutex_unlock(&client->mtx);
 }
 
 #include "network.c"
 
-static void *reciever_thread(void *clientptr)
+static void *server_reciever_thread(void *clientptr)
 {
 	Client *client = clientptr;
 
@@ -68,40 +43,77 @@ static void *reciever_thread(void *clientptr)
 
 	free(client->address);
 
-	pthread_mutex_destroy(client->write_mtx);
+	pthread_mutex_destroy(&client->mtx);
+
 	free(client);
 
 	return NULL;
 }
 
-static void accept_client(Server *srv)
+static void server_accept_client()
 {
 	struct sockaddr_storage client_address = {0};
 	socklen_t client_addrlen = sizeof(client_address);
 
-	int fd = accept(srv->sockfd, (struct sockaddr *) &client_address, &client_addrlen);
+	int fd = accept(server.sockfd, (struct sockaddr *) &client_address, &client_addrlen);
 
 	if (fd == -1) {
-		if (errno == EINTR)
-			server_shutdown(srv);
-		else
-			syscall_error("accept");
+		if (errno != EINTR)
+			perror("accept");
+		return;
 	}
 
 	Client *client = malloc(sizeof(Client));
-	client->server = srv;
-	client->state = CS_CREATED;
 	client->fd = fd;
+	pthread_mutex_init(&client->mtx, NULL);
+	client->state = CS_CREATED;
 	client->address = address_string((struct sockaddr_in6 *) &client_address);
 	client->name = client->address;
+	client->server = &server;
+	pthread_create(&client->thread, NULL, &server_reciever_thread, client);
 
 	printf("Connected %s\n", client->address);
+}
 
-	client->write_mtx = &client->mutex;
-	pthread_mutex_init(client->write_mtx, NULL);
+void server_start(int fd)
+{
+	server.sockfd = fd;
+	server.map = map_create(NULL);
+	server.clients = list_create(&list_compare_string);
 
-	pthread_t thread;
-	pthread_create(&thread, NULL, &reciever_thread, client);
+	FILE *mapfile = fopen("map", "r");
+	if (mapfile) {
+		map_deserialize(fileno(mapfile), server.map);
+		fclose(mapfile);
+	} else if (errno != ENOENT) {
+		perror("fopen");
+	}
+
+	while (! interrupted)
+		server_accept_client();
+
+	printf("Shutting down\n");
+
+	ITERATE_LIST(&server.clients, pair) server_disconnect_client(pair->value, DISCO_NO_REMOVE | DISCO_NO_MESSAGE, "");
+	list_clear(&server.clients);
+
+	shutdown(server.sockfd, SHUT_RDWR);
+	close(server.sockfd);
+
+	mapfile = fopen("map", "w");
+	if (mapfile) {
+		if (map_serialize(fileno(mapfile), server.map))
+			printf("Saved map\n");
+		else
+			perror("map_serialize");
+		fclose(mapfile);
+	} else {
+		perror("fopen");
+	}
+
+	map_delete(server.map);
+
+	exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char **argv)
@@ -125,26 +137,20 @@ int main(int argc, char **argv)
 	if (gai_state != 0)
 		internal_error(gai_strerror(gai_state));
 
-	Server server = {
-		.sockfd = -1,
-		.map = NULL,
-		.clients = list_create(&list_compare_string),
-	};
+	int fd = socket(info->ai_family, info->ai_socktype, 0);
 
-	server.sockfd = socket(info->ai_family, info->ai_socktype, 0);
-
-	if (server.sockfd == -1)
+	if (fd == -1)
 		syscall_error("socket");
 
 	int flag = 1;
 
-	if (setsockopt(server.sockfd, SOL_SOCKET, SO_REUSEADDR, &flag, 4) == -1)
+	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag)) == -1)
 		syscall_error("setsockopt");
 
-	if (bind(server.sockfd, info->ai_addr, info->ai_addrlen) == -1)
+	if (bind(fd, info->ai_addr, info->ai_addrlen) == -1)
 		syscall_error("bind");
 
-	if (listen(server.sockfd, 3) == -1)
+	if (listen(fd, 3) == -1)
 		syscall_error("listen");
 
 	char *addrstr = address_string((struct sockaddr_in6 *) info->ai_addr);
@@ -154,16 +160,7 @@ int main(int argc, char **argv)
 	freeaddrinfo(info);
 
 	init_signal_handlers();
+	server_start(fd);
 
-	server.map = map_create(NULL);
-
-	FILE *mapfile = fopen("map", "r");
-	if (mapfile) {
-		map_deserialize(fileno(mapfile), server.map);
-		fclose(mapfile);
-	} else if (errno != ENOENT) {
-		perror("fopen");
-	}
-
-	for ever accept_client(&server);
+	return EXIT_SUCCESS;
 }

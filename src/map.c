@@ -5,6 +5,38 @@
 #include "map.h"
 #include "util.h"
 
+Map *map_create()
+{
+	Map *map = malloc(sizeof(Map));
+	map->sectors = array_create(sizeof(MapSector *));
+	return map;
+}
+
+static MapBlock **get_block_ptr(MapSector *sector, size_t idx)
+{
+	return (MapBlock **) sector->blocks.ptr + idx;
+}
+
+static MapSector **get_sector_ptr(Map *map, size_t idx)
+{
+	return (MapSector **) map->sectors.ptr + idx;
+}
+
+void map_delete(Map *map)
+{
+	for (size_t s = 0; s < map->sectors.siz; s++) {
+		MapSector *sector = *get_sector_ptr(map, s);
+		for (size_t b = 0; b < sector->blocks.siz; b++)
+			map_free_block(*get_block_ptr(sector, b));
+		if (sector->blocks.ptr)
+			free(sector->blocks.ptr);
+		free(sector);
+	}
+	if (map->sectors.ptr)
+		free(map->sectors.ptr);
+	free(map);
+}
+
 #define CMPBOUNDS(x) x == 0 ? 0 : x > 0 ? 1 : -1
 
 static s8 sector_compare(void *hash, void *sector)
@@ -19,16 +51,16 @@ MapSector *map_get_sector(Map *map, v2s32 pos, bool create)
 	BinsearchResult res = binsearch(&hash, map->sectors.ptr, map->sectors.siz, &sector_compare);
 
 	if (res.success)
-		return map->sectors.ptr[res.index];
+		return *get_sector_ptr(map, res.index);
 	if (! create)
 		return NULL;
 
 	MapSector *sector = malloc(sizeof(MapSector));
 	sector->pos = pos;
 	sector->hash = hash;
-	sector->blocks = array_create();
+	sector->blocks = array_create(sizeof(MapBlock *));
 
-	array_insert(&map->sectors, sector, res.index);
+	array_insert(&map->sectors, &sector, res.index);
 
 	return sector;
 }
@@ -39,7 +71,7 @@ static s8 block_compare(void *level, void *block)
 	return CMPBOUNDS(d);
 }
 
-static void allocate_block(v3s23 pos)
+static MapBlock *allocate_block(v3s32 pos)
 {
 	MapBlock *block = malloc(sizeof(MapBlock));
 	block->pos = pos;
@@ -56,7 +88,7 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 	BinsearchResult res = binsearch(&pos.y, sector->blocks.ptr, sector->blocks.siz, &block_compare);
 
 	if (res.success)
-		return sector->blocks.ptr[res.index];
+		return *get_block_ptr(sector, res.index);
 	if (! create)
 		return NULL;
 
@@ -65,7 +97,7 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 	MapNode air = map_node_create(NODE_AIR);
 	ITERATE_MAPBLOCK block->data[x][y][z] = air;
 
-	array_insert(&sector->blocks, block, res.index);
+	array_insert(&sector->blocks, &block, res.index);
 
 	return block;
 }
@@ -75,10 +107,11 @@ void map_add_block(Map *map, MapBlock *block)
 	MapSector *sector = map_get_sector(map, (v2s32) {block->pos.x, block->pos.z}, true);
 	BinsearchResult res = binsearch(&block->pos.y, sector->blocks.ptr, sector->blocks.siz, &block_compare);
 	if (res.success) {
-		map_free_block(sector->blocks.ptr[res.index]);
-		sector->blocks.ptr[res.index] = block;
+		MapBlock **ptr = get_block_ptr(sector, res.index);
+		map_free_block(*ptr);
+		*ptr = block;
 	} else {
-		array_insert(&sector->blocks, block, res.index);
+		array_insert(&sector->blocks, &block, res.index);
 	}
 }
 
@@ -147,9 +180,9 @@ MapBlock *map_deserialize_block(int fd)
 bool map_serialize(int fd, Map *map)
 {
 	for (size_t s = 0; s < map->sectors.siz; s++) {
-		MapSector *sector = map->sectors.ptr[s];
+		MapSector *sector = *get_sector_ptr(map, s);
 		for (size_t b = 0; b < sector->blocks.siz; b++)
-			if (! map_serialize_block(fd, sector->blocks.ptr[b]))
+			if (! map_serialize_block(fd, *get_block_ptr(sector, b)))
 				return false;
 	}
 	return true;
@@ -197,27 +230,4 @@ MapNode map_node_create(Node type)
 void map_node_clear(MapNode *node)
 {
 	list_clear(&node->meta);
-}
-
-Map *map_create()
-{
-	Map *map = malloc(sizeof(Map));
-	map->sectors = array_create();
-
-	return map;
-}
-
-void map_delete(Map *map)
-{
-	for (size_t s = 0; s < map->sectors.siz; s++) {
-		MapSector *sector = map->sectors.ptr[s];
-		for (size_t b = 0; b < sector->blocks.siz; b++)
-			map_free_block(sector->blocks.ptr[b]);
-		if (sector->blocks.ptr)
-			free(sector->blocks.ptr);
-		free(sector);
-	}
-	if (map->sectors.ptr)
-		free(map->sectors.ptr);
-	free(map);
 }

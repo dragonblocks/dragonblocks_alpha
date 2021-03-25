@@ -5,104 +5,44 @@
 #include <unistd.h>
 #include <errno.h>
 #include <netdb.h>
-#include <GLFW/glfw3.h>
 #include <GL/glew.h>
 #include <GL/gl.h>
+#include <GLFW/glfw3.h>
 #include "client.h"
-#include "mesh.h"
 #include "signal.h"
 #include "util.h"
 
-void client_create_mesh(Client *client, Mesh *mesh);
-{
-	pthread_mutex_lock(client->meshlist_mtx);
-	list_put(&client->meshlist, mesh, NULL);
-	pthread_mutex_unlock(client->meshlist_mtx);
-}
+Client client;
 
-void client_remove_mesh(Client *client, Mesh *mesh);
+void client_disconnect(bool send, const char *detail)
 {
-	pthread_mutex_lock(client->meshlist_mtx);
-	list_delete(&client->meshlist, mesh);
-	pthread_mutex_unlock(client->meshlist_mtx);
-	delete_mesh(mesh);
-}
-
-void client_mapblock_changed(Client *client, v3s32 pos)
-{
-	v3s32 *posptr = malloc(sizeof(v3s32));
-	*posptr = pos;
-	pthread_mutex_lock(client->mapblock_meshgen_mtx);
-	if (! list_put(&client->mapblock_meshgen_queue, posptr, NULL))
-		free(posptr);
-	pthread_mutex_unlock(client->mapblock_meshgen_mtx);
-}
-
-void client_disconnect(Client *client, bool send, const char *detail)
-{
-	pthread_mutex_lock(client->write_mtx);
-	if (client->state != CS_DISCONNECTED) {
+	pthread_mutex_lock(&client.mtx);
+	if (client.state != CS_DISCONNECTED) {
 		if (send)
-			write_u32(client->fd, SC_DISCONNECT);
+			write_u32(client.fd, SC_DISCONNECT);
 
-		client->state = CS_DISCONNECTED;
+		client.state = CS_DISCONNECTED;
 		printf("Disconnected %s%s%s\n", INBRACES(detail));
-		close(client->fd);
+		close(client.fd);
 	}
-	pthread_mutex_unlock(client->write_mtx);
+	pthread_mutex_unlock(&client.mtx);
 }
 
 #include "network.c"
 
-static void *reciever_thread(void *cliptr)
+static void *reciever_thread(void *unused)
 {
-	Client *client = cliptr;
+	(void) unused;
 
-	handle_packets(client);
+	handle_packets(&client);
 
-	if (errno == EINTR)
-		client_disconnect(client, true, NULL);
-	else
-		client_disconnect(client, false, "network error");
+	if (errno != EINTR)
+		client_disconnect(false, "network error");
 
-	if (client->name)
-		free(client->name);
-
-	pthread_mutex_lock(client->meshlist_mtx);
-	ITERATE_LIST(&client->meshes, pair) delete_mesh(pair->value);
-	list_clear(&client->meshes);
-	pthread_mutex_unlock(client->meshlist_mtx);
-
-	for (int i = 0; i < CLIENT_MTX_COUNT; i++)
-		pthread_mutex_destroy(&client.mutexes[i]);
-
-	exit(EXIT_SUCCESS);
 	return NULL;
 }
 
-static void *mapblock_meshgen_thread(void *cliptr)
-{
-	Client *client = cliptr;
-
-	for ever {
-		ListPair **lptr = &client->mapblock_meshgen_queue.first;
-		if (*lptr) {
-			MapBlock *block = map_get_block(client->map, *(v3s32 *)(*lptr)->key, false);
-			Array vertices(sizeof(GLfloat));
-
-			// ToDo: Actual vertices generation code
-
-			client_create_mesh(client, create_mesh(vertices.ptr, vertices.siz));
-			pthread_mutex_lock(client->mapblock_meshgen_mtx);
-			*lptr = (*lptr)->next;
-			pthread_mutex_unlock(client->mapblock_meshgen_mtx);
-		} else {
-			sched_yield();
-		}
-	}
-}
-
-static void client_loop(Client *client)
+static void client_loop()
 {
 	if(! glfwInit()) {
 		printf("Failed to initialize GLFW\n");
@@ -128,38 +68,44 @@ static void client_loop(Client *client)
 		return;
 	}
 
-	while (! glfwWindowShouldClose(window) && client->state != CS_DISCONNECTED && ! interrupted) {
+	int shader_program = 0;
+
+	while (! glfwWindowShouldClose(window) && client.state != CS_DISCONNECTED && ! interrupted) {
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClearColor(0.52941176470588, 0.8078431372549, 0.92156862745098, 1.0);
+
+		mat4x4 view, proj;
+
+		scene_render(client.scene, shader_program, view, proj);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
 }
 
-static bool client_name_prompt(Client *client)
+static bool client_name_prompt()
 {
 	printf("Enter name: ");
 	fflush(stdout);
 	char name[NAME_MAX];
 	if (scanf("%s", name) == EOF)
 		return false;
-	client->name = strdup(name);
-	pthread_mutex_lock(client->write_mtx);
-	if (write_u32(client->fd, SC_AUTH) && write(client->fd, client->name, strlen(name) + 1)) {
-		client->state = CS_AUTH;
+	client.name = strdup(name);
+	pthread_mutex_lock(&client.mtx);
+	if (write_u32(client.fd, SC_AUTH) && write(client.fd, client.name, strlen(client.name) + 1)) {
+		client.state = CS_AUTH;
 		printf("Authenticating...\n");
 	}
-	pthread_mutex_unlock(client->write_mtx);
+	pthread_mutex_unlock(&client.mtx);
 	return true;
 }
 
-static bool client_authenticate(Client *client)
+static bool client_authenticate()
 {
 	for ever {
-		switch (client->state) {
+		switch (client.state) {
 			case CS_CREATED:
-				if (client_name_prompt(client))
+				if (client_name_prompt())
 					break;
 				else
 					return false;
@@ -178,11 +124,33 @@ static bool client_authenticate(Client *client)
 	return false;
 }
 
-static bool compare_positions(void *p1, void *p2)
+static void client_start(int fd)
 {
-	v3s32 *pos1 = p1;
-	v3s32 *pos2 = p2;
-	return pos1->x == pos2->x && pos1->y == pos2->y && pos->z == pos2->z;
+	client.fd = fd;
+	pthread_mutex_init(&client.mtx, NULL);
+	client.state = CS_CREATED;
+	client.name = NULL;
+	client.map = map_create();
+	client.scene = scene_create();
+	//client.mapblock_meshgen = mapblock_meshgen_create();
+
+	pthread_t recv_thread;
+	pthread_create(&recv_thread, NULL, &reciever_thread, NULL);
+
+	if (client_authenticate())
+		client_loop();
+
+	if (client.state != CS_DISCONNECTED)
+		client_disconnect(true, NULL);
+
+	if (client.name)
+		free(client.name);
+
+	map_delete(client.map);
+	scene_delete(client.scene);
+	//mapblock_meshgen_delete(client.mapblock_meshgen);
+
+	pthread_mutex_destroy(&client.mtx);
 }
 
 int main(int argc, char **argv)
@@ -193,7 +161,7 @@ int main(int argc, char **argv)
 		internal_error("missing address or port");
 
 	struct addrinfo hints = {
-		.ai_family = AF_UNSPEC,			// support both IPv4 and IPv6
+		.ai_family = AF_UNSPEC,
 		.ai_socktype = SOCK_STREAM,
 		.ai_protocol = 0,
 		.ai_flags = AI_NUMERICSERV,
@@ -206,28 +174,12 @@ int main(int argc, char **argv)
 	if (gai_state != 0)
 		internal_error(gai_strerror(gai_state));
 
-	Client client = {
-		.fd = -1,
-		.map = NULL,
-		.name = NULL,
-		.state = CS_CREATED,
-		.meshlist = list_create(NULL),
-		.mapblock_meshgen_queue = list_create(&compare_positions),
-	};
+	int fd = socket(info->ai_family, info->ai_socktype, info->ai_protocol);
 
-	for (int i = 0; i < CLIENT_MTX_COUNT; i++)
-		pthread_mutex_init(&client.mutexes[i], NULL);
-
-	client.write_mtx = &client.mutexes[0];
-	client.meshlist_mtx = &client.mutexes[1];
-	client.mapblock_meshgen_mtx = &client.mutexes[2];
-
-	client.fd = socket(info->ai_family, info->ai_socktype, info->ai_protocol);
-
-	if (client.fd == -1)
+	if (fd == -1)
 		syscall_error("socket");
 
-	if (connect(client.fd, info->ai_addr, info->ai_addrlen) == -1)
+	if (connect(fd, info->ai_addr, info->ai_addrlen) == -1)
 		syscall_error("connect");
 
 	char *addrstr = address_string((struct sockaddr_in6 *) info->ai_addr);
@@ -237,18 +189,7 @@ int main(int argc, char **argv)
 	freeaddrinfo(info);
 
 	init_signal_handlers();
+	client_start(fd);
 
-	client.map = map_create();
-
-	pthread_t recv_thread;
-	pthread_t mmg_thread;
-	pthread_create(&recv_thread, NULL, &reciever_thread, &client);
-	pthread_create(&mmg_thread, NULL, &mapblock_meshgen_thread, &client);
-
-	if (client_authenticate(&client))
-		client_loop(&client);
-
-	client_disconnect(&client, true, NULL);
-
-	pthread_join(recv_thread, NULL);
+	return EXIT_SUCCESS;
 }

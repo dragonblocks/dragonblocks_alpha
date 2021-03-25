@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include "array.h"
-#include "linkedlist.h"
+#include "list.h"
 #include "node.h"
 #include "types.h"
 
@@ -12,7 +12,7 @@
 typedef struct
 {
 	Node type;
-	LinkedList meta;
+	List meta;
 } MapNode;
 
 typedef struct
@@ -34,6 +34,9 @@ typedef struct
 	Array sectors;
 } Map;
 
+Map *map_create();
+void map_delete(Map *map);
+
 MapSector *map_get_sector(Map *map, v2s32 pos, bool create);
 MapBlock *map_get_block(Map *map, v3s32 pos, bool create);
 
@@ -53,8 +56,5 @@ MapNode map_get_node(Map *map, v3s32 pos);
 void map_set_node(Map *map, v3s32 pos, MapNode node);
 MapNode map_node_create(Node type);
 void map_node_clear(MapNode *node);
-
-Map *map_create();
-void map_delete(Map *map);
 
 #endif

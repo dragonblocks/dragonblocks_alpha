@@ -13,7 +13,7 @@ typedef struct
 	GLuint VAO, VBO;
 } Mesh;
 
-Mesh *create_mesh(const GLvoid *vertices, GLsizei size);
-void delete_mesh(Mesh *mesh);
+Mesh *mesh_create(const GLvoid *vertices, GLsizei size);
+void mesh_delete(Mesh *mesh);
 
 #endif

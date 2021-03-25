@@ -7,12 +7,13 @@
 
 typedef struct
 {
+	size_t membsiz;
 	size_t siz, cap;
-	void **ptr;
+	void *ptr;
 } Array;
 
 void array_insert(Array *array, void *elem, size_t idx);
 void array_append(Array *array, void *elem);
-Array array_create();
+Array array_create(size_t membsiz);
 
 #endif

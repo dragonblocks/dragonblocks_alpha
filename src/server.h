@@ -12,19 +12,19 @@
 typedef struct
 {
 	int sockfd;
-	Map *map;
 	List clients;
+	Map *map;
 } Server;
 
 typedef struct Client
 {
 	int fd;
-	char *name;
-	char *address;
-	Server *server;
+	pthread_mutex_t mtx;
 	ClientState state;
-	pthread_mutex_t *write_mtx;
-	pthread_mutex_t mutex;
+	char *address;
+	char *name;
+	Server *server;
+	pthread_t thread;
 } Client;
 
 typedef enum
@@ -35,6 +35,6 @@ typedef enum
 } DiscoFlag;
 
 void server_disconnect_client(Client *client, int flags, const char *detail);
-void server_shutdown(Server *srv);
+void server_shutdown();
 
 #endif

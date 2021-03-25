@@ -33,9 +33,9 @@ static bool auth_handler(Client *client, bool good)
 		free(name);
 	}
 
-	pthread_mutex_lock(client->write_mtx);
+	pthread_mutex_lock(&client->mtx);
 	bool ret = write_u32(client->fd, CC_AUTH) && write_u8(client->fd, success);
-	pthread_mutex_unlock(client->write_mtx);
+	pthread_mutex_unlock(&client->mtx);
 
 	return ret;
 }
@@ -52,9 +52,9 @@ static bool getblock_handler(Client *client, bool good)
 
 	MapBlock *block = map_get_block(client->server->map, pos, false);
 	if (block) {
-		pthread_mutex_lock(client->write_mtx);
+		pthread_mutex_lock(&client->mtx);
 		bool ret = write_u32(client->fd, CC_BLOCK) && map_serialize_block(client->fd, block);
-		pthread_mutex_unlock(client->write_mtx);
+		pthread_mutex_unlock(&client->mtx);
 
 		return ret;
 	}

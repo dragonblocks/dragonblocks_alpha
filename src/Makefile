@@ -1,6 +1,6 @@
 COMMON = array.o binsearch.o list.o map.o signal.o util.o types.o
 SERVER = $(COMMON) server.o servercommands.o
-CLIENT = $(COMMON) client.o clientcommands.o mesh.o
+CLIENT = $(COMMON) client.o clientcommands.o mesh.o scene.o
 LIBRARIES = -lpthread -lm
 CLIENT_LIBRARIES = -lGL -lGLEW -lglfw
 FLAGS = -g
