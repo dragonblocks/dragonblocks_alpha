@@ -14,5 +14,6 @@ void syscall_error(const char *err);
 void internal_error(const char *err);
 char *read_string(int fd, size_t bufsiz);
 char *address_string(struct sockaddr_in6 *addr);
+v3f html_to_v3f(const char *html);
 
 #endif

@@ -6,10 +6,11 @@
 #include <linmath.h/linmath.h>
 #include <stdbool.h>
 #include "shaders.h"
+#include "types.h"
 
 typedef struct
 {
-	vec3 pos, rot, scale;
+	v3f pos, rot, scale;
 	float angle;
 	mat4x4 transform;
 	GLuint VAO, VBO;

@@ -142,7 +142,7 @@ bool map_deserialize_node(int fd, MapNode *node)
 	if (! read_u32(fd, &type))
 		return false;
 
-	if (type > NODE_INVALID)
+	if (type >= NODE_UNLOADED)
 		type = NODE_INVALID;
 
 	*node = map_node_create(type);

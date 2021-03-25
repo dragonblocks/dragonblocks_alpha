@@ -4,11 +4,9 @@
 Mesh *mesh_create(GLfloat *vertices, GLsizei size)
 {
 	Mesh *mesh = malloc(sizeof(Mesh));
-	for (int i = 0; i < 3; i++) {
-		mesh->pos[i] = 0;
-		mesh->rot[i] = 0;
-		mesh->scale[i] = 1;
-	}
+	mesh->pos = (v3f) {0.0f, 0.0f, 0.0f};
+	mesh->rot = (v3f) {0.0f, 0.0f, 0.0f};
+	mesh->scale = (v3f) {1.0f, 1.0f, 1.0f};
 	mesh_transform(mesh);
 	mesh->angle = 0.0f;
 	mesh->VAO = 0;
@@ -25,9 +23,9 @@ Mesh *mesh_create(GLfloat *vertices, GLsizei size)
 
 void mesh_transform(Mesh *mesh)
 {
-	mat4x4_translate(mesh->transform, mesh->pos[0], mesh->pos[1], mesh->pos[2]);
-	mat4x4_rotate(mesh->transform, mesh->transform, mesh->rot[0], mesh->rot[1], mesh->rot[2], mesh->angle);
-	mat4x4_scale_aniso(mesh->transform, mesh->transform, mesh->scale[0], mesh->scale[1], mesh->scale[2]);
+	mat4x4_translate(mesh->transform, mesh->pos.x, mesh->pos.y, mesh->pos.z);
+	mat4x4_rotate(mesh->transform, mesh->transform, mesh->rot.x, mesh->rot.y, mesh->rot.z, mesh->angle);
+	mat4x4_scale_aniso(mesh->transform, mesh->transform, mesh->scale.x, mesh->scale.y, mesh->scale.z);
 }
 
 #pragma GCC diagnostic pop

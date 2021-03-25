@@ -13,7 +13,7 @@ The development versions OpenGL, GLFW3, GLEW are required to build the client.
 sudo apt install libgl1-mesa-dev libglfw3-dev libglew-dev
 ```
 
-When building the client, don't forget to pull the submodules before building.
+Don't forget to pull the submodules before building.
 ``bash
 git submodule update --init
 ```

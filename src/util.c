@@ -49,3 +49,10 @@ char *address_string(struct sockaddr_in6 *addr)
 	sprintf(result, "%s:%s", address, port);
 	return result;
 }
+
+v3f html_to_v3f(const char *html)
+{
+	unsigned int r, g, b;
+	sscanf(html, "#%2x%2x%2x", &r, &g, &b);
+	return (v3f) {(float) r / 255.0f, (float) g / 255.0f, (float) b / 255.0f};
+}
