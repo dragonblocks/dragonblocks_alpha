@@ -81,7 +81,6 @@ static void *meshgen_thread(void *unused)
 
 			if (vertices.siz > 0) {
 				mesh = mesh_create(vertices.ptr, vertices.siz);
-				free(vertices.ptr);
 				scene_add_mesh(meshgen.scene, mesh);
 			}
 

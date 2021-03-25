@@ -24,7 +24,7 @@ void scene_add_mesh(Scene *scene, Mesh *mesh)
 	pthread_mutex_unlock(&scene->mtx);
 }
 
-void scene_render(Scene *scene, int prog)
+void scene_render(Scene *scene, ShaderProgram *prog)
 {
 	for (ListPair **pairptr = &scene->meshes.first; *pairptr != NULL; ) {
 		ListPair *pair = *pairptr;

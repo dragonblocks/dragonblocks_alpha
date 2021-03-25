@@ -5,8 +5,8 @@
 #include <pthread.h>
 #include "servercommands.h"
 #include "clientcommands.h"
-#include "network.h"
 #include "map.h"
+#include "network.h"
 #include "scene.h"
 
 typedef struct Client

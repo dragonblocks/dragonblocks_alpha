@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include "list.h"
 #include "mesh.h"
+#include "shaders.h"
 
 typedef struct
 {
@@ -16,6 +17,6 @@ void scene_delete(Scene *scene);
 
 void scene_add_mesh(Scene *scene, Mesh *mesh);
 void scene_remove_mesh(Scene *scene, Mesh *mesh);
-void scene_render(Scene *scene, int prog);
+void scene_render(Scene *scene, ShaderProgram *prog);
 
 #endif

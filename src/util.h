@@ -2,6 +2,7 @@
 #define _UTIL_H_
 
 #include <arpa/inet.h>
+#include <linmath.h/linmath.h>
 #include "types.h"
 
 #define ever (;;)

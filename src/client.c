@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <errno.h>
@@ -11,6 +12,7 @@
 #include "client.h"
 #include "mapblock_meshgen.h"
 #include "signal.h"
+#include "shaders.h"
 #include "util.h"
 
 Client client;
@@ -43,6 +45,12 @@ static void *reciever_thread(void *unused)
 	return NULL;
 }
 
+#ifdef RELEASE
+#define SHADER_PATH "shaders/"
+#else
+#define SHADER_PATH "../shaders/"
+#endif
+
 static void client_loop()
 {
 	if(! glfwInit()) {
@@ -55,7 +63,11 @@ static void client_loop()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow *window = glfwCreateWindow(1024, 768, "Dragonblocks", NULL, NULL);
+	int width, height;
+	width = 1024;
+	height = 768;
+
+	GLFWwindow *window = glfwCreateWindow(width, height, "Dragonblocks", NULL, NULL);
 
 	if (! window) {
 		printf("Failed to create window\n");
@@ -69,17 +81,28 @@ static void client_loop()
 		return;
 	}
 
-	int shader_program = 0;
+	ShaderProgram *prog = create_shader_program(SHADER_PATH);
+
+	mat4x4 view, proj;
+
+	mat4x4_identity(view);	// ToDo: camera
+	mat4x4_perspective(proj, 86.1f / 180.0f * M_PI, (float) width / (float) height, 0.01f, 100.0f);
+
+	glUseProgram(prog->id);
+	glUniformMatrix4fv(prog->loc_view, 1, GL_FALSE, view[0]);
+	glUniformMatrix4fv(prog->loc_proj, 1, GL_FALSE, proj[0]);
 
 	while (! glfwWindowShouldClose(window) && client.state != CS_DISCONNECTED && ! interrupted) {
 		glClear(GL_COLOR_BUFFER_BIT);
-		glClearColor(0.52941176470588, 0.8078431372549, 0.92156862745098, 1.0);
+		glClearColor(0.52941176470588f, 0.8078431372549f, 0.92156862745098f, 1.0f);
 
-		scene_render(client.scene, shader_program);
+		scene_render(client.scene, prog);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
+
+	delete_shader_program(prog);
 }
 
 static bool client_name_prompt()

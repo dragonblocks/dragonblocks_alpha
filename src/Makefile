@@ -6,7 +6,7 @@ CLIENT_LIBRARIES = -lGL -lGLEW -lglfw
 FLAGS = -g -fmax-errors=4
 
 ifdef RELEASE
-FLAGS = -O3
+FLAGS = -O3 -DRELEASE
 endif
 
 all: Dragonblocks DragonblocksServer
