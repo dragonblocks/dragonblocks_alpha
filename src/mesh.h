@@ -4,6 +4,7 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <linmath.h/linmath.h>
+#include <stdbool.h>
 
 typedef struct
 {
@@ -11,9 +12,11 @@ typedef struct
 	float angle;
 	mat4x4 transform;
 	GLuint VAO, VBO;
+	bool remove;
 } Mesh;
 
 Mesh *mesh_create(const GLvoid *vertices, GLsizei size);
 void mesh_delete(Mesh *mesh);
+void mesh_render(Mesh *mesh, int prog);
 
 #endif

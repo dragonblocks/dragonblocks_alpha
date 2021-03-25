@@ -87,19 +87,22 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 
 	BinsearchResult res = binsearch(&pos.y, sector->blocks.ptr, sector->blocks.siz, &block_compare);
 
-	if (res.success)
-		return *get_block_ptr(sector, res.index);
-	if (! create)
+	MapBlock *block = NULL;
+
+	if (res.success) {
+		block = *get_block_ptr(sector, res.index);
+	} else if (create) {
+		block = allocate_block(pos);
+
+		if (map->on_block_create)
+			map->on_block_create(block);
+
+		array_insert(&sector->blocks, &block, res.index);
+	} else {
 		return NULL;
+	}
 
-	MapBlock *block = allocate_block(pos);
-
-	MapNode air = map_node_create(NODE_AIR);
-	ITERATE_MAPBLOCK block->data[x][y][z] = air;
-
-	array_insert(&sector->blocks, &block, res.index);
-
-	return block;
+	return block->ready ? block : NULL;
 }
 
 void map_add_block(Map *map, MapBlock *block)
@@ -113,6 +116,8 @@ void map_add_block(Map *map, MapBlock *block)
 	} else {
 		array_insert(&sector->blocks, &block, res.index);
 	}
+	if (map->on_block_add)
+		map->on_block_add(block);
 }
 
 void map_clear_block(MapBlock *block, v3u8 init_state)
@@ -216,10 +221,12 @@ MapNode map_get_node(Map *map, v3s32 pos)
 void map_set_node(Map *map, v3s32 pos, MapNode node)
 {
 	v3u8 offset;
-	MapBlock *block = map_get_block(map, map_node_to_block_pos(pos, &offset), true);
-	MapNode *current_node = &block->data[offset.x][offset.y][offset.z];
-	map_node_clear(current_node);
-	*current_node = node;
+	MapBlock *block = map_get_block(map, map_node_to_block_pos(pos, &offset), false);
+	if (block) {
+		MapNode *current_node = &block->data[offset.x][offset.y][offset.z];
+		map_node_clear(current_node);
+		*current_node = node;
+	}
 }
 
 MapNode map_node_create(Node type)

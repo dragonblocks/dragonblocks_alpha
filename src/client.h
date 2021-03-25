@@ -7,7 +7,6 @@
 #include "clientcommands.h"
 #include "network.h"
 #include "map.h"
-//#include "mapblock_meshgen.h"
 #include "scene.h"
 
 typedef struct Client
@@ -18,7 +17,6 @@ typedef struct Client
 	char *name;
 	Map *map;
 	Scene *scene;
-	//MapblockMeshgen *mapblock_meshgen;
 } Client;
 
 void client_disconnect(bool send, const char *detail);

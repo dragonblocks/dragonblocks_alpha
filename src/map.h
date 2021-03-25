@@ -19,6 +19,7 @@ typedef struct
 {
 	MapNode data[16][16][16];
 	v3s32 pos;
+	bool ready;
 	void *extra;
 } MapBlock;
 
@@ -29,9 +30,14 @@ typedef struct
 	u64 hash;
 } MapSector;
 
+typedef void (*MapBlockCallback)(MapBlock *block);
+
 typedef struct
 {
 	Array sectors;
+	MapBlockCallback on_block_create;
+	MapBlockCallback on_block_add;
+	MapBlockCallback on_block_change;
 } Map;
 
 Map *map_create();

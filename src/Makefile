@@ -1,9 +1,9 @@
 COMMON = array.o binsearch.o list.o map.o signal.o util.o types.o
-SERVER = $(COMMON) server.o servercommands.o
-CLIENT = $(COMMON) client.o clientcommands.o mesh.o scene.o
+SERVER = $(COMMON) server.o servercommands.o mapgen.o
+CLIENT = $(COMMON) client.o clientcommands.o mesh.o scene.o mapblock_meshgen.o
 LIBRARIES = -lpthread -lm
 CLIENT_LIBRARIES = -lGL -lGLEW -lglfw
-FLAGS = -g
+FLAGS = -g -fmax-errors=4
 
 ifdef RELEASE
 FLAGS = -O3

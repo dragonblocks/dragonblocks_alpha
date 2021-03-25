@@ -9,6 +9,7 @@
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
 #include "client.h"
+#include "mapblock_meshgen.h"
 #include "signal.h"
 #include "util.h"
 
@@ -74,9 +75,7 @@ static void client_loop()
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClearColor(0.52941176470588, 0.8078431372549, 0.92156862745098, 1.0);
 
-		mat4x4 view, proj;
-
-		scene_render(client.scene, shader_program, view, proj);
+		scene_render(client.scene, shader_program);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -132,7 +131,8 @@ static void client_start(int fd)
 	client.name = NULL;
 	client.map = map_create();
 	client.scene = scene_create();
-	//client.mapblock_meshgen = mapblock_meshgen_create();
+
+	mapblock_meshgen_init(client.map, client.scene);
 
 	pthread_t recv_thread;
 	pthread_create(&recv_thread, NULL, &reciever_thread, NULL);
@@ -146,9 +146,10 @@ static void client_start(int fd)
 	if (client.name)
 		free(client.name);
 
+	mapblock_meshgen_stop();
+
 	map_delete(client.map);
 	scene_delete(client.scene);
-	//mapblock_meshgen_delete(client.mapblock_meshgen);
 
 	pthread_mutex_destroy(&client.mtx);
 }
