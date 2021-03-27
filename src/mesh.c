@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "mesh.h"
 
-Mesh *mesh_create(GLfloat *vertices, GLsizei size)
+Mesh *mesh_create(GLfloat *vertices, GLsizei count)
 {
 	Mesh *mesh = malloc(sizeof(Mesh));
 	mesh->pos = (v3f) {0.0f, 0.0f, 0.0f};
@@ -13,8 +13,7 @@ Mesh *mesh_create(GLfloat *vertices, GLsizei size)
 	mesh->VBO = 0;
 	mesh->remove = false;
 	mesh->vertices = vertices;
-	mesh->size = size;
-	mesh->count = size / 6;
+	mesh->count = count;
 	return mesh;
 }
 
@@ -49,7 +48,7 @@ static void mesh_configure(Mesh *mesh)
 	glBindVertexArray(mesh->VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, mesh->VBO);
 
-	glBufferData(GL_ARRAY_BUFFER, mesh->size, mesh->vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, mesh->count * 6, mesh->vertices, GL_STATIC_DRAW);
 
 	GLsizei stride = 6 * sizeof(GLfloat);
 

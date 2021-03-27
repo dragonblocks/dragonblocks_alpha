@@ -1,10 +1,15 @@
-#include "util.h"
 #include "node.h"
+#include "util.h"
 
 NodeDefintion node_definitions[NODE_UNLOADED] = {
-	{true, html_to_v3f("#F44026")},
-	{false, {0}},
-	{true, html_to_v3f("#00CB1F")},
-	{true, html_to_v3f("#854025")},
-	{true, html_to_v3f("#7A7A7A")},
+	{true,  false, "#F44026", {0.0f, 0.0f, 0.0f}},
+	{false, false, "",        {0.0f, 0.0f, 0.0f}},
+	{true,  false, "#00CB1F", {0.0f, 0.0f, 0.0f}},
+	{true,  false, "#854025", {0.0f, 0.0f, 0.0f}},
+	{true,  false, "#7A7A7A", {0.0f, 0.0f, 0.0f}},
 };
+
+v3f get_node_color(NodeDefintion *def)
+{
+	return def->color_initialized ? def->color : (def->color = html_to_v3f(def->color_str));
+}

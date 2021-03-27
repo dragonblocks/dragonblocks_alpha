@@ -16,10 +16,10 @@ typedef struct
 	GLuint VAO, VBO;
 	bool remove;
 	GLfloat *vertices;
-	GLsizei size, count;
+	GLsizei count;
 } Mesh;
 
-Mesh *mesh_create(GLfloat *vertices, GLsizei size);
+Mesh *mesh_create(GLfloat *vertices, GLsizei count);
 void mesh_delete(Mesh *mesh);
 void mesh_transform(Mesh *mesh);
 void mesh_render(Mesh *mesh, ShaderProgram *prog);

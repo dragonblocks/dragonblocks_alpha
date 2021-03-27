@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include "node.h"
 #include "mapblock_meshgen.h"
 
 static struct
@@ -11,56 +12,108 @@ static struct
 	bool cancel;
 } meshgen;
 
+static v3f vpos[6][6] = {
+	{
+		{-0.5f, -0.5f, -0.5f},
+		{+0.5f, -0.5f, -0.5f},
+		{+0.5f, +0.5f, -0.5f},
+		{+0.5f, +0.5f, -0.5f},
+		{-0.5f, +0.5f, -0.5f},
+		{-0.5f, -0.5f, -0.5f},
+	},
+	{
+		{-0.5f, -0.5f, +0.5f},
+		{+0.5f, +0.5f, +0.5f},
+		{+0.5f, -0.5f, +0.5f},
+		{+0.5f, +0.5f, +0.5f},
+		{-0.5f, -0.5f, +0.5f},
+		{-0.5f, +0.5f, +0.5f},
+	},
+	{
+		{-0.5f, +0.5f, +0.5f},
+		{-0.5f, -0.5f, -0.5f},
+		{-0.5f, +0.5f, -0.5f},
+		{-0.5f, -0.5f, -0.5f},
+		{-0.5f, +0.5f, +0.5f},
+		{-0.5f, -0.5f, +0.5f},
+	},
+	{
+		{+0.5f, +0.5f, +0.5f},
+		{+0.5f, +0.5f, -0.5f},
+		{+0.5f, -0.5f, -0.5f},
+		{+0.5f, -0.5f, -0.5f},
+		{+0.5f, -0.5f, +0.5f},
+		{+0.5f, +0.5f, +0.5f},
+	},
+	{
+		{-0.5f, -0.5f, -0.5f},
+		{+0.5f, -0.5f, -0.5f},
+		{+0.5f, -0.5f, +0.5f},
+		{+0.5f, -0.5f, +0.5f},
+		{-0.5f, -0.5f, +0.5f},
+		{-0.5f, -0.5f, -0.5f},
+	},
+	{
+		{-0.5f, +0.5f, -0.5f},
+		{+0.5f, +0.5f, -0.5f},
+		{+0.5f, +0.5f, +0.5f},
+		{+0.5f, +0.5f, +0.5f},
+		{-0.5f, +0.5f, +0.5f},
+		{-0.5f, +0.5f, -0.5f},
+	},
+};
+
+static v3s8 fdir[6] = {
+	{+0, +0, -1},
+	{+0, +0, +1},
+	{-1, +0, +0},
+	{+1, +0, +0},
+	{+0, -1, +0},
+	{+0, +1, +0},
+};
+
+#define GNODDEF(block, x, y, z) node_definitions[block->data[x][y][z].type]
+#define VALIDPOS(pos) (pos.x >= 0 && pos.x < 16 && pos.y >= 0 && pos.y < 16 && pos.z >= 0 && pos.z < 16)
+
 static Array make_vertices(MapBlock *block)
 {
-	Array vertices = array_create(sizeof(GLfloat));
+	Array vertices = array_create(sizeof(GLfloat) * 6);
 
-	(void) block;
-
-	/*
 	ITERATE_MAPBLOCK {
-		MapNode node = block->data[x][y][z];
-		BlockDef *def = block->getDef();
-		if (! def->drawable)
-			continue;
-		ivec3 bpos(x, y, z);
-		vec3 pos_from_mesh_origin = vec3(bpos) - vec3(SIZE / 2 + 0.5);
-		for (int facenr = 0; facenr < 6; facenr++) {
-			ivec3 npos = bpos + face_dir[facenr];
-			const Block *neighbor_own, *neighbor;
-			neighbor_own = neighbor = getBlockNoEx(npos);
-			if (! neighbor)
-				neighbor = map->getBlock(pos * SIZE + npos);
-			if (neighbor && ! neighbor->getDef()->drawable)
-				any_drawable_block = true;
-			if (! mesh_created_before)
-				neighbor = neighbor_own;
-			if (! mesh_created_before && ! neighbor || neighbor && ! neighbor->getDef()->drawable) {
-				textures.push_back(def->tile_def.get(facenr));
-				for (int vertex_index = 0; vertex_index < 6; vertex_index++) {
-					for (int attribute_index = 0; attribute_index < 5; attribute_index++) {
-						GLdouble value = box_vertices[facenr][vertex_index][attribute_index];
-						switch (attribute_index) {
-							case 0:
-							value += pos_from_mesh_origin.x;
-							break;
-							case 1:
-							value += pos_from_mesh_origin.y;
-							break;
-							case 2:
-							value += pos_from_mesh_origin.z;
-							break;
-						}
-						vertices.push_back(value);
+		NodeDefintion *def = &GNODDEF(block, x, y, z);
+		if (def->visible) {
+			v3u8 pos = {x, y, z};
+			v3f offset = {x + 8.5f, y + 8.5f, z + 8.5f};
+			v3f color = get_node_color(def);
+			for (int f = 0; f < 6; f++) {
+				v3s8 *noff = &fdir[f];
+				v3s8 npos = {
+					pos.x + noff->x,
+					pos.y + noff->y,
+					pos.z + noff->z,
+				};
+				if (VALIDPOS(npos) && ! GNODDEF(block, npos.x, npos.y, npos.z).visible) {
+					for (int v = 0; v < 6; v++) {
+						GLfloat vertex[6] = {
+							vpos[f][v].x + offset.x,
+							vpos[f][v].y + offset.y,
+							vpos[f][v].z + offset.z,
+							color.x,
+							color.y,
+							color.z,
+						};
+						array_append(&vertices, &vertex);
 					}
 				}
 			}
 		}
 	}
-	*/
 
 	return vertices;
 }
+
+#undef GNODDEF
+#undef VALIDPOS
 
 static void *meshgen_thread(void *unused)
 {

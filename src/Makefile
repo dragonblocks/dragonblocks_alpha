@@ -1,4 +1,4 @@
-COMMON = array.o list.o map.o signal.o util.o types.o
+COMMON = array.o list.o map.o signal.o util.o types.o node.o
 SERVER = $(COMMON) server.o servercommands.o mapgen.o
 CLIENT = $(COMMON) client.o clientcommands.o mesh.o scene.o mapblock_meshgen.o shaders.o
 LIBRARIES = -lpthread -lm
