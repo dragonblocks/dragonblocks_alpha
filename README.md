@@ -6,6 +6,12 @@
 ./Dragonblocks <address> <port>
 ```
 
+or alternatively:
+
+```bash
+./singleplayer.sh
+```
+
 The server will save the map to a file named "map" in the directory it is run in. It will also load the map from there at startup, given that the file exists.
 
 ## Nodes:
