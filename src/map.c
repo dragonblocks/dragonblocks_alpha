@@ -8,13 +8,13 @@
 
 static s8 sector_compare(void *hash, void *sector)
 {
-	s64 d = *((u64 *) hash) - ((MapSector *) sector)->hash;
+	s64 d = *((u64 *) hash) - (*(MapSector **) sector)->hash;
 	return CMPBOUNDS(d);
 }
 
 static s8 block_compare(void *level, void *block)
 {
-	s32 d = *((s32 *) level) - ((MapBlock *) block)->pos.y;
+	s32 d = *((s32 *) level) - (*(MapBlock **) block)->pos.y;
 	return CMPBOUNDS(d);
 }
 
