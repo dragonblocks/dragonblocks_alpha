@@ -45,12 +45,6 @@ static void *reciever_thread(void *unused)
 	return NULL;
 }
 
-#ifdef RELEASE
-#define SHADER_PATH "shaders/"
-#else
-#define SHADER_PATH "../shaders/"
-#endif
-
 static void client_loop()
 {
 	if(! glfwInit()) {
@@ -70,27 +64,39 @@ static void client_loop()
 	GLFWwindow *window = glfwCreateWindow(width, height, "Dragonblocks", NULL, NULL);
 
 	if (! window) {
-		printf("Failed to create window\n");
+		fprintf(stderr, "Failed to create window\n");
 		glfwTerminate();
 		return;
 	}
 
 	glfwMakeContextCurrent(window);
 	if (glewInit() != GLEW_OK) {
-		printf("Failed to initialize GLEW\n");
+		fprintf(stderr, "Failed to initialize GLEW\n");
 		return;
 	}
 
-	ShaderProgram *prog = create_shader_program(SHADER_PATH);
+	const char *shader_path;
 
-	mat4x4 view, proj;
+#ifdef RELEASE
+	shader_path = "shaders";
+#else
+	shader_path = "../shaders";
+#endif
+
+	ShaderProgram *prog = create_shader_program(shader_path);
+	if (! prog) {
+		fprintf(stderr, "Failed to create shader program\n");
+		return;
+	}
+
+	mat4x4 view, projection;
 
 	mat4x4_identity(view);	// ToDo: camera
-	mat4x4_perspective(proj, 86.1f / 180.0f * M_PI, (float) width / (float) height, 0.01f, 100.0f);
+	mat4x4_perspective(projection, 86.1f / 180.0f * M_PI, (float) width / (float) height, 0.01f, 100.0f);
 
 	glUseProgram(prog->id);
 	glUniformMatrix4fv(prog->loc_view, 1, GL_FALSE, view[0]);
-	glUniformMatrix4fv(prog->loc_proj, 1, GL_FALSE, proj[0]);
+	glUniformMatrix4fv(prog->loc_projection, 1, GL_FALSE, projection[0]);
 
 	while (! glfwWindowShouldClose(window) && client.state != CS_DISCONNECTED && ! interrupted) {
 		glClear(GL_COLOR_BUFFER_BIT);
