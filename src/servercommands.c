@@ -50,7 +50,7 @@ static bool getblock_handler(Client *client, bool good)
 	if (! good)
 		return true;
 
-	MapBlock *block = map_get_block(client->server->map, pos, false);
+	MapBlock *block = map_get_block(client->server->map, pos, true);
 	if (block) {
 		pthread_mutex_lock(&client->mtx);
 		bool ret = write_u32(client->fd, CC_BLOCK) && map_serialize_block(client->fd, block);
