@@ -7,5 +7,5 @@ cd ..
 rm -rf .git* deps src BUILDING.md release.sh DragonblocksAlpha-*.zip
 cd ..
 mv .build DragonblocksAlpha
-zip DragonblocksAlpha-`git rev-parse --short HEAD` DragonblocksAlpha/*
+zip -r DragonblocksAlpha-`git rev-parse --short HEAD` DragonblocksAlpha/*
 rm -rf DragonblocksAlpha
