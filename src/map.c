@@ -22,6 +22,7 @@ static MapBlock *allocate_block(v3s32 pos)
 {
 	MapBlock *block = malloc(sizeof(MapBlock));
 	block->pos = pos;
+	block->ready = false;
 	block->extra = NULL;
 	return block;
 }
@@ -110,6 +111,7 @@ void map_add_block(Map *map, MapBlock *block)
 {
 	MapSector *sector = map_get_sector(map, (v2s32) {block->pos.x, block->pos.z}, true);
 	ArraySearchResult res = array_search(&sector->blocks, &block->pos.y);
+	block->ready = true;
 	if (res.success) {
 		MapBlock **ptr = get_block_ptr(sector, res.index);
 		map_free_block(*ptr);
