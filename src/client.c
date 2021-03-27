@@ -75,6 +75,8 @@ static void client_loop()
 		return;
 	}
 
+	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+
 	const char *shader_path;
 
 #ifdef RELEASE
@@ -101,6 +103,12 @@ static void client_loop()
 	while (! glfwWindowShouldClose(window) && client.state != CS_DISCONNECTED && ! interrupted) {
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClearColor(0.52941176470588f, 0.8078431372549f, 0.92156862745098f, 1.0f);
+
+		if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+			pthread_mutex_lock(&client.mtx);
+			(void) (write_u32(client.fd, SC_GETBLOCK) && write_v3s32(client.fd, (v3s32) {0, 0, 0}));
+			pthread_mutex_unlock(&client.mtx);
+		};
 
 		scene_render(client.scene, prog);
 
