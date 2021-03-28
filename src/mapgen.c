@@ -4,10 +4,8 @@
 // mapgen prototype
 static void generate_block(MapBlock *block)
 {
-	if (block->pos.y < 0 && rand() % 2 == 0) {
-		ITERATE_MAPBLOCK {
-			block->data[x][y][z] = map_node_create(rand() % 4 + 1);
-		}
+	ITERATE_MAPBLOCK {
+		block->data[x][y][z] = map_node_create(rand() % 4 + 1);
 	}
 	block->ready = true;
 }

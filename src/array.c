@@ -50,23 +50,23 @@ void array_append(Array *array, void *elem)
 ArraySearchResult array_search(Array *array, void *search)
 {
 	assert(array->cmp);
-	size_t min, max, index;
+	size_t low, high, index;
 
-	min = index = 0;
-	max = array->siz;
+	low = index = 0;
+	high = array->siz;
 
-	while (min < max) {
-		index = min;
+	while (low < high) {
+		index = low;
 
-		size_t mid = (max + min) / 2;
+		size_t mid = (low + high) / 2;
 		s8 state = array->cmp(search, (char *) array->ptr + mid * array->membsiz);
 
 		if (state == 0)
 			return (ArraySearchResult) {true, mid};
 		else if (state > 0)
-			max = mid;
+			high = mid;
 		else
-			min = mid;
+			low = mid + 1;
 	}
 
 	return (ArraySearchResult) {false, index};

@@ -91,24 +91,60 @@ static void client_loop()
 		return;
 	}
 
+	v3f pos = {0.0f, 0.0f, 0.0f};
+
 	mat4x4 view, projection;
 
-	mat4x4_identity(view);	// ToDo: camera
-	mat4x4_perspective(projection, 86.1f / 180.0f * M_PI, (float) width / (float) height, 0.01f, 100.0f);
+	mat4x4_translate(view, -pos.x, -pos.y, -pos.z);
+	mat4x4_perspective(projection, 86.1f / 180.0f * M_PI, (float) width / (float) height, 0.01f, 1000.0f);
 
 	glUseProgram(prog->id);
 	glUniformMatrix4fv(prog->loc_view, 1, GL_FALSE, view[0]);
 	glUniformMatrix4fv(prog->loc_projection, 1, GL_FALSE, projection[0]);
 
+	bool e_was_pressed = false;
+
 	while (! glfwWindowShouldClose(window) && client.state != CS_DISCONNECTED && ! interrupted) {
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClearColor(0.52941176470588f, 0.8078431372549f, 0.92156862745098f, 1.0f);
 
-		if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+		bool e_is_pressed = glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS;
+
+		if (e_is_pressed && ! e_was_pressed) {
 			pthread_mutex_lock(&client.mtx);
-			(void) (write_u32(client.fd, SC_GETBLOCK) && write_v3s32(client.fd, (v3s32) {0, 0, 0}));
+			(void) (write_u32(client.fd, SC_GETBLOCK) && write_v3s32(client.fd, map_node_to_block_pos((v3s32) {pos.x, pos.y, pos.z}, NULL)));
 			pthread_mutex_unlock(&client.mtx);
-		};
+		}
+
+		e_was_pressed = e_is_pressed;
+
+		bool view_changed = false;
+
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+			view_changed = true;
+			pos.z -= 1.0f;
+		} else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+			view_changed = true;
+			pos.z += 1.0f;
+		} if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+			view_changed = true;
+			pos.x -= 1.0f;
+		} else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+			view_changed = true;
+			pos.x += 1.0f;
+		} if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+			view_changed = true;
+			pos.y -= 1.0f;
+		} else if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+			view_changed = true;
+			pos.y += 1.0f;
+		}
+
+		if (view_changed) {
+			printf("%f %f %f\n", pos.x, pos.y, pos.z);
+			mat4x4_translate(view, -pos.x, -pos.y, -pos.z);
+			glUniformMatrix4fv(prog->loc_view, 1, GL_FALSE, view[0]);
+		}
 
 		scene_render(client.scene, prog);
 
