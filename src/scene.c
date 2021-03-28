@@ -11,7 +11,7 @@ Scene *scene_create()
 
 void scene_delete(Scene *scene)
 {
-	ITERATE_LIST(&scene->meshes, pair) mesh_delete(pair->value);
+	ITERATE_LIST(&scene->meshes, pair) mesh_delete(pair->key);
 	list_clear(&scene->meshes);
 	pthread_mutex_destroy(&scene->mtx);
 	free(scene);
