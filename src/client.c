@@ -141,7 +141,6 @@ static void client_loop()
 		}
 
 		if (view_changed) {
-			printf("%f %f %f\n", pos.x, pos.y, pos.z);
 			mat4x4_translate(view, -pos.x, -pos.y, -pos.z);
 			glUniformMatrix4fv(prog->loc_view, 1, GL_FALSE, view[0]);
 		}
