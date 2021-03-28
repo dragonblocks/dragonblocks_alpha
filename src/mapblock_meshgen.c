@@ -92,7 +92,7 @@ static Array make_vertices(MapBlock *block)
 					pos.y + noff->y,
 					pos.z + noff->z,
 				};
-				if (VALIDPOS(npos) && ! GNODDEF(block, npos.x, npos.y, npos.z).visible) {
+				if (! VALIDPOS(npos) || ! GNODDEF(block, npos.x, npos.y, npos.z).visible) {
 					for (int v = 0; v < 6; v++) {
 						Vertex vertex = {
 							vpos[f][v].x + offset.x,
