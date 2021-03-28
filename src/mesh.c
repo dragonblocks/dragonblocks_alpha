@@ -12,13 +12,13 @@ Mesh *mesh_create(Vertex *vertices, GLsizei count)
 	mesh->VAO = 0;
 	mesh->VBO = 0;
 	mesh->remove = false;
-	mesh->vertices = (GLfloat *) vertices;
+	mesh->vertices = vertices;
 	mesh->count = count;
 	return mesh;
 }
 
 #pragma GCC diagnostic push
-#pragma GCC diagnostic warning "-Wpedantic"
+#pragma GCC diagnostic ignored "-Wpedantic"
 
 void mesh_transform(Mesh *mesh)
 {
@@ -48,13 +48,11 @@ static void mesh_configure(Mesh *mesh)
 	glBindVertexArray(mesh->VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, mesh->VBO);
 
-	glBufferData(GL_ARRAY_BUFFER, mesh->count * 6, mesh->vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, mesh->count * sizeof(Vertex), mesh->vertices, GL_STATIC_DRAW);
 
-	GLsizei stride = 6 * sizeof(GLfloat);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, stride, (GLvoid *)(0 * sizeof(GLfloat)));
+	glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex), (GLvoid *)(0 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, false, stride, (GLvoid *)(3 * sizeof(GLfloat)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(Vertex), (GLvoid *)(3 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
