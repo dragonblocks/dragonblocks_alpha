@@ -1,3 +1,4 @@
+#! /bin/bash
 mkdir .build
 cp -r * .build/
 cd .build/src
