@@ -105,7 +105,8 @@ static void client_loop()
 	bool e_was_pressed = false;
 
 	while (! glfwWindowShouldClose(window) && client.state != CS_DISCONNECTED && ! interrupted) {
-		glClear(GL_COLOR_BUFFER_BIT);
+		glEnable(GL_DEPTH_TEST);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClearColor(0.52941176470588f, 0.8078431372549f, 0.92156862745098f, 1.0f);
 
 		bool e_is_pressed = glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS;
