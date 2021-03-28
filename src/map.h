@@ -46,13 +46,11 @@ void map_delete(Map *map);
 MapSector *map_get_sector(Map *map, v2s32 pos, bool create);
 MapBlock *map_get_block(Map *map, v3s32 pos, bool create);
 
-void map_clear_block(MapBlock *block, v3u8 init_state);
 void map_free_block(MapBlock *block);
-void map_add_block(Map *map, MapBlock *block);
 
 bool map_deserialize_node(int fd, MapNode *buf);
 bool map_serialize_block(int fd, MapBlock *block);
-MapBlock *map_deserialize_block(int fd);
+bool map_deserialize_block(int fd, Map *map, bool dummy);
 bool map_serialize(int fd, Map *map);
 void map_deserialize(int fd, Map *map);
 

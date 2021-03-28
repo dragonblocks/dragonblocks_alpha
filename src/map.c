@@ -27,14 +27,14 @@ static MapBlock *allocate_block(v3s32 pos)
 	return block;
 }
 
-static MapBlock **get_block_ptr(MapSector *sector, size_t idx)
+static MapBlock *get_block(MapSector *sector, size_t idx)
 {
-	return (MapBlock **) sector->blocks.ptr + idx;
+	return ((MapBlock **) sector->blocks.ptr)[idx];
 }
 
-static MapSector **get_sector_ptr(Map *map, size_t idx)
+static MapSector *get_sector(Map *map, size_t idx)
 {
-	return (MapSector **) map->sectors.ptr + idx;
+	return ((MapSector **) map->sectors.ptr)[idx];
 }
 
 Map *map_create()
@@ -48,9 +48,9 @@ Map *map_create()
 void map_delete(Map *map)
 {
 	for (size_t s = 0; s < map->sectors.siz; s++) {
-		MapSector *sector = *get_sector_ptr(map, s);
+		MapSector *sector = get_sector(map, s);
 		for (size_t b = 0; b < sector->blocks.siz; b++)
-			map_free_block(*get_block_ptr(sector, b));
+			map_free_block(get_block(sector, b));
 		if (sector->blocks.ptr)
 			free(sector->blocks.ptr);
 		free(sector);
@@ -66,7 +66,7 @@ MapSector *map_get_sector(Map *map, v2s32 pos, bool create)
 	ArraySearchResult res = array_search(&map->sectors, &hash);
 
 	if (res.success)
-		return *get_sector_ptr(map, res.index);
+		return get_sector(map, res.index);
 	if (! create)
 		return NULL;
 
@@ -92,14 +92,13 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 	MapBlock *block = NULL;
 
 	if (res.success) {
-		block = *get_block_ptr(sector, res.index);
+		block = get_block(sector, res.index);
 	} else if (create) {
 		block = allocate_block(pos);
+		array_insert(&sector->blocks, &block, res.index);
 
 		if (map->on_block_create)
 			map->on_block_create(block);
-
-		array_insert(&sector->blocks, &block, res.index);
 	} else {
 		return NULL;
 	}
@@ -107,33 +106,9 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 	return block->ready ? block : NULL;
 }
 
-void map_add_block(Map *map, MapBlock *block)
-{
-	MapSector *sector = map_get_sector(map, (v2s32) {block->pos.x, block->pos.z}, true);
-	ArraySearchResult res = array_search(&sector->blocks, &block->pos.y);
-	block->ready = true;
-	if (res.success) {
-		MapBlock **ptr = get_block_ptr(sector, res.index);
-		map_free_block(*ptr);
-		*ptr = block;
-	} else {
-		array_insert(&sector->blocks, &block, res.index);
-	}
-	if (map->on_block_add)
-		map->on_block_add(block);
-}
-
-void map_clear_block(MapBlock *block, v3u8 init_state)
-{
-	for (u8 x = 0; x <= init_state.x; x++)
-		for (u8 y = 0; y <= init_state.y; y++)
-			for (u8 z = 0; z <= init_state.z; z++)
-				map_node_clear(&block->data[x][y][z]);
-}
-
 void map_free_block(MapBlock *block)
 {
-	map_clear_block(block, (v3u8) {15, 15, 15});
+	ITERATE_MAPBLOCK map_node_clear(&block->data[x][y][z]);
 	free(block);
 }
 
@@ -165,32 +140,50 @@ bool map_serialize_block(int fd, MapBlock *block)
 	return true;
 }
 
-MapBlock *map_deserialize_block(int fd)
+bool map_deserialize_block(int fd, Map *map, bool dummy)
 {
 	v3s32 pos;
 
 	if (! read_v3s32(fd, &pos))
-		return NULL;
+		return false;
 
-	MapBlock *block = allocate_block(pos);
+	MapSector *sector = map_get_sector(map, (v2s32) {pos.x, pos.z}, true);
+	ArraySearchResult res = array_search(&sector->blocks, &pos.y);
 
-	ITERATE_MAPBLOCK {
-		if (! map_deserialize_node(fd, &block->data[x][y][z])) {
-			map_clear_block(block, (v3u8) {x, y, z});
-			free(block);
-			return NULL;
-		}
+	MapBlock *block;
+
+	if (dummy) {
+		block = allocate_block(pos);
+	} else if (res.success) {
+		block = get_block(sector, res.index);
+	} else {
+		block = allocate_block(pos);
+		array_insert(&sector->blocks, &block, res.index);
 	}
 
-	return block;
+	ITERATE_MAPBLOCK {
+		if (! map_deserialize_node(fd, &block->data[x][y][z]))
+			return false;
+	}
+
+	if (dummy) {
+		map_free_block(block);
+	} else {
+		block->ready = true;
+
+		if (map->on_block_add)
+			map->on_block_add(block);
+	}
+
+	return true;
 }
 
 bool map_serialize(int fd, Map *map)
 {
 	for (size_t s = 0; s < map->sectors.siz; s++) {
-		MapSector *sector = *get_sector_ptr(map, s);
+		MapSector *sector = get_sector(map, s);
 		for (size_t b = 0; b < sector->blocks.siz; b++)
-			if (! map_serialize_block(fd, *get_block_ptr(sector, b)))
+			if (! map_serialize_block(fd, get_block(sector, b)))
 				return false;
 	}
 	return true;
@@ -198,10 +191,8 @@ bool map_serialize(int fd, Map *map)
 
 void map_deserialize(int fd, Map *map)
 {
-	MapBlock *block;
-
-	while ((block = map_deserialize_block(fd)) != NULL)
-		map_add_block(map, block);
+	while (map_deserialize_block(fd, map, false))
+		;
 }
 
 v3s32 map_node_to_block_pos(v3s32 pos, v3u8 *offset)
