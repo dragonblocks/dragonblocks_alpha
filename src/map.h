@@ -43,6 +43,8 @@ typedef struct
 Map *map_create();
 void map_delete(Map *map);
 
+MapSector *map_get_sector_raw(Map *map, size_t idx);
+MapBlock *map_get_block_raw(MapSector *sector, size_t idx);
 MapSector *map_get_sector(Map *map, v2s32 pos, bool create);
 MapBlock *map_get_block(Map *map, v3s32 pos, bool create);
 
