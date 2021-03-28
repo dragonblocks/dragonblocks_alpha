@@ -135,7 +135,7 @@ static void *meshgen_thread(void *unused)
 
 			if (vertices.siz > 0) {
 				mesh = mesh_create(vertices.ptr, vertices.siz);
-				mesh->pos = (v3f) {block->pos.x * 16.0f + 8.0f, block->pos.y * 16.0f + 8.0f, block->pos.z * 16.0f + 8.0f};
+				mesh->pos = (v3f) {block->pos.x * 16.0f - 8.0f, block->pos.y * 16.0f - 8.0f, block->pos.z * 16.0f - 8.0f};
 				mesh_transform(mesh);
 				scene_add_mesh(meshgen.scene, mesh);
 			}
