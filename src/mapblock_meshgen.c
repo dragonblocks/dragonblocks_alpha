@@ -77,7 +77,7 @@ static v3s8 fdir[6] = {
 
 static Array make_vertices(MapBlock *block)
 {
-	Array vertices = array_create(sizeof(GLfloat) * 6);
+	Array vertices = array_create(sizeof(Vertex));
 
 	ITERATE_MAPBLOCK {
 		NodeDefintion *def = &GNODDEF(block, x, y, z);
@@ -94,7 +94,7 @@ static Array make_vertices(MapBlock *block)
 				};
 				if (VALIDPOS(npos) && ! GNODDEF(block, npos.x, npos.y, npos.z).visible) {
 					for (int v = 0; v < 6; v++) {
-						GLfloat vertex[6] = {
+						Vertex vertex = {
 							vpos[f][v].x + offset.x,
 							vpos[f][v].y + offset.y,
 							vpos[f][v].z + offset.z,
@@ -122,11 +122,12 @@ static void *meshgen_thread(void *unused)
 	while (! meshgen.cancel) {
 		ListPair **lptr = &meshgen.queue.first;
 		if (*lptr) {
-			MapBlock *block = map_get_block(meshgen.map, *(v3s32 *)(*lptr)->key, false);
+			MapBlock *block = (*lptr)->key;
 
 			pthread_mutex_lock(&meshgen.mtx);
-			free((*lptr)->key);
-			*lptr = (*lptr)->next;
+			ListPair *next = (*lptr)->next;
+			free(*lptr);
+			*lptr = next;
 			pthread_mutex_unlock(&meshgen.mtx);
 
 			Array vertices = make_vertices(block);
@@ -153,26 +154,16 @@ static void *meshgen_thread(void *unused)
 
 static void enqueue_block(MapBlock *block)
 {
-	v3s32 *posptr = malloc(sizeof(v3s32));
-	*posptr = block->pos;
 	pthread_mutex_lock(&meshgen.mtx);
-	if (! list_put(&meshgen.queue, posptr, NULL))
-		free(posptr);
+	list_put(&meshgen.queue, block, NULL);
 	pthread_mutex_unlock(&meshgen.mtx);
-}
-
-static bool compare_positions(void *p1, void *p2)
-{
-	v3s32 *pos1 = p1;
-	v3s32 *pos2 = p2;
-	return pos1->x == pos2->x && pos1->y == pos2->y && pos1->z == pos2->z;
 }
 
 void mapblock_meshgen_init(Map *map, Scene *scene)
 {
 	meshgen.map = map;
 	meshgen.scene = scene;
-	meshgen.queue = list_create(&compare_positions);
+	meshgen.queue = list_create(NULL);
 	pthread_mutex_init(&meshgen.mtx, NULL);
 	map->on_block_add = &enqueue_block;
 	map->on_block_change = &enqueue_block;

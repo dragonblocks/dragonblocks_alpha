@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "mesh.h"
 
-Mesh *mesh_create(GLfloat *vertices, GLsizei count)
+Mesh *mesh_create(Vertex *vertices, GLsizei count)
 {
 	Mesh *mesh = malloc(sizeof(Mesh));
 	mesh->pos = (v3f) {0.0f, 0.0f, 0.0f};
@@ -12,7 +12,7 @@ Mesh *mesh_create(GLfloat *vertices, GLsizei count)
 	mesh->VAO = 0;
 	mesh->VBO = 0;
 	mesh->remove = false;
-	mesh->vertices = vertices;
+	mesh->vertices = (GLfloat *) vertices;
 	mesh->count = count;
 	return mesh;
 }

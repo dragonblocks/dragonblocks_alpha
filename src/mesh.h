@@ -19,7 +19,13 @@ typedef struct
 	GLsizei count;
 } Mesh;
 
-Mesh *mesh_create(GLfloat *vertices, GLsizei count);
+typedef struct
+{
+	GLfloat x, y, z;
+	GLfloat r, g, b;
+} __attribute__((packed, aligned(4))) Vertex;
+
+Mesh *mesh_create(Vertex *vertices, GLsizei count);
 void mesh_delete(Mesh *mesh);
 void mesh_transform(Mesh *mesh);
 void mesh_render(Mesh *mesh, ShaderProgram *prog);
