@@ -80,3 +80,27 @@ DEFTYPES(8)
 DEFTYPES(16)
 DEFTYPES(32)
 DEFTYPES(64)
+
+#define DEFFLOAT(type) \
+	bool read_ ## type(int fd, type *buf) \
+	{ \
+		int n_read; \
+		if ((n_read = read(fd, buf, sizeof(type))) != sizeof(type)) { \
+			if (n_read == -1) \
+				perror("read"); \
+			return false; \
+		} \
+		return true; \
+	} \
+	bool write_ ## type(int fd, type val) \
+	{ \
+		if (write(fd, &val, sizeof(val)) == -1) { \
+			perror("write"); \
+			return false; \
+		} \
+		return true; \
+	} \
+	DEFVEC(type)
+
+DEFFLOAT(f32)
+DEFFLOAT(f64)

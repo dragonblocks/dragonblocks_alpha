@@ -17,6 +17,7 @@ typedef struct Client
 	char *name;
 	Map *map;
 	Scene *scene;
+	v3f pos;
 } Client;
 
 void client_disconnect(bool send, const char *detail);

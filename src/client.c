@@ -45,6 +45,12 @@ static void *reciever_thread(void *unused)
 	return NULL;
 }
 
+static void update_view_matrix(ShaderProgram *prog, mat4x4 view)
+{
+	mat4x4_translate(view, -client.pos.x, -client.pos.y, -client.pos.z);
+	glUniformMatrix4fv(prog->loc_view, 1, GL_FALSE, view[0]);
+}
+
 static void client_loop()
 {
 	if(! glfwInit()) {
@@ -91,11 +97,9 @@ static void client_loop()
 		return;
 	}
 
-	v3f pos = {0.0f, 0.0f, 0.0f};
-
 	mat4x4 view, projection;
 
-	mat4x4_translate(view, -pos.x, -pos.y, -pos.z);
+	update_view_matrix(prog, view);
 	mat4x4_perspective(projection, 86.1f / 180.0f * M_PI, (float) width / (float) height, 0.01f, 1000.0f);
 
 	glUseProgram(prog->id);
@@ -107,31 +111,33 @@ static void client_loop()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClearColor(0.52941176470588f, 0.8078431372549f, 0.92156862745098f, 1.0f);
 
-		bool view_changed = false;
+		bool pos_changed = false;
 
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-			view_changed = true;
-			pos.z -= 1.0f;
+			pos_changed = true;
+			client.pos.z -= 1.0f;
 		} else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-			view_changed = true;
-			pos.z += 1.0f;
+			pos_changed = true;
+			client.pos.z += 1.0f;
 		} if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-			view_changed = true;
-			pos.x -= 1.0f;
+			pos_changed = true;
+			client.pos.x -= 1.0f;
 		} else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-			view_changed = true;
-			pos.x += 1.0f;
+			pos_changed = true;
+			client.pos.x += 1.0f;
 		} if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-			view_changed = true;
-			pos.y -= 1.0f;
+			pos_changed = true;
+			client.pos.y -= 1.0f;
 		} else if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-			view_changed = true;
-			pos.y += 1.0f;
+			pos_changed = true;
+			client.pos.y += 1.0f;
 		}
 
-		if (view_changed) {
-			mat4x4_translate(view, -pos.x, -pos.y, -pos.z);
-			glUniformMatrix4fv(prog->loc_view, 1, GL_FALSE, view[0]);
+		if (pos_changed) {
+			update_view_matrix(prog, view);
+			pthread_mutex_lock(&client.mtx);
+			(void) (write_u32(client.fd, SC_POS) && write_v3f32(client.fd, client.pos));
+			pthread_mutex_unlock(&client.mtx);
 		}
 
 		scene_render(client.scene, prog);
@@ -192,6 +198,7 @@ static void client_start(int fd)
 	client.name = NULL;
 	client.map = map_create();
 	client.scene = scene_create();
+	client.pos = (v3f) {0.0f, 0.0f, 0.0f};
 
 	mapblock_meshgen_init(client.map, client.scene);
 

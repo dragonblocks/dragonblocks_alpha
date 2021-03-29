@@ -45,15 +45,17 @@ void mapgen_init(Server *srv)
 	server->map->on_block_create = &generate_block;
 }
 
+#define RANGE 3
+
 static void *mapgen_thread(void *cliptr)
 {
 	Client *client = cliptr;
 
 	while (client->state != CS_DISCONNECTED) {
 		v3s32 pos = map_node_to_block_pos((v3s32) {client->pos.x, client->pos.y, client->pos.z}, NULL);
-		for (s32 x = pos.x - 5; x < pos.x + 5; x++)
-			for (s32 y = pos.y - 5; y < pos.y + 5; y++)
-				for (s32 z = pos.z - 5; z < pos.z + 5; z++)
+		for (s32 x = pos.x - RANGE; x <= pos.x + RANGE; x++)
+			for (s32 y = pos.y - RANGE; y <= pos.y + RANGE; y++)
+				for (s32 z = pos.z - RANGE; z <= pos.z + RANGE; z++)
 					map_get_block(client->server->map, (v3s32) {x, y, z}, true);
 	}
 

@@ -88,10 +88,24 @@ static bool kick_handler(Client *client, bool good)
 	return true;
 }
 
+static bool pos_handler(Client *client, bool good)
+{
+	v3f pos;
+
+	if (! read_v3f32(client->fd, &pos))
+		return false;
+
+	if (good)
+		client->pos = pos;
+
+	return true;
+}
+
 CommandHandler command_handlers[SERVER_COMMAND_COUNT] = {
 	{0},
 	{&disconnect_handler, "DISCONNECT", CS_CREATED | CS_ACTIVE},
 	{&auth_handler, "AUTH", CS_CREATED},
 	{&setnode_handler, "SETNODE", CS_ACTIVE},
 	{&kick_handler, "KICK", CS_ACTIVE},
+	{&pos_handler, "POS", CS_ACTIVE},
 };

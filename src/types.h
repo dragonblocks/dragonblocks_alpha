@@ -31,8 +31,8 @@ DEFTYPES(64)
 typedef float f32;
 typedef double f64;
 
-DEFVEC(f32)
-DEFVEC(f64)
+DEFTYP(float, f32)
+DEFTYP(double, f64)
 
 typedef v2f32 v2f;
 typedef v3f32 v3f;
