@@ -71,6 +71,7 @@ static void server_accept_client()
 	client->address = address_string((struct sockaddr_in6 *) &client_address);
 	client->name = client->address;
 	client->server = &server;
+	client->pos = (v3f) {0.0f, 0.0f, 0.0f};
 	pthread_create(&client->thread, NULL, &server_reciever_thread, client);
 
 	printf("Connected %s\n", client->address);
@@ -90,7 +91,7 @@ void server_start(int fd)
 		perror("fopen");
 	}
 
-	mapgen_init(server.map);
+	mapgen_init(&server);
 
 	while (! interrupted)
 		server_accept_client();

@@ -2,11 +2,11 @@
 #include "util.h"
 
 NodeDefintion node_definitions[NODE_UNLOADED] = {
-	{true,  false, "#F44026", {0.0f, 0.0f, 0.0f}},
+	{true,  false, "#991300", {0.0f, 0.0f, 0.0f}},
 	{false, false, "",        {0.0f, 0.0f, 0.0f}},
-	{true,  false, "#00CB1F", {0.0f, 0.0f, 0.0f}},
-	{true,  false, "#854025", {0.0f, 0.0f, 0.0f}},
-	{true,  false, "#7A7A7A", {0.0f, 0.0f, 0.0f}},
+	{true,  false, "#137822", {0.0f, 0.0f, 0.0f}},
+	{true,  false, "#6B3627", {0.0f, 0.0f, 0.0f}},
+	{true,  false, "#4F4F4F", {0.0f, 0.0f, 0.0f}},
 };
 
 v3f get_node_color(NodeDefintion *def)

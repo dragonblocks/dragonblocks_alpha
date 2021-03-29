@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "mapgen.h"
 #include "server.h"
 #include "util.h"
 
@@ -40,37 +41,16 @@ static bool auth_handler(Client *client, bool good)
 	if (success) {
 		client->name = name;
 		client->state = CS_ACTIVE;
+		mapgen_start_thread(client);
 	} else {
 		free(name);
 	}
 
 	pthread_mutex_lock(&client->mtx);
-	bool ret = write_u32(client->fd, CC_AUTH) && write_u8(client->fd, success) && send_map(client);
+	bool ret = write_u32(client->fd, CC_AUTH) && write_u8(client->fd, success) && (success ? send_map(client) : true);
 	pthread_mutex_unlock(&client->mtx);
 
 	return ret;
-}
-
-static bool getblock_handler(Client *client, bool good)
-{
-	v3s32 pos;
-
-	if (! read_v3s32(client->fd, &pos))
-		return false;
-
-	if (! good)
-		return true;
-
-	MapBlock *block = map_get_block(client->server->map, pos, true);
-	if (block) {
-		pthread_mutex_lock(&client->mtx);
-		bool ret = write_u32(client->fd, CC_BLOCK) && map_serialize_block(client->fd, block);
-		pthread_mutex_unlock(&client->mtx);
-
-		return ret;
-	}
-
-	return true;
 }
 
 static bool setnode_handler(Client *client, bool good)
@@ -112,7 +92,6 @@ CommandHandler command_handlers[SERVER_COMMAND_COUNT] = {
 	{0},
 	{&disconnect_handler, "DISCONNECT", CS_CREATED | CS_ACTIVE},
 	{&auth_handler, "AUTH", CS_CREATED},
-	{&getblock_handler, "GETBLOCK", CS_ACTIVE},
 	{&setnode_handler, "SETNODE", CS_ACTIVE},
 	{&kick_handler, "KICK", CS_ACTIVE},
 };

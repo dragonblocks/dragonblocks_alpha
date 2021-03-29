@@ -25,6 +25,7 @@ typedef struct Client
 	char *name;
 	Server *server;
 	pthread_t thread;
+	v3f pos;
 } Client;
 
 typedef enum

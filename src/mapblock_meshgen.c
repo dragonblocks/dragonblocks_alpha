@@ -141,7 +141,7 @@ static void *meshgen_thread(void *unused)
 			}
 
 			if (block->extra)
-				mesh->remove = true;
+				((Mesh *) block->extra)->remove = true;
 
 			block->extra = mesh;
 		} else {

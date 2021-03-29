@@ -58,8 +58,8 @@ static void client_loop()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	int width, height;
-	width = 1024;
-	height = 768;
+	width = 1250;
+	height = 750;
 
 	GLFWwindow *window = glfwCreateWindow(width, height, "Dragonblocks", NULL, NULL);
 
@@ -102,22 +102,10 @@ static void client_loop()
 	glUniformMatrix4fv(prog->loc_view, 1, GL_FALSE, view[0]);
 	glUniformMatrix4fv(prog->loc_projection, 1, GL_FALSE, projection[0]);
 
-	bool e_was_pressed = false;
-
 	while (! glfwWindowShouldClose(window) && client.state != CS_DISCONNECTED && ! interrupted) {
 		glEnable(GL_DEPTH_TEST);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClearColor(0.52941176470588f, 0.8078431372549f, 0.92156862745098f, 1.0f);
-
-		bool e_is_pressed = glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS;
-
-		if (e_is_pressed && ! e_was_pressed) {
-			pthread_mutex_lock(&client.mtx);
-			(void) (write_u32(client.fd, SC_GETBLOCK) && write_v3s32(client.fd, map_node_to_block_pos((v3s32) {pos.x, pos.y, pos.z}, NULL)));
-			pthread_mutex_unlock(&client.mtx);
-		}
-
-		e_was_pressed = e_is_pressed;
 
 		bool view_changed = false;
 
