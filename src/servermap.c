@@ -29,6 +29,7 @@ static void generate_block(MapBlock *block)
 				else
 					type = NODE_STONE;
 				block->data[x][y][z] = map_node_create(type);
+				block->metadata[x][y][z] = list_create(&list_compare_string);
 			}
 		}
 	}

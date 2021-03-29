@@ -13,7 +13,7 @@
 typedef struct
 {
 	Node type;
-	List meta;
+	// here will be a NodeState (union)
 } MapNode;
 
 typedef enum
@@ -27,6 +27,7 @@ typedef enum
 typedef struct
 {
 	MapNode data[16][16][16];
+	List metadata[16][16][16];
 	v3s32 pos;
 	MapBlockState state;
 	pthread_mutex_t mtx;

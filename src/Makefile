@@ -2,7 +2,6 @@ COMMON = array.o list.o map.o signal.o util.o types.o node.o
 SERVER = $(COMMON) server.o servercommands.o servermap.o
 CLIENT = $(COMMON) client.o clientcommands.o clientmap.o mesh.o scene.o shaders.o
 LIBRARIES = -lpthread -lm
-CLIENT_LIBRARIES = -lGL -lGLEW -lglfw
 FLAGS = -g -fmax-errors=4
 
 ifdef RELEASE
@@ -12,13 +11,13 @@ endif
 all: Dragonblocks DragonblocksServer
 
 Dragonblocks: $(CLIENT)
-	cc $(FLAGS) -o Dragonblocks $(CLIENT) $(LIBRARIES) $(CLIENT_LIBRARIES)
+	cc $(FLAGS) -o Dragonblocks $(CLIENT) $(LIBRARIES) -lGL -lGLEW -lglfw
 
 DragonblocksServer: $(SERVER)
 	cc $(FLAGS) -o DragonblocksServer $(SERVER) $(LIBRARIES)
 
 %.o: %.c
-	cc $(FLAGS) -o $@ -c -Wall -Wextra -Wpedantic -Werror -isystem ../deps $<
+	cc $(FLAGS) -Wall -Wextra -Wpedantic -Werror -isystem ../deps -c -o $@ $<
 
 clean:
 	rm -rf *.o

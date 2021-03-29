@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
+#include <unistd.h>
+#include <stdio.h>
 #include <math.h>
 #include "map.h"
 #include "util.h"
@@ -106,7 +108,7 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 
 void map_free_block(MapBlock *block)
 {
-	ITERATE_MAPBLOCK map_node_clear(&block->data[x][y][z]);
+	ITERATE_MAPBLOCK list_clear(&block->metadata[x][y][z]);
 	pthread_mutex_destroy(&block->mtx);
 	free(block);
 }
@@ -131,12 +133,12 @@ bool map_serialize_block(int fd, MapBlock *block)
 	if (! write_v3s32(fd, block->pos))
 		return false;
 
-	ITERATE_MAPBLOCK {
-		if (! write_u32(fd, block->data[x][y][z].type))
-			return false;
-	}
+	if (write(fd, block->data, sizeof(block->data)) == -1)
+		perror("write");
+	else
+		return true;
 
-	return true;
+	return false;
 }
 
 bool map_deserialize_block(int fd, Map *map, MapBlock **blockptr, bool dummy)
@@ -160,20 +162,34 @@ bool map_deserialize_block(int fd, Map *map, MapBlock **blockptr, bool dummy)
 		array_insert(&sector->blocks, &block, res.index);
 	}
 
-	ITERATE_MAPBLOCK {
-		if (! map_deserialize_node(fd, &block->data[x][y][z])) {
-			if (dummy)
-				map_free_block(block);
-			return false;
+	bool ret = true;
+	size_t n_read_total = 0;
+	int n_read;
+
+	while (n_read_total < sizeof(block->data)) {
+		if ((n_read = read(fd, (char *) block->data + n_read_total, sizeof(block->data) - n_read_total)) == -1) {
+			perror("read");
+			ret = false;
+			break;
 		}
+
+		n_read_total += n_read;
 	}
+
+	ITERATE_MAPBLOCK {
+		if (block->data[x][y][z].type >= NODE_UNLOADED)
+			block->data[x][y][z].type = NODE_INVALID;
+		block->metadata[x][y][z] = list_create(&list_compare_string);
+	}
+
+	// ToDo: Deserialize meta
 
 	if (dummy)
 		map_free_block(block);
 	else if (blockptr)
 		*blockptr = block;
 
-	return true;
+	return ret;
 }
 
 bool map_serialize(int fd, Map *map)
@@ -215,9 +231,8 @@ void map_set_node(Map *map, v3s32 pos, MapNode node)
 	v3u8 offset;
 	MapBlock *block = map_get_block(map, map_node_to_block_pos(pos, &offset), false);
 	if (block) {
-		MapNode *current_node = &block->data[offset.x][offset.y][offset.z];
-		map_node_clear(current_node);
-		*current_node = node;
+		list_clear(&block->metadata[offset.x][offset.y][offset.z]);
+		block->data[offset.x][offset.y][offset.z] = node;
 
 		block->state = MBS_MODIFIED;
 	}
@@ -225,10 +240,5 @@ void map_set_node(Map *map, v3s32 pos, MapNode node)
 
 MapNode map_node_create(Node type)
 {
-	return (MapNode) {type, list_create(&list_compare_string)};
-}
-
-void map_node_clear(MapNode *node)
-{
-	list_clear(&node->meta);
+	return (MapNode) {type};
 }
