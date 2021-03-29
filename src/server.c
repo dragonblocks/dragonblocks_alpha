@@ -106,7 +106,7 @@ void server_start(int fd)
 
 	mapfile = fopen("map", "w");
 	if (mapfile) {
-		if (map_serialize(fileno(mapfile), server.map))
+		if (map_serialize(mapfile, server.map))
 			printf("Saved map\n");
 		else
 			perror("map_serialize");

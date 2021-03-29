@@ -1,5 +1,7 @@
 # Dragonblocks alpha
 
+A multiplayer voxelgame for POSIX.1-2008 systems.
+
 ## Usage
 ```bash
 ./DragonblocksServer <port>

@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <math.h>
+#include <endian.h>
 #include "map.h"
 #include "util.h"
 
@@ -128,13 +129,18 @@ bool map_deserialize_node(int fd, MapNode *node)
 	return true;
 }
 
-bool map_serialize_block(int fd, MapBlock *block)
+bool map_serialize_block(FILE *file, MapBlock *block)
 {
-	if (! write_v3s32(fd, block->pos))
+	s32 pos[3] = {
+		htobe32(block->pos.x),
+		htobe32(block->pos.y),
+		htobe32(block->pos.z),
+	};
+	if (fwrite(pos, 1, sizeof(pos), file) != sizeof(pos))
 		return false;
 
-	if (write(fd, block->data, sizeof(block->data)) == -1)
-		perror("write");
+	if (fwrite(block->data, 1, sizeof(block->data), file) !=  sizeof(block->data))
+		perror("fwrite");
 	else
 		return true;
 
@@ -192,13 +198,13 @@ bool map_deserialize_block(int fd, Map *map, MapBlock **blockptr, bool dummy)
 	return ret;
 }
 
-bool map_serialize(int fd, Map *map)
+bool map_serialize(FILE *file, Map *map)
 {
 	for (size_t s = 0; s < map->sectors.siz; s++) {
 		MapSector *sector = map_get_sector_raw(map, s);
 		for (size_t b = 0; b < sector->blocks.siz; b++)
-			if (! map_serialize_block(fd, map_get_block_raw(sector, b)))
-				return false;
+			if (! map_serialize_block(file, map_get_block_raw(sector, b)))
+				return true;
 	}
 	return true;
 }

@@ -57,9 +57,9 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create);
 void map_free_block(MapBlock *block);
 
 bool map_deserialize_node(int fd, MapNode *buf);
-bool map_serialize_block(int fd, MapBlock *block);
+bool map_serialize_block(FILE *file, MapBlock *block);
 bool map_deserialize_block(int fd, Map *map, MapBlock **blockptr, bool dummy);
-bool map_serialize(int fd, Map *map);
+bool map_serialize(FILE *file, Map *map);
 void map_deserialize(int fd, Map *map);
 
 v3s32 map_node_to_block_pos(v3s32 pos, v3u8 *offset);

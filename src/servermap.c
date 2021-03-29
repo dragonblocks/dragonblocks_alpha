@@ -1,4 +1,7 @@
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 #include <perlin/perlin.h>
 #include "servermap.h"
 
@@ -36,6 +39,32 @@ static void generate_block(MapBlock *block)
 	block->state = MBS_READY;
 }
 
+typedef struct
+{
+	char *ptr;
+	size_t size;
+} MapBlockBuffer;
+
+static void serialize_block(Client *client, MapBlock *block)
+{
+	MapBlockBuffer *buffer = block->extra;
+
+	if (! buffer) {
+		buffer = malloc(sizeof(MapBlockBuffer));
+
+		FILE *buffile = open_memstream(&buffer->ptr, &buffer->size);
+		map_serialize_block(buffile, block);
+		fflush(buffile);
+		fclose(buffile);
+
+		block->extra = buffer;
+	}
+
+	pthread_mutex_lock(&client->mtx);
+	(void) (write_u32(client->fd, CC_BLOCK) && write(client->fd, buffer->ptr, buffer->size) != -1);
+	pthread_mutex_unlock(&client->mtx);
+}
+
 static void send_block(MapBlock *block)
 {
 	pthread_mutex_lock(&block->mtx);
@@ -45,11 +74,8 @@ static void send_block(MapBlock *block)
 		if (block->state != MBS_READY)
 			break;
 		Client *client = pair->value;
-		if (client->state == CS_ACTIVE) {
-			pthread_mutex_lock(&client->mtx);
-			(void) (write_u32(client->fd, CC_BLOCK) && map_serialize_block(client->fd, block));
-			pthread_mutex_unlock(&client->mtx);
-		}
+		if (client->state == CS_ACTIVE)
+			serialize_block(client, block);
 	}
 	pthread_mutex_unlock(&block->mtx);
 }
@@ -59,7 +85,7 @@ static void send_block(MapBlock *block)
 static size_t pos_chache_count = POS_CACHE_COUNT;
 static v3s32 pos_cache[POS_CACHE_COUNT];
 
-static void create_pos_cache()
+static void init_pos_cache()
 {
 	size_t i = -1;
 #define ADDPOS(a, b, c, va, vb, vc) \
@@ -107,21 +133,27 @@ static void send_blocks(Client *client, bool init)
 	v3s32 pos = map_node_to_block_pos((v3s32) {client->pos.x, client->pos.y, client->pos.z}, NULL);
 	for (size_t i = 0; i < pos_chache_count; i++) {
 		MapBlock *block = map_get_block(client->server->map, (v3s32) {pos.x + pos_cache[i].x, pos.y + pos_cache[i].y, pos.z + pos_cache[i].z}, ! init);
-		if (init)
-			(void) (block && write_u32(client->fd, CC_BLOCK) && map_serialize_block(client->fd, block));
-		else switch (block->state) {
-			case MBS_CREATED:
-				generate_block(block);
-				__attribute__ ((fallthrough));
-			case MBS_MODIFIED:
-				send_block(block);
-				__attribute__ ((fallthrough));
-			case MBS_PROCESSING:
-				i = -1;
-				sched_yield();
-				__attribute__ ((fallthrough));
-			case MBS_READY:
-				break;
+		if (init) {
+			if (block)
+				serialize_block(client, block);
+		} else switch (block->state) {
+		case MBS_CREATED:
+			generate_block(block);
+			__attribute__ ((fallthrough));
+		case MBS_MODIFIED:
+			if (block->extra) {
+				free(((MapBlockBuffer *) block->extra)->ptr);
+				free(block->extra);
+				block->extra = NULL;
+			}
+			send_block(block);
+			__attribute__ ((fallthrough));
+		case MBS_PROCESSING:
+			i = -1;
+			sched_yield();
+			__attribute__ ((fallthrough));
+		case MBS_READY:
+			break;
 		}
 	}
 }
@@ -141,7 +173,7 @@ static void *block_send_thread(void *cli)
 void servermap_init(Server *srv)
 {
 	server = srv;
-	create_pos_cache();
+	init_pos_cache();
 }
 
 void servermap_add_client(Client *client)
