@@ -8,5 +8,9 @@ cd ..
 rm -rf .git* deps src BUILDING.md release.sh DragonblocksAlpha-*.zip
 cd ..
 mv .build DragonblocksAlpha
-zip -r DragonblocksAlpha-`git rev-parse --short HEAD` DragonblocksAlpha/*
+RELEASE=`git tag --points-at HEAD`
+if [[ $RELEASE = "" ]]; then
+	RELEASE=`git rev-parse --short HEAD`
+fi
+zip -r DragonblocksAlpha-$RELEASE DragonblocksAlpha/*
 rm -rf DragonblocksAlpha
