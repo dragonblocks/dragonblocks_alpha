@@ -3,8 +3,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <netdb.h>
-#include "mapgen.h"
 #include "server.h"
+#include "servermap.h"
 #include "signal.h"
 #include "util.h"
 
@@ -91,7 +91,7 @@ void server_start(int fd)
 		perror("fopen");
 	}
 
-	mapgen_init(&server);
+	servermap_init(&server);
 
 	while (! interrupted)
 		server_accept_client();

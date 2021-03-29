@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "client.h"
+#include "clientmap.h"
 #include "types.h"
 
 static bool disconnect_handler(Client *client, bool good)
@@ -33,7 +34,12 @@ static bool auth_handler(Client *client, bool good)
 
 static bool block_handler(Client *client, bool good)
 {
-	return map_deserialize_block(client->fd, client->map, ! good);
+	MapBlock *block;
+	if (! map_deserialize_block(client->fd, client->map, &block, ! good))
+		return false;
+	if (good)
+		clientmap_block_changed(block);
+	return true;
 }
 
 CommandHandler command_handlers[CLIENT_COMMAND_COUNT] = {

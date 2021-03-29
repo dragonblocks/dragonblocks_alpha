@@ -22,8 +22,9 @@ static MapBlock *allocate_block(v3s32 pos)
 {
 	MapBlock *block = malloc(sizeof(MapBlock));
 	block->pos = pos;
-	block->ready = false;
+	block->state = MBS_CREATED;
 	block->extra = NULL;
+	pthread_mutex_init(&block->mtx, NULL);
 	return block;
 }
 
@@ -96,19 +97,17 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 	} else if (create) {
 		block = allocate_block(pos);
 		array_insert(&sector->blocks, &block, res.index);
-
-		if (map->on_block_create)
-			map->on_block_create(block);
 	} else {
 		return NULL;
 	}
 
-	return block->ready ? block : NULL;
+	return (create || block->state == MBS_READY) ? block : NULL;
 }
 
 void map_free_block(MapBlock *block)
 {
 	ITERATE_MAPBLOCK map_node_clear(&block->data[x][y][z]);
+	pthread_mutex_destroy(&block->mtx);
 	free(block);
 }
 
@@ -140,7 +139,7 @@ bool map_serialize_block(int fd, MapBlock *block)
 	return true;
 }
 
-bool map_deserialize_block(int fd, Map *map, bool dummy)
+bool map_deserialize_block(int fd, Map *map, MapBlock **blockptr, bool dummy)
 {
 	v3s32 pos;
 
@@ -162,18 +161,17 @@ bool map_deserialize_block(int fd, Map *map, bool dummy)
 	}
 
 	ITERATE_MAPBLOCK {
-		if (! map_deserialize_node(fd, &block->data[x][y][z]))
+		if (! map_deserialize_node(fd, &block->data[x][y][z])) {
+			if (dummy)
+				map_free_block(block);
 			return false;
+		}
 	}
 
-	if (dummy) {
+	if (dummy)
 		map_free_block(block);
-	} else {
-		block->ready = true;
-
-		if (map->on_block_add)
-			map->on_block_add(block);
-	}
+	else if (blockptr)
+		*blockptr = block;
 
 	return true;
 }
@@ -191,7 +189,7 @@ bool map_serialize(int fd, Map *map)
 
 void map_deserialize(int fd, Map *map)
 {
-	while (map_deserialize_block(fd, map, false))
+	while (map_deserialize_block(fd, map, NULL, false))
 		;
 }
 
@@ -220,6 +218,8 @@ void map_set_node(Map *map, v3s32 pos, MapNode node)
 		MapNode *current_node = &block->data[offset.x][offset.y][offset.z];
 		map_node_clear(current_node);
 		*current_node = node;
+
+		block->state = MBS_MODIFIED;
 	}
 }
 

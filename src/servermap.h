@@ -4,7 +4,8 @@
 #include "server.h"
 #include "map.h"
 
-void mapgen_init(Server *srv);
-void mapgen_start_thread(Client *client);
+void servermap_init(Server *srv);
+
+void servermap_add_client(Client *client);
 
 #endif

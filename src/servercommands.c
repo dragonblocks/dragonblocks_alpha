@@ -1,24 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "mapgen.h"
 #include "server.h"
+#include "servermap.h"
 #include "util.h"
 
 static bool disconnect_handler(Client *client, bool good)
 {
 	if (good)
 		server_disconnect_client(client, DISCO_NO_SEND, NULL);
-	return true;
-}
-
-static bool send_map(Client *client)
-{
-	for (size_t s = 0; s < client->server->map->sectors.siz; s++) {
-		MapSector *sector = map_get_sector_raw(client->server->map, s);
-		for (size_t b = 0; b < sector->blocks.siz; b++)
-			if (! (write_u32(client->fd, CC_BLOCK) && map_serialize_block(client->fd, map_get_block_raw(sector, b))))
-				return false;
-	}
 	return true;
 }
 
@@ -41,13 +30,13 @@ static bool auth_handler(Client *client, bool good)
 	if (success) {
 		client->name = name;
 		client->state = CS_ACTIVE;
-		mapgen_start_thread(client);
+		servermap_add_client(client);
 	} else {
 		free(name);
 	}
 
 	pthread_mutex_lock(&client->mtx);
-	bool ret = write_u32(client->fd, CC_AUTH) && write_u8(client->fd, success) && (success ? send_map(client) : true);
+	bool ret = write_u32(client->fd, CC_AUTH) && write_u8(client->fd, success);
 	pthread_mutex_unlock(&client->mtx);
 
 	return ret;

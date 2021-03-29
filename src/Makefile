@@ -1,6 +1,6 @@
 COMMON = array.o list.o map.o signal.o util.o types.o node.o
-SERVER = $(COMMON) server.o servercommands.o mapgen.o perlin.o
-CLIENT = $(COMMON) client.o clientcommands.o mesh.o scene.o mapblock_meshgen.o shaders.o
+SERVER = $(COMMON) server.o servercommands.o servermap.o
+CLIENT = $(COMMON) client.o clientcommands.o clientmap.o mesh.o scene.o shaders.o
 LIBRARIES = -lpthread -lm
 CLIENT_LIBRARIES = -lGL -lGLEW -lglfw
 FLAGS = -g -fmax-errors=4

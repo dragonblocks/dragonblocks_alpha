@@ -2,6 +2,7 @@
 #define _MAP_H_
 
 #include <stdbool.h>
+#include <pthread.h>
 #include "array.h"
 #include "list.h"
 #include "node.h"
@@ -15,11 +16,20 @@ typedef struct
 	List meta;
 } MapNode;
 
+typedef enum
+{
+	MBS_CREATED,
+	MBS_PROCESSING,
+	MBS_READY,
+	MBS_MODIFIED,
+} MapBlockState;
+
 typedef struct
 {
 	MapNode data[16][16][16];
 	v3s32 pos;
-	bool ready;
+	MapBlockState state;
+	pthread_mutex_t mtx;
 	void *extra;
 } MapBlock;
 
@@ -30,14 +40,9 @@ typedef struct
 	u64 hash;
 } MapSector;
 
-typedef void (*MapBlockCallback)(MapBlock *block);
-
 typedef struct
 {
 	Array sectors;
-	MapBlockCallback on_block_create;
-	MapBlockCallback on_block_add;
-	MapBlockCallback on_block_change;
 } Map;
 
 Map *map_create();
@@ -52,7 +57,7 @@ void map_free_block(MapBlock *block);
 
 bool map_deserialize_node(int fd, MapNode *buf);
 bool map_serialize_block(int fd, MapBlock *block);
-bool map_deserialize_block(int fd, Map *map, bool dummy);
+bool map_deserialize_block(int fd, Map *map, MapBlock **blockptr, bool dummy);
 bool map_serialize(int fd, Map *map);
 void map_deserialize(int fd, Map *map);
 

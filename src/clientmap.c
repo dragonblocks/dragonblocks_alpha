@@ -1,16 +1,15 @@
 #include <stdlib.h>
-#include "node.h"
-#include "mapblock_meshgen.h"
+#include "clientmap.h"
 
 static struct
 {
-	Map *map;
-	Scene *scene;
 	List queue;
 	pthread_mutex_t mtx;
 	pthread_t thread;
 	bool cancel;
 } meshgen;
+
+static Client *client = NULL;
 
 static v3f vpos[6][6] = {
 	{
@@ -122,9 +121,9 @@ static void *meshgen_thread(void *unused)
 	while (! meshgen.cancel) {
 		ListPair **lptr = &meshgen.queue.first;
 		if (*lptr) {
-			MapBlock *block = (*lptr)->key;
-
 			pthread_mutex_lock(&meshgen.mtx);
+			MapBlock *block = (*lptr)->key;
+			block->state = MBS_READY;
 			ListPair *next = (*lptr)->next;
 			free(*lptr);
 			*lptr = next;
@@ -137,7 +136,7 @@ static void *meshgen_thread(void *unused)
 				mesh = mesh_create(vertices.ptr, vertices.siz);
 				mesh->pos = (v3f) {block->pos.x * 16.0f - 8.0f, block->pos.y * 16.0f - 8.0f, block->pos.z * 16.0f - 8.0f};
 				mesh_transform(mesh);
-				scene_add_mesh(meshgen.scene, mesh);
+				scene_add_mesh(client->scene, mesh);
 			}
 
 			if (block->extra)
@@ -152,29 +151,28 @@ static void *meshgen_thread(void *unused)
 	return NULL;
 }
 
-static void enqueue_block(MapBlock *block)
+void clientmap_init(Client *cli)
 {
-	pthread_mutex_lock(&meshgen.mtx);
-	list_put(&meshgen.queue, block, NULL);
-	pthread_mutex_unlock(&meshgen.mtx);
-}
-
-void mapblock_meshgen_init(Map *map, Scene *scene)
-{
-	meshgen.map = map;
-	meshgen.scene = scene;
+	client = cli;
 	meshgen.queue = list_create(NULL);
 	pthread_mutex_init(&meshgen.mtx, NULL);
-	map->on_block_add = &enqueue_block;
-	map->on_block_change = &enqueue_block;
 	pthread_create(&meshgen.thread, NULL, &meshgen_thread, NULL);
 }
 
-void mapblock_meshgen_stop()
+void clientmap_deinit()
 {
 	meshgen.cancel = true;
 	pthread_join(meshgen.thread, NULL);
 	pthread_mutex_destroy(&meshgen.mtx);
-	ITERATE_LIST(&meshgen.queue, pair) free(pair->key);
 	list_clear(&meshgen.queue);
+}
+
+void clientmap_block_changed(MapBlock *block)
+{
+	pthread_mutex_lock(&meshgen.mtx);
+	if (block->state != MBS_PROCESSING) {
+		block->state = MBS_PROCESSING;
+		list_put(&meshgen.queue, block, NULL);
+	}
+	pthread_mutex_unlock(&meshgen.mtx);
 }

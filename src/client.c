@@ -10,7 +10,7 @@
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
 #include "client.h"
-#include "mapblock_meshgen.h"
+#include "clientmap.h"
 #include "signal.h"
 #include "shaders.h"
 #include "util.h"
@@ -200,7 +200,7 @@ static void client_start(int fd)
 	client.scene = scene_create();
 	client.pos = (v3f) {0.0f, 0.0f, 0.0f};
 
-	mapblock_meshgen_init(client.map, client.scene);
+	clientmap_init(&client);
 
 	pthread_t recv_thread;
 	pthread_create(&recv_thread, NULL, &reciever_thread, NULL);
@@ -214,7 +214,7 @@ static void client_start(int fd)
 	if (client.name)
 		free(client.name);
 
-	mapblock_meshgen_stop();
+	clientmap_deinit();
 
 	map_delete(client.map);
 	scene_delete(client.scene);
