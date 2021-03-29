@@ -9,18 +9,18 @@ static Server *server = NULL;
 static void generate_block(MapBlock *block)
 {
 	for (u8 x = 0; x < 16; x++) {
-		s32 abs_x = x + block->pos.x * 16;
+		u32 ux = x + block->pos.x * 16 + ((u32) 1 << 31);
 		for (u8 z = 0; z < 16; z++) {
-			s32 abs_z = z + block->pos.z * 16;
-			s32 height = noise2d(abs_x / 16, abs_z / 16, 1, seed) * 16;
+			u32 uz = z + block->pos.z * 16 + ((u32) 1 << 31);
+			s32 height = smooth2d((double) ux / 32.0f, (double) uz / 32.0f, 0, seed) * 16.0f;
 			for (u8 y = 0; y < 16; y++) {
-				s32 abs_y = y + block->pos.y * 16;
+				s32 ay = y + block->pos.y * 16;
 				Node type;
-				if (abs_y > height)
+				if (ay > height)
 					type = NODE_AIR;
-				else if (abs_y == height)
+				else if (ay == height)
 					type = NODE_GRASS;
-				else if (abs_y >= height - 4)
+				else if (ay >= height - 4)
 					type = NODE_DIRT;
 				else
 					type = NODE_STONE;
