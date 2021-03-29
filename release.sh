@@ -12,5 +12,5 @@ RELEASE=`git tag --points-at HEAD`
 if [[ $RELEASE = "" ]]; then
 	RELEASE=`git rev-parse --short HEAD`
 fi
-zip -r DragonblocksAlpha-$RELEASE DragonblocksAlpha/*
+zip -r DragonblocksAlpha-$RELEASE.zip DragonblocksAlpha/*
 rm -rf DragonblocksAlpha
