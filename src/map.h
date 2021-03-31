@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <pthread.h>
+#include <stdio.h>
 #include "array.h"
 #include "list.h"
 #include "node.h"

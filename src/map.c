@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <unistd.h>
-#include <stdio.h>
 #include <math.h>
 #include <endian.h>
 #include "map.h"
