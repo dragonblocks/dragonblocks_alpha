@@ -29,6 +29,6 @@ The debug flag (`-g`) is set by default (RELEASE=TRUE will disable it).
 
 ## Release
 ```bash
-./release.sh
+./snapshot.sh
 ```
-This script will create a release zipfile.
+This script will create a snapshot zipfile.
