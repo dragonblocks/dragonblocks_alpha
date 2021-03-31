@@ -1,7 +1,7 @@
 name: snapshot
 on: [push]
 jobs:
-  build:
+  snapshot:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository and submodules
