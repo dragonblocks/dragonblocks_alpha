@@ -1,9 +1,15 @@
-name: "Build"
+name: build
 on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - run: apt install -y build-essential make libgl1-mesa-dev libglfw3-dev libglew-dev
-      - run: cd src && make -j$(nproc)
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential make libgl1-mesa-dev libglfw3-dev libglew-dev
+      - name: Build
+        run: |
+          cd src
+          make -j$(nproc)
