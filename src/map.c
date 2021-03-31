@@ -33,6 +33,7 @@ static MapBlock *allocate_block(v3s32 pos)
 Map *map_create()
 {
 	Map *map = malloc(sizeof(Map));
+	pthread_rwlock_init(&map->rwlck, NULL);
 	map->sectors = array_create(sizeof(MapSector *));
 	map->sectors.cmp = &sector_compare;
 	return map;
@@ -40,12 +41,14 @@ Map *map_create()
 
 void map_delete(Map *map)
 {
+	pthread_rwlock_destroy(&map->rwlck);
 	for (size_t s = 0; s < map->sectors.siz; s++) {
 		MapSector *sector = map_get_sector_raw(map, s);
 		for (size_t b = 0; b < sector->blocks.siz; b++)
 			map_free_block(map_get_block_raw(sector, b));
 		if (sector->blocks.ptr)
 			free(sector->blocks.ptr);
+		pthread_rwlock_destroy(&sector->rwlck);
 		free(sector);
 	}
 	if (map->sectors.ptr)
@@ -66,20 +69,30 @@ MapBlock *map_get_block_raw(MapSector *sector, size_t idx)
 MapSector *map_get_sector(Map *map, v2s32 pos, bool create)
 {
 	u64 hash = ((u64) pos.x << 32) + (u64) pos.y;
+
+	if (create)
+		pthread_rwlock_wrlock(&map->rwlck);
+	else
+		pthread_rwlock_rdlock(&map->rwlck);
+
 	ArraySearchResult res = array_search(&map->sectors, &hash);
 
-	if (res.success)
-		return map_get_sector_raw(map, res.index);
-	if (! create)
-		return NULL;
+	MapSector *sector = NULL;
 
-	MapSector *sector = malloc(sizeof(MapSector));
-	sector->pos = pos;
-	sector->hash = hash;
-	sector->blocks = array_create(sizeof(MapBlock *));
-	sector->blocks.cmp = &block_compare;
+	if (res.success) {
+		sector = map_get_sector_raw(map, res.index);
+	} else if (create) {
+		sector = malloc(sizeof(MapSector));
+		pthread_rwlock_init(&sector->rwlck, NULL);
+		sector->pos = pos;
+		sector->hash = hash;
+		sector->blocks = array_create(sizeof(MapBlock *));
+		sector->blocks.cmp = &block_compare;
 
-	array_insert(&map->sectors, &sector, res.index);
+		array_insert(&map->sectors, &sector, res.index);
+	}
+
+	pthread_rwlock_unlock(&map->rwlck);
 
 	return sector;
 }
@@ -90,25 +103,39 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 	if (! sector)
 		return NULL;
 
+	if (create)
+		pthread_rwlock_wrlock(&sector->rwlck);
+	else
+		pthread_rwlock_rdlock(&sector->rwlck);
+
 	ArraySearchResult res = array_search(&sector->blocks, &pos.y);
 
 	MapBlock *block = NULL;
 
 	if (res.success) {
-		block = map_get_block_raw(sector, res.index);
+		MapBlock *rawblock = map_get_block_raw(sector, res.index);
+		if (rawblock->state == MBS_READY || create)
+			block = rawblock;
 	} else if (create) {
 		block = allocate_block(pos);
 		array_insert(&sector->blocks, &block, res.index);
-	} else {
-		return NULL;
 	}
 
-	return (create || block->state == MBS_READY) ? block : NULL;
+	pthread_rwlock_unlock(&sector->rwlck);
+
+	return block;
+}
+
+void map_clear_meta(MapBlock *block)
+{
+	pthread_mutex_lock(&block->mtx);
+	ITERATE_MAPBLOCK list_clear(&block->metadata[x][y][z]);
+	pthread_mutex_unlock(&block->mtx);
 }
 
 void map_free_block(MapBlock *block)
 {
-	ITERATE_MAPBLOCK list_clear(&block->metadata[x][y][z]);
+	map_clear_meta(block);
 	pthread_mutex_destroy(&block->mtx);
 	free(block);
 }
@@ -161,19 +188,30 @@ bool map_deserialize_block(int fd, Map *map, MapBlock **blockptr, bool dummy)
 	if (! read_v3s32(fd, &pos))
 		return false;
 
-	MapSector *sector = map_get_sector(map, (v2s32) {pos.x, pos.z}, true);
-	ArraySearchResult res = array_search(&sector->blocks, &pos.y);
-
 	MapBlock *block;
 
 	if (dummy) {
 		block = allocate_block(pos);
-	} else if (res.success) {
-		block = map_get_block_raw(sector, res.index);
 	} else {
-		block = allocate_block(pos);
-		array_insert(&sector->blocks, &block, res.index);
+		MapSector *sector = map_get_sector(map, (v2s32) {pos.x, pos.z}, true);
+
+		pthread_rwlock_wrlock(&sector->rwlck);
+		ArraySearchResult res = array_search(&sector->blocks, &pos.y);
+
+		if (res.success) {
+			block = map_get_block_raw(sector, res.index);
+		} else {
+			block = allocate_block(pos);
+			array_insert(&sector->blocks, &block, res.index);
+		}
+
+		pthread_rwlock_unlock(&sector->rwlck);
+
+		if (res.success)
+			map_clear_meta(block);
 	}
+
+	pthread_mutex_lock(&block->mtx);
 
 	bool ret = true;
 	size_t n_read_total = 0;
@@ -190,8 +228,8 @@ bool map_deserialize_block(int fd, Map *map, MapBlock **blockptr, bool dummy)
 		n_read_total += n_read;
 	}
 
-	if (ret) {
-		ITERATE_MAPBLOCK {
+	ITERATE_MAPBLOCK {
+		if (ret) {
 			MapNode node = data[x][y][z];
 			node.type = be32toh(node.type);
 
@@ -199,28 +237,34 @@ bool map_deserialize_block(int fd, Map *map, MapBlock **blockptr, bool dummy)
 				node.type = NODE_INVALID;
 
 			block->data[x][y][z] = node;
-			block->metadata[x][y][z] = list_create(&list_compare_string);
 		}
+
+		block->metadata[x][y][z] = list_create(&list_compare_string);
 	}
 
-	// ToDo: Deserialize meta
 
 	if (dummy)
 		map_free_block(block);
 	else if (blockptr && ret)
 		*blockptr = block;
 
+	pthread_mutex_unlock(&block->mtx);
+
 	return ret;
 }
 
 bool map_serialize(FILE *file, Map *map)
 {
+	pthread_rwlock_rdlock(&map->rwlck);
 	for (size_t s = 0; s < map->sectors.siz; s++) {
 		MapSector *sector = map_get_sector_raw(map, s);
+		pthread_rwlock_rdlock(&sector->rwlck);
 		for (size_t b = 0; b < sector->blocks.siz; b++)
 			if (! map_serialize_block(file, map_get_block_raw(sector, b)))
 				return true;
+		pthread_rwlock_unlock(&sector->rwlck);
 	}
+	pthread_rwlock_unlock(&map->rwlck);
 	return true;
 }
 

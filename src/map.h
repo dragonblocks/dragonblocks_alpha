@@ -39,6 +39,7 @@ typedef struct
 
 typedef struct
 {
+	pthread_rwlock_t rwlck;
 	Array blocks;
 	v2s32 pos;
 	u64 hash;
@@ -46,6 +47,7 @@ typedef struct
 
 typedef struct
 {
+	pthread_rwlock_t rwlck;
 	Array sectors;
 } Map;
 
