@@ -18,6 +18,10 @@ The server will save the map to a file named "map" in the directory it is run in
 
 Interrupt handlers for SIGINT und SIGTERM are implemented.
 
+## Controls
+
+Use W, A, S and D to move forward / left / backward / right.
+
 ## Dependencies
 
 The client depends on GLFW3, OpenGL and GLEW.
