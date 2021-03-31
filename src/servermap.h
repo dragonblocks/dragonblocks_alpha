@@ -1,8 +1,7 @@
-#ifndef _MAPGEN_H_
-#define _MAPGEN_H_
+#ifndef _SERVERMAP_H_
+#define _SERVERMAP_H_
 
 #include "server.h"
-#include "map.h"
 
 void servermap_init(Server *srv);
 

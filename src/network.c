@@ -8,7 +8,7 @@ bool send_command(Client *client, RemoteCommand cmd)
 	return ret;
 }
 
-static void handle_packets(Client *client) {
+static bool handle_packets(Client *client) {
 	while (client->state != CS_DISCONNECTED || ! interrupted) {
 		struct pollfd pfd = {
 			.fd = client->fd,
@@ -20,7 +20,7 @@ static void handle_packets(Client *client) {
 
 		if (pstate == -1) {
 			perror("poll");
-			return;
+			break;
 		}
 
 		if (pstate == 0) {
@@ -29,11 +29,11 @@ static void handle_packets(Client *client) {
 		}
 
 		if (! (pfd.revents & POLLIN))
-			return;
+			return false;
 
 		HostCommand command;
 		if (! read_u32(client->fd, &command))
-			return;
+			break;
 
 		CommandHandler *handler = NULL;
 
@@ -45,9 +45,11 @@ static void handle_packets(Client *client) {
 			if (! good)
 				printf("Recieved %s command, but client is in invalid state: %d\n", handler->name, client->state);
 			if (! handler->func(client, good))
-				return;
+				break;
 		} else {
 			printf("Recieved invalid command %d\n", command);
 		}
 	}
+
+	return client->state == CS_DISCONNECTED || errno == EINTR;
 }

@@ -23,7 +23,9 @@ static bool auth_handler(Client *client, bool good)
 		return true;
 	}
 
-	u8 success = list_put(&client->server->clients, name, client);
+	pthread_rwlock_wrlock(&client->server->players_rwlck);
+	u8 success = list_put(&client->server->players, name, client);
+	pthread_rwlock_unlock(&client->server->players_rwlck);
 
 	printf("Authentication %s: %s -> %s\n", success ? "success" : "failure", client->address, name);
 
@@ -60,23 +62,6 @@ static bool setnode_handler(Client *client, bool good)
 	return true;
 }
 
-static bool kick_handler(Client *client, bool good)
-{
-	char *target_name = read_string(client->fd, NAME_MAX);
-
-	if (! target_name)
-		return false;
-
-	if (good) {
-		Client *target = list_get(&client->server->clients, target_name);
-		if (target)
-			server_disconnect_client(target, 0, "kicked");
-	}
-
-	free(target_name);
-	return true;
-}
-
 static bool pos_handler(Client *client, bool good)
 {
 	v3f pos;
@@ -95,6 +80,5 @@ CommandHandler command_handlers[SERVER_COMMAND_COUNT] = {
 	{&disconnect_handler, "DISCONNECT", CS_CREATED | CS_ACTIVE},
 	{&auth_handler, "AUTH", CS_CREATED},
 	{&setnode_handler, "SETNODE", CS_ACTIVE},
-	{&kick_handler, "KICK", CS_ACTIVE},
 	{&pos_handler, "POS", CS_ACTIVE},
 };

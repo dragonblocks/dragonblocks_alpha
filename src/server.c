@@ -12,10 +12,19 @@ Server server;
 
 void server_disconnect_client(Client *client, int flags, const char *detail)
 {
+	ClientState cs = client->state;
 	client->state = CS_DISCONNECTED;
 
-	if (client->name && ! (flags & DISCO_NO_REMOVE))
-		list_delete(&server.clients, client->name);
+	if (! (flags & DISCO_NO_REMOVE)) {
+		if (client->name) {
+			pthread_rwlock_wrlock(&server.players_rwlck);
+			list_delete(&server.players, client->name);
+			pthread_rwlock_unlock(&server.players_rwlck);
+		}
+		pthread_rwlock_wrlock(&server.clients_rwlck);
+		list_delete(&server.clients, client);
+		pthread_rwlock_unlock(&server.clients_rwlck);
+	}
 
 	if (! (flags & DISCO_NO_MESSAGE))
 		printf("Disconnected %s %s%s%s\n", client->name, INBRACES(detail));
@@ -26,27 +35,29 @@ void server_disconnect_client(Client *client, int flags, const char *detail)
 	pthread_mutex_lock(&client->mtx);
 	close(client->fd);
 	pthread_mutex_unlock(&client->mtx);
+
+	if (! (flags & DISCO_NO_JOIN))
+		pthread_join(client->net_thread, NULL);
+
+	if (cs == CS_ACTIVE)
+		pthread_join(client->map_thread, NULL);
+
+	if (client->name != client->address)
+		free(client->name);
+	free(client->address);
+
+	pthread_mutex_destroy(&client->mtx);
+	free(client);
 }
 
 #include "network.c"
 
-static void *server_reciever_thread(void *clientptr)
+static void *server_reciever_thread(void *cli)
 {
-	Client *client = clientptr;
+	Client *client = cli;
 
-	handle_packets(client);
-
-	if (client->state != CS_DISCONNECTED)
-		server_disconnect_client(client, DISCO_NO_SEND, "network error");
-
-	if (client->name != client->address)
-		free(client->name);
-
-	free(client->address);
-
-	pthread_mutex_destroy(&client->mtx);
-
-	free(client);
+	if (! handle_packets(client))
+		server_disconnect_client(client, DISCO_NO_SEND | DISCO_NO_JOIN, "network error");
 
 	return NULL;
 }
@@ -72,7 +83,11 @@ static void server_accept_client()
 	client->name = client->address;
 	client->server = &server;
 	client->pos = (v3f) {0.0f, 0.0f, 0.0f};
-	pthread_create(&client->thread, NULL, &server_reciever_thread, client);
+	pthread_create(&client->net_thread, NULL, &server_reciever_thread, client);
+
+	pthread_rwlock_wrlock(&server.clients_rwlck);
+	list_put(&server.clients, client, NULL);
+	pthread_rwlock_unlock(&server.clients_rwlck);
 
 	printf("Connected %s\n", client->address);
 }
@@ -81,7 +96,10 @@ void server_start(int fd)
 {
 	server.sockfd = fd;
 	server.map = map_create(NULL);
-	server.clients = list_create(&list_compare_string);
+	pthread_rwlock_init(&server.clients_rwlck, NULL);
+	server.clients = list_create(NULL);
+	pthread_rwlock_init(&server.players_rwlck, NULL);
+	server.players = list_create(&list_compare_string);
 
 	FILE *mapfile = fopen("map", "r");
 	if (mapfile) {
@@ -98,8 +116,16 @@ void server_start(int fd)
 
 	printf("Shutting down\n");
 
-	ITERATE_LIST(&server.clients, pair) server_disconnect_client(pair->value, DISCO_NO_REMOVE | DISCO_NO_MESSAGE, "");
+	pthread_rwlock_wrlock(&server.clients_rwlck);
+	ITERATE_LIST(&server.clients, pair) server_disconnect_client(pair->key, DISCO_NO_REMOVE | DISCO_NO_MESSAGE, "");
 	list_clear(&server.clients);
+	pthread_rwlock_unlock(&server.clients_rwlck);
+	pthread_rwlock_wrlock(&server.players_rwlck);
+	list_clear(&server.players);
+	pthread_rwlock_unlock(&server.players_rwlck);
+
+	pthread_rwlock_destroy(&server.clients_rwlck);
+	pthread_rwlock_destroy(&server.players_rwlck);
 
 	shutdown(server.sockfd, SHUT_RDWR);
 	close(server.sockfd);

@@ -30,6 +30,30 @@ static MapBlock *allocate_block(v3s32 pos)
 	return block;
 }
 
+static MapBlock *create_block(MapSector *sector, size_t idx, v3s32 pos)
+{
+	MapBlock *block = allocate_block(pos);
+	array_insert(&sector->blocks, &block, idx);
+	return block;
+}
+
+static bool read_block_data(int fd, MapBlockData data)
+{
+	size_t n_read_total = 0;
+	int n_read;
+
+	while (n_read_total < sizeof(MapBlockData)) {
+		if ((n_read = read(fd, (char *) data + n_read_total, sizeof(MapBlockData) - n_read_total)) == -1) {
+			perror("read");
+			return false;
+		}
+
+		n_read_total += n_read;
+	}
+
+	return true;
+}
+
 Map *map_create()
 {
 	Map *map = malloc(sizeof(Map));
@@ -113,12 +137,11 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 	MapBlock *block = NULL;
 
 	if (res.success) {
-		MapBlock *rawblock = map_get_block_raw(sector, res.index);
-		if (rawblock->state == MBS_READY || create)
-			block = rawblock;
+		block = map_get_block_raw(sector, res.index);
+		if (block->state < MBS_READY && ! create)
+			block = NULL;
 	} else if (create) {
-		block = allocate_block(pos);
-		array_insert(&sector->blocks, &block, res.index);
+		block = create_block(sector, res.index, pos);
 	}
 
 	pthread_rwlock_unlock(&sector->rwlck);
@@ -190,46 +213,23 @@ bool map_deserialize_block(int fd, Map *map, MapBlock **blockptr, bool dummy)
 
 	MapBlock *block;
 
-	if (dummy) {
+	if (dummy)
 		block = allocate_block(pos);
-	} else {
-		MapSector *sector = map_get_sector(map, (v2s32) {pos.x, pos.z}, true);
+	else
+		block = map_get_block(map, pos, true);
 
-		pthread_rwlock_wrlock(&sector->rwlck);
-		ArraySearchResult res = array_search(&sector->blocks, &pos.y);
-
-		if (res.success) {
-			block = map_get_block_raw(sector, res.index);
-		} else {
-			block = allocate_block(pos);
-			array_insert(&sector->blocks, &block, res.index);
-		}
-
-		pthread_rwlock_unlock(&sector->rwlck);
-
-		if (res.success)
-			map_clear_meta(block);
-	}
+	if (block->state != MBS_CREATED)
+		map_clear_meta(block);
 
 	pthread_mutex_lock(&block->mtx);
+	block->state = MBS_INITIALIZING;
 
-	bool ret = true;
-	size_t n_read_total = 0;
-	int n_read;
 	MapBlockData data;
 
-	while (n_read_total < sizeof(MapBlockData)) {
-		if ((n_read = read(fd, (char *) data + n_read_total, sizeof(MapBlockData) - n_read_total)) == -1) {
-			perror("read");
-			ret = false;
-			break;
-		}
-
-		n_read_total += n_read;
-	}
+	bool success = read_block_data(fd, data);
 
 	ITERATE_MAPBLOCK {
-		if (ret) {
+		if (success) {
 			MapNode node = data[x][y][z];
 			node.type = be32toh(node.type);
 
@@ -242,15 +242,16 @@ bool map_deserialize_block(int fd, Map *map, MapBlock **blockptr, bool dummy)
 		block->metadata[x][y][z] = list_create(&list_compare_string);
 	}
 
+	block->state = MBS_UNSENT;
 
 	if (dummy)
 		map_free_block(block);
-	else if (blockptr && ret)
+	else if (blockptr && success)
 		*blockptr = block;
 
 	pthread_mutex_unlock(&block->mtx);
 
-	return ret;
+	return success;
 }
 
 bool map_serialize(FILE *file, Map *map)
@@ -299,7 +300,7 @@ void map_set_node(Map *map, v3s32 pos, MapNode node)
 		list_clear(&block->metadata[offset.x][offset.y][offset.z]);
 		block->data[offset.x][offset.y][offset.z] = node;
 
-		block->state = MBS_MODIFIED;
+		block->state = MBS_UNSENT;
 	}
 }
 

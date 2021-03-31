@@ -123,7 +123,6 @@ static void *meshgen_thread(void *unused)
 		if (*lptr) {
 			pthread_mutex_lock(&meshgen.mtx);
 			MapBlock *block = (*lptr)->key;
-			block->state = MBS_READY;
 			ListPair *next = (*lptr)->next;
 			free(*lptr);
 			*lptr = next;
@@ -170,9 +169,6 @@ void clientmap_deinit()
 void clientmap_block_changed(MapBlock *block)
 {
 	pthread_mutex_lock(&meshgen.mtx);
-	if (block->state != MBS_PROCESSING) {
-		block->state = MBS_PROCESSING;
-		list_put(&meshgen.queue, block, NULL);
-	}
+	list_put(&meshgen.queue, block, NULL);
 	pthread_mutex_unlock(&meshgen.mtx);
 }

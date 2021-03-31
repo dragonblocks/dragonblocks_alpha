@@ -12,7 +12,10 @@
 typedef struct
 {
 	int sockfd;
+	pthread_rwlock_t clients_rwlck;
 	List clients;
+	pthread_rwlock_t players_rwlck;
+	List players;
 	Map *map;
 } Server;
 
@@ -24,7 +27,8 @@ typedef struct Client
 	char *address;
 	char *name;
 	Server *server;
-	pthread_t thread;
+	pthread_t net_thread;
+	pthread_t map_thread;
 	v3f pos;
 } Client;
 
@@ -33,6 +37,7 @@ typedef enum
 	DISCO_NO_REMOVE = 0x01,
 	DISCO_NO_SEND = 0x02,
 	DISCO_NO_MESSAGE = 0x04,
+	DISCO_NO_JOIN = 0x08,
 } DiscoFlag;
 
 void server_disconnect_client(Client *client, int flags, const char *detail);

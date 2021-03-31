@@ -20,9 +20,10 @@ typedef struct
 typedef enum
 {
 	MBS_CREATED,
-	MBS_PROCESSING,
+	MBS_INITIALIZING,
 	MBS_READY,
-	MBS_MODIFIED,
+	MBS_UNSENT,
+	MBS_SENDING,
 } MapBlockState;
 
 typedef MapNode MapBlockData[16][16][16];
