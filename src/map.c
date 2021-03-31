@@ -139,7 +139,15 @@ bool map_serialize_block(FILE *file, MapBlock *block)
 	if (fwrite(pos, 1, sizeof(pos), file) != sizeof(pos))
 		return false;
 
-	if (fwrite(block->data, 1, sizeof(block->data), file) !=  sizeof(block->data))
+	MapBlockData data;
+
+	ITERATE_MAPBLOCK {
+		MapNode node = block->data[x][y][z];
+		node.type = htobe32(node.type);
+		data[x][y][z] = node;
+	}
+
+	if (fwrite(data, 1, sizeof(MapBlockData), file) !=  sizeof(MapBlockData))
 		perror("fwrite");
 	else
 		return true;
@@ -171,9 +179,10 @@ bool map_deserialize_block(int fd, Map *map, MapBlock **blockptr, bool dummy)
 	bool ret = true;
 	size_t n_read_total = 0;
 	int n_read;
+	MapBlockData data;
 
-	while (n_read_total < sizeof(block->data)) {
-		if ((n_read = read(fd, (char *) block->data + n_read_total, sizeof(block->data) - n_read_total)) == -1) {
+	while (n_read_total < sizeof(MapBlockData)) {
+		if ((n_read = read(fd, (char *) data + n_read_total, sizeof(MapBlockData) - n_read_total)) == -1) {
 			perror("read");
 			ret = false;
 			break;
@@ -182,17 +191,24 @@ bool map_deserialize_block(int fd, Map *map, MapBlock **blockptr, bool dummy)
 		n_read_total += n_read;
 	}
 
-	ITERATE_MAPBLOCK {
-		if (block->data[x][y][z].type >= NODE_UNLOADED)
-			block->data[x][y][z].type = NODE_INVALID;
-		block->metadata[x][y][z] = list_create(&list_compare_string);
+	if (ret) {
+		ITERATE_MAPBLOCK {
+			MapNode node = data[x][y][z];
+			node.type = be32toh(node.type);
+
+			if (node.type >= NODE_UNLOADED)
+				node.type = NODE_INVALID;
+
+			block->data[x][y][z] = node;
+			block->metadata[x][y][z] = list_create(&list_compare_string);
+		}
 	}
 
 	// ToDo: Deserialize meta
 
 	if (dummy)
 		map_free_block(block);
-	else if (blockptr)
+	else if (blockptr && ret)
 		*blockptr = block;
 
 	return ret;

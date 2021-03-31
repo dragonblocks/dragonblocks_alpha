@@ -24,9 +24,11 @@ typedef enum
 	MBS_MODIFIED,
 } MapBlockState;
 
+typedef MapNode MapBlockData[16][16][16];
+
 typedef struct
 {
-	MapNode data[16][16][16];
+	MapBlockData data;
 	List metadata[16][16][16];
 	v3s32 pos;
 	MapBlockState state;
