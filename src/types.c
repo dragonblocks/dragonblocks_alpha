@@ -4,6 +4,20 @@
 #include <poll.h>
 #include "types.h"
 
+bool read_full(int fd, char *buffer, size_t size)
+{
+	size_t n_read_total = 0;
+	int n_read;
+	while (n_read_total < size) {
+		if ((n_read = read(fd, buffer + n_read_total, size - n_read_total)) == -1) {
+			perror("read");
+			return false;
+		}
+		n_read_total += n_read;
+	}
+	return true;
+}
+
 #define htobe8(x) x
 #define be8toh(x) x
 
@@ -52,12 +66,8 @@
 	bool read_ ## type(int fd, type *buf) \
 	{ \
 		u ## bits encoded; \
-		int n_read; \
-		if ((n_read = read(fd, &encoded, sizeof(encoded))) != sizeof(encoded)) { \
-			if (n_read == -1) \
-				perror("read"); \
+		if (! read_full(fd, (char *) &encoded, sizeof(type))) \
 			return false; \
-		} \
 		*buf = be ## bits ## toh(encoded); \
 		return true; \
 	} \
@@ -84,12 +94,8 @@ DEFTYPES(64)
 #define DEFFLOAT(type) \
 	bool read_ ## type(int fd, type *buf) \
 	{ \
-		int n_read; \
-		if ((n_read = read(fd, buf, sizeof(type))) != sizeof(type)) { \
-			if (n_read == -1) \
-				perror("read"); \
+		if (! read_full(fd, (char *) buf, sizeof(type))) \
 			return false; \
-		} \
 		return true; \
 	} \
 	bool write_ ## type(int fd, type val) \

@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+bool read_full(int fd, char *buffer, size_t size);
+
 #define DEFRW(type) \
 	bool read_ ## type(int fd, type *ptr); \
 	bool write_ ## type(int fd, type val);

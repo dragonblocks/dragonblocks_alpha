@@ -46,15 +46,8 @@ static bool block_handler(Client *client, bool good)
 		return false;
 
 	char data[header];
-	size_t n_read_total = 0;
-	int n_read;
-	while (n_read_total < header) {
-		if ((n_read = read(client->fd, data + n_read_total, header - n_read_total)) == -1) {
-			perror("read");
-			return false;
-		}
-		n_read_total += n_read;
-	}
+	if (! read_full(client->fd, data, header))
+		return false;
 
 	MapBlock *block;
 
