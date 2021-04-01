@@ -40,16 +40,16 @@ static bool block_handler(Client *client, bool good)
 	if (! read_v3s32(client->fd, &pos))
 		return false;
 
-	u64 size;
+	MapBlockHeader header;
 
-	if (! read_u64(client->fd, &size))
+	if (! read_u16(client->fd, &header))
 		return false;
 
-	char data[size];
+	char data[header];
 	size_t n_read_total = 0;
 	int n_read;
-	while (n_read_total < size) {
-		if ((n_read = read(client->fd, data + n_read_total, size - n_read_total)) == -1) {
+	while (n_read_total < header) {
+		if ((n_read = read(client->fd, data + n_read_total, header - n_read_total)) == -1) {
 			perror("read");
 			return false;
 		}
@@ -66,7 +66,7 @@ static bool block_handler(Client *client, bool good)
 	if (block->state != MBS_CREATED)
 		map_clear_meta(block);
 
-	bool ret = map_deserialize_block(block, data, size);
+	bool ret = map_deserialize_block(block, data, header);
 
 	if (good)
 		clientmap_block_changed(block);

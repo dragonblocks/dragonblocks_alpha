@@ -26,7 +26,7 @@ typedef enum
 
 typedef MapNode MapBlockData[16][16][16];
 
-typedef u64 MapBlockHeader;
+typedef u16 MapBlockHeader;
 
 typedef struct
 {

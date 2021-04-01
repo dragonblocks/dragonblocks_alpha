@@ -192,8 +192,8 @@ void map_serialize_block(MapBlock *block, char **dataptr, size_t *sizeptr)
 
 	size_t size = sizeof(MapBlockHeader) + sizeof(MapBlockHeader) + compressed_size;
 	char *data = malloc(size);
-	*(MapBlockHeader *) data = htobe64(sizeof(MapBlockHeader) + compressed_size);
-	*(MapBlockHeader *) (data + sizeof(MapBlockHeader)) = htobe64(uncompressed_size);
+	*(MapBlockHeader *) data = htobe16(sizeof(MapBlockHeader) + compressed_size);
+	*(MapBlockHeader *) (data + sizeof(MapBlockHeader)) = htobe16(uncompressed_size);
 	memcpy(data + sizeof(MapBlockHeader) + sizeof(MapBlockHeader), compressed_data, compressed_size);
 
 	*sizeptr = size;
@@ -205,7 +205,7 @@ bool map_deserialize_block(MapBlock *block, const char *data, size_t size)
 	if (size < sizeof(MapBlockHeader))
 		return false;
 
-	MapBlockHeader uncompressed_size = be64toh(*(MapBlockHeader *) data);
+	MapBlockHeader uncompressed_size = be16toh(*(MapBlockHeader *) data);
 
 	if (uncompressed_size < sizeof(MapBlockData))
 		return false;
@@ -217,8 +217,8 @@ bool map_deserialize_block(MapBlock *block, const char *data, size_t size)
     stream.zfree = Z_NULL;
     stream.opaque = Z_NULL;
 
-	stream.avail_in = size - sizeof(u64);
-    stream.next_in = (Bytef *) (data + sizeof(u64));
+	stream.avail_in = size - sizeof(MapBlockHeader);
+    stream.next_in = (Bytef *) (data + sizeof(MapBlockHeader));
     stream.avail_out = uncompressed_size;
     stream.next_out = (Bytef *) decompressed_data;
 
