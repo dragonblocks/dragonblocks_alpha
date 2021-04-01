@@ -2,7 +2,11 @@
 mkdir .build
 cp -r * .build/
 cd .build/src
-make clobber && make all RELEASE=TRUE -j$(nproc) && make clean
+if ! (make clobber && make all RELEASE=TRUE -j$(nproc) && make clean); then
+    cd ../..
+    rm -rf .build
+	exit 1
+fi
 cp Dragonblocks DragonblocksServer ..
 cd ..
 rm -rf .git* deps src BUILDING.md snapshot.sh upload.sh DragonblocksAlpha-*.zip
