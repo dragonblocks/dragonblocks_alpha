@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <math.h>
 #include <endian.h>
+#include <zlib.h>
 #include "map.h"
 #include "util.h"
 
@@ -161,11 +162,8 @@ bool map_deserialize_node(int fd, MapNode *node)
 
 void map_serialize_block(MapBlock *block, char **dataptr, size_t *sizeptr)
 {
-	*sizeptr = sizeof(MapBlockHeader) + sizeof(MapBlockData);
-	*dataptr = malloc(*sizeptr);
-
-	MapBlockHeader header = htobe64(sizeof(MapBlockData));
-	memcpy(*dataptr, &header, sizeof(header));
+	size_t uncompressed_size = sizeof(MapBlockData);
+	char uncompressed_data[uncompressed_size];
 
 	MapBlockData blockdata;
 	ITERATE_MAPBLOCK {
@@ -173,17 +171,66 @@ void map_serialize_block(MapBlock *block, char **dataptr, size_t *sizeptr)
 		node.type = htobe32(node.type);
 		blockdata[x][y][z] = node;
 	}
-	memcpy(*dataptr + sizeof(header), blockdata, sizeof(MapBlockData));
+	memcpy(uncompressed_data, blockdata, sizeof(MapBlockData));
+
+	char compressed_data[uncompressed_size];
+
+	z_stream stream;
+	stream.zalloc = Z_NULL;
+	stream.zfree = Z_NULL;
+	stream.opaque = Z_NULL;
+
+	stream.avail_in = stream.avail_out = uncompressed_size;
+    stream.next_in = (Bytef *) uncompressed_data;
+    stream.next_out = (Bytef *) compressed_data;
+
+    deflateInit(&stream, Z_BEST_COMPRESSION);
+    deflate(&stream, Z_FINISH);
+    deflateEnd(&stream);
+
+	size_t compressed_size = stream.total_out;
+
+	size_t size = sizeof(MapBlockHeader) + sizeof(MapBlockHeader) + compressed_size;
+	char *data = malloc(size);
+	*(MapBlockHeader *) data = htobe64(sizeof(MapBlockHeader) + compressed_size);
+	*(MapBlockHeader *) (data + sizeof(MapBlockHeader)) = htobe64(uncompressed_size);
+	memcpy(data + sizeof(MapBlockHeader) + sizeof(MapBlockHeader), compressed_data, compressed_size);
+
+	*sizeptr = size;
+	*dataptr = data;
 }
 
 bool map_deserialize_block(MapBlock *block, const char *data, size_t size)
 {
-	if (size < sizeof(MapBlockData))
+	if (size < sizeof(MapBlockHeader))
+		return false;
+
+	MapBlockHeader uncompressed_size = be64toh(*(MapBlockHeader *) data);
+
+	if (uncompressed_size < sizeof(MapBlockData))
+		return false;
+
+	char decompressed_data[uncompressed_size];
+
+	z_stream stream;
+	stream.zalloc = Z_NULL;
+    stream.zfree = Z_NULL;
+    stream.opaque = Z_NULL;
+
+	stream.avail_in = size - sizeof(u64);
+    stream.next_in = (Bytef *) (data + sizeof(u64));
+    stream.avail_out = uncompressed_size;
+    stream.next_out = (Bytef *) decompressed_data;
+
+    inflateInit(&stream);
+    inflate(&stream, Z_NO_FLUSH);
+    inflateEnd(&stream);
+
+    if (stream.total_out < uncompressed_size)
 		return false;
 
 	MapBlockData blockdata;
-
-	memcpy(blockdata, data, sizeof(MapBlockData));
+	memcpy(blockdata, decompressed_data, sizeof(MapBlockData));
 
 	ITERATE_MAPBLOCK {
 		MapNode node = blockdata[x][y][z];

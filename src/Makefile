@@ -1,7 +1,7 @@
 COMMON = array.o list.o map.o signal.o util.o types.o node.o queue.o
 SERVER = $(COMMON) server.o servercommands.o servermap.o perlin.o facecache.o mapgen.o mapdb.o
 CLIENT = $(COMMON) client.o clientcommands.o clientmap.o mesh.o scene.o shaders.o blockmesh.o
-LIBRARIES = -lpthread -lm
+LIBRARIES = -lpthread -lm -lz
 FLAGS = -g -fmax-errors=4
 
 ifdef RELEASE

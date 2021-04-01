@@ -36,3 +36,9 @@ The server depends on SQLite3.
 ```bash
 sudo apt install libsqlite3-0
 ```
+
+both the client and the server depend on ZLib.
+
+```bash
+sudo apt install zlib1g
+```
