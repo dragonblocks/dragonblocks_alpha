@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 bool read_full(int fd, char *buffer, size_t size);
 
