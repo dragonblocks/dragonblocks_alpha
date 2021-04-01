@@ -43,11 +43,11 @@ static bool handle_packets(Client *client) {
 		if (handler && handler->func) {
 			bool good = client->state & handler->state_flags;
 			if (! good)
-				printf("Recieved %s command, but client is in invalid state: %d\n", handler->name, client->state);
+				printf("Received %s command, but client is in invalid state: %d\n", handler->name, client->state);
 			if (! handler->func(client, good))
 				break;
 		} else {
-			printf("Recieved invalid command %d\n", command);
+			printf("Received invalid command %d\n", command);
 		}
 	}
 
