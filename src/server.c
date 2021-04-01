@@ -12,7 +12,6 @@ Server server;
 
 void server_disconnect_client(Client *client, int flags, const char *detail)
 {
-	ClientState cs = client->state;
 	client->state = CS_DISCONNECTED;
 
 	if (! (flags & DISCO_NO_REMOVE)) {
@@ -38,9 +37,6 @@ void server_disconnect_client(Client *client, int flags, const char *detail)
 
 	if (! (flags & DISCO_NO_JOIN))
 		pthread_join(client->net_thread, NULL);
-
-	if (cs == CS_ACTIVE)
-		pthread_join(client->map_thread, NULL);
 
 	if (client->name != client->address)
 		free(client->name);
@@ -84,6 +80,7 @@ static void server_accept_client()
 	client->server = &server;
 	client->pos = (v3f) {0.0f, 0.0f, 0.0f};
 	pthread_create(&client->net_thread, NULL, &server_reciever_thread, client);
+	client->sent_blocks = list_create(NULL);
 
 	pthread_rwlock_wrlock(&server.clients_rwlck);
 	list_put(&server.clients, client, NULL);
@@ -101,20 +98,14 @@ void server_start(int fd)
 	pthread_rwlock_init(&server.players_rwlck, NULL);
 	server.players = list_create(&list_compare_string);
 
-	FILE *mapfile = fopen("map", "r");
-	if (mapfile) {
-		map_deserialize(fileno(mapfile), server.map);
-		fclose(mapfile);
-	} else if (errno != ENOENT) {
-		perror("fopen");
-	}
-
 	servermap_init(&server);
 
 	while (! interrupted)
 		server_accept_client();
 
 	printf("Shutting down\n");
+
+	servermap_deinit();
 
 	pthread_rwlock_wrlock(&server.clients_rwlck);
 	ITERATE_LIST(&server.clients, pair) server_disconnect_client(pair->key, DISCO_NO_REMOVE | DISCO_NO_MESSAGE, "");
@@ -130,18 +121,7 @@ void server_start(int fd)
 	shutdown(server.sockfd, SHUT_RDWR);
 	close(server.sockfd);
 
-	mapfile = fopen("map", "w");
-	if (mapfile) {
-		if (map_serialize(mapfile, server.map))
-			printf("Saved map\n");
-		else
-			perror("map_serialize");
-		fclose(mapfile);
-	} else {
-		perror("fopen");
-	}
-
-	map_delete(server.map);
+	map_delete(server.map, &servermap_delete_extra_data);
 
 	exit(EXIT_SUCCESS);
 }

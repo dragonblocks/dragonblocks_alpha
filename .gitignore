@@ -1,5 +1,5 @@
 *.o
 DragonblocksServer
 Dragonblocks
-map
+map.sqlite
 DragonblocksAlpha-*.zip

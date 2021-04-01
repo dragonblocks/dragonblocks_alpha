@@ -1,106 +1,142 @@
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdio.h>
 #include "facecache.h"
-#include "mapgen.h"
 #include "map.h"
+#include "mapdb.h"
+#include "mapgen.h"
 #include "servermap.h"
 
-static size_t max_blocks;
+static struct {
+	size_t max_blocks;
+	pthread_t thread;
+	sqlite3 *db;
+	bool cancel;
+} servermap;
 
 static Server *server = NULL;
 
-typedef struct
+static void initialize_block(MapBlock *block)
 {
-	char *ptr;
-	size_t size;
-} MapBlockBuffer;
-
-static void generate_block(MapBlock *block)
-{
-	pthread_mutex_lock(&block->mtx);
-	if (block->state == MBS_CREATED) {
-		block->state = MBS_INITIALIZING;
+	if (! load_block(servermap.db, block))
 		mapgen_generate_block(block);
-		block->state = MBS_UNSENT;
-	}
-	pthread_mutex_unlock(&block->mtx);
+	block->state = MBS_MODIFIED;
 }
 
-static void serialize_block(Client *client, MapBlock *block)
+static void reset_block(MapBlock *block)
 {
-	MapBlockBuffer *buffer = block->extra;
+	MapBlockExtraData *extra = block->extra;
 
-	if (! buffer) {
-		buffer = malloc(sizeof(MapBlockBuffer));
-
-		FILE *buffile = open_memstream(&buffer->ptr, &buffer->size);
-		map_serialize_block(buffile, block);
-		fflush(buffile);
-		fclose(buffile);
-
-		block->extra = buffer;
+	if (extra) {
+		free(extra->data);
+	} else {
+		extra = malloc(sizeof(MapBlockExtraData));
+		extra->clients = list_create(&list_compare_string);
 	}
 
+	map_serialize_block(block, &extra->data, &extra->size);
+
+	block->extra = extra;
+
+	save_block(servermap.db, block);
+
+	ITERATE_LIST(&extra->clients, pair) {
+		Client *client = list_get(&server->players, pair->key);
+		if (client)
+			list_delete(&client->sent_blocks, block);
+		free(pair->key);
+	}
+	list_clear(&extra->clients);
+
+	block->state = MBS_READY;
+}
+
+static void send_block(Client *client, MapBlock *block)
+{
+	MapBlockExtraData *extra = block->extra;
+
+	list_put(&client->sent_blocks, block, block);
+	list_put(&extra->clients, strdup(client->name), NULL);
+
 	pthread_mutex_lock(&client->mtx);
-	(void) (write_u32(client->fd, CC_BLOCK) && write(client->fd, buffer->ptr, buffer->size) != -1);
+	if (client->state == CS_ACTIVE)
+		(void) (write_u32(client->fd, CC_BLOCK) && write_v3s32(client->fd, block->pos) && write(client->fd, extra->data, extra->size) != -1);
 	pthread_mutex_unlock(&client->mtx);
 }
 
-static void send_block(MapBlock *block)
+static void reset_modified_blocks(Client *client)
 {
-	pthread_mutex_lock(&block->mtx);
-	if (block->state == MBS_UNSENT) {
-		block->state = MBS_SENDING;
-		if (block->extra) {
-			free(((MapBlockBuffer *) block->extra)->ptr);
-			free(block->extra);
-			block->extra = NULL;
+	for (ListPair **pairptr = &client->sent_blocks.first; *pairptr != NULL; pairptr = &(*pairptr)->next) {
+
+		MapBlock *block = (*pairptr)->key;
+
+		pthread_mutex_lock(&block->mtx);
+		if (block->state == MBS_MODIFIED) {
+			reset_block(block);
+
+			ListPair *next = (*pairptr)->next;
+			free(*pairptr);
+			*pairptr = next;
 		}
-		// ToDo: only send to near clients
-		pthread_rwlock_rdlock(&server->players_rwlck);
-		ITERATE_LIST(&server->players, pair) {
-			if (block->state != MBS_SENDING)
-				break;
-			serialize_block(pair->value, block);
-		}
-		pthread_rwlock_unlock(&server->players_rwlck);
-		if (block->state == MBS_SENDING)
-			block->state = MBS_READY;
+		pthread_mutex_unlock(&block->mtx);
 	}
-	pthread_mutex_unlock(&block->mtx);
 }
 
 static void send_blocks(Client *client)
 {
 	v3s32 pos = map_node_to_block_pos((v3s32) {client->pos.x, client->pos.y, client->pos.z}, NULL);
-	for (size_t i = 0; i < max_blocks; i++) {
+
+	for (size_t i = 0; i < servermap.max_blocks; i++) {
 		MapBlock *block = map_get_block(client->server->map, get_face(i, &pos), true);
+
+		pthread_mutex_lock(&block->mtx);
 		switch (block->state) {
-		case MBS_CREATED:
-			generate_block(block);
-			__attribute__ ((fallthrough));
-		case MBS_UNSENT:
-			send_block(block);
-			__attribute__ ((fallthrough));
-		case MBS_INITIALIZING:
-		case MBS_SENDING:
-			return;
-		case MBS_READY:
-			break;
+			case MBS_CREATED:
+
+				initialize_block(block);
+
+			__attribute__ ((fallthrough)); case MBS_MODIFIED:
+
+				reset_block(block);
+
+				send:
+				send_block(client, block);
+
+				pthread_mutex_unlock(&block->mtx);
+				return;
+
+			case MBS_READY:
+
+				if (! list_get(&client->sent_blocks, block))
+					goto send;
+				else
+					break;
+
+			default:
+
+				break;
 		}
+		pthread_mutex_unlock(&block->mtx);
 	}
 }
 
-static void *map_thread(void *cli)
+static void map_step()
 {
-	Client *client = cli;
+	pthread_rwlock_rdlock(&server->players_rwlck);
+	ITERATE_LIST(&server->players, pair) reset_modified_blocks(pair->value);
+	ITERATE_LIST(&server->players, pair) send_blocks(pair->value);
+	pthread_rwlock_unlock(&server->players_rwlck);
+}
 
-	while (client->state != CS_DISCONNECTED) {
-		send_blocks(client);
-		sched_yield();
-	}
+static void *map_thread(void *unused)
+{
+	(void) unused;
+
+	servermap.db = open_mapdb("map.sqlite");
+
+	while (! servermap.cancel)
+		map_step();
 
 	return NULL;
 }
@@ -108,10 +144,26 @@ static void *map_thread(void *cli)
 void servermap_init(Server *srv)
 {
 	server = srv;
-	max_blocks = get_face_count(3);
+	servermap.max_blocks = get_face_count(3);
+
+	pthread_create(&servermap.thread, NULL, &map_thread, NULL);
 }
 
-void servermap_add_client(Client *client)
+void servermap_delete_extra_data(void *ext)
 {
-	pthread_create(&client->map_thread, NULL, &map_thread, client);
+	MapBlockExtraData *extra = ext;
+
+	if (extra) {
+		ITERATE_LIST(&extra->clients, pair) free(pair->key);
+		list_clear(&extra->clients);
+		free(extra->data);
+		free(extra);
+	}
+}
+
+void servermap_deinit()
+{
+	servermap.cancel = true;
+	pthread_join(servermap.thread, NULL);
+	sqlite3_close(servermap.db);
 }

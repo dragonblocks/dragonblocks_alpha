@@ -1,8 +1,9 @@
 # Dragonblocks alpha
 
-A multiplayer voxelgame for POSIX.1-2008 systems.
+A multiplayer voxelgame for POSIX systems.
 
 ## Usage
+
 ```bash
 ./DragonblocksServer <port>
 ./Dragonblocks <address> <port>
@@ -28,4 +29,10 @@ The client depends on GLFW3, OpenGL and GLEW.
 
 ```bash
 sudo apt install libgl1-mesa-dri libglfw3 libglew2.1
+```
+
+The server depends on SQLite3.
+
+```bash
+sudo apt install libsqlite3-0
 ```

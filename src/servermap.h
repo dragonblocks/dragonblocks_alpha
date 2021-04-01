@@ -3,8 +3,15 @@
 
 #include "server.h"
 
-void servermap_init(Server *srv);
+typedef struct
+{
+	List clients;
+	char *data;
+	size_t size;
+} MapBlockExtraData;
 
-void servermap_add_client(Client *client);
+void servermap_init(Server *srv);
+void servermap_deinit();
+void servermap_delete_extra_data(void *ext);
 
 #endif

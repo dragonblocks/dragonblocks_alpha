@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <unistd.h>
 #include "client.h"
 #include "clientmap.h"
 #include "types.h"
@@ -34,12 +35,45 @@ static bool auth_handler(Client *client, bool good)
 
 static bool block_handler(Client *client, bool good)
 {
-	MapBlock *block;
-	if (! map_deserialize_block(client->fd, client->map, &block, ! good))
+	v3s32 pos;
+
+	if (! read_v3s32(client->fd, &pos))
 		return false;
+
+	u64 size;
+
+	if (! read_u64(client->fd, &size))
+		return false;
+
+	char data[size];
+	size_t n_read_total = 0;
+	int n_read;
+	while (n_read_total < size) {
+		if ((n_read = read(client->fd, data + n_read_total, size - n_read_total)) == -1) {
+			perror("read");
+			return false;
+		}
+		n_read_total += n_read;
+	}
+
+	MapBlock *block;
+
+	if (good)
+		block = map_get_block(client->map, pos, true);
+	else
+		block = map_allocate_block(pos);
+
+	if (block->state != MBS_CREATED)
+		map_clear_meta(block);
+
+	bool ret = map_deserialize_block(block, data, size);
+
 	if (good)
 		clientmap_block_changed(block);
-	return true;
+	else
+		map_free_block(block);
+
+	return ret;
 }
 
 CommandHandler command_handlers[CLIENT_COMMAND_COUNT] = {

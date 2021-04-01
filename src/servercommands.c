@@ -25,14 +25,10 @@ static bool auth_handler(Client *client, bool good)
 
 	pthread_rwlock_wrlock(&client->server->players_rwlck);
 	u8 success = list_put(&client->server->players, name, client);
-	pthread_rwlock_unlock(&client->server->players_rwlck);
-
-	printf("Authentication %s: %s -> %s\n", success ? "success" : "failure", client->address, name);
 
 	if (success) {
 		client->name = name;
 		client->state = CS_ACTIVE;
-		servermap_add_client(client);
 	} else {
 		free(name);
 	}
@@ -40,6 +36,10 @@ static bool auth_handler(Client *client, bool good)
 	pthread_mutex_lock(&client->mtx);
 	bool ret = write_u32(client->fd, CC_AUTH) && write_u8(client->fd, success);
 	pthread_mutex_unlock(&client->mtx);
+
+	pthread_rwlock_unlock(&client->server->players_rwlck);
+
+	printf("Authentication %s: %s -> %s\n", success ? "success" : "failure", client->address, name);
 
 	return ret;
 }

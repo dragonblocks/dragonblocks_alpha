@@ -3,7 +3,6 @@
 
 #include <stdbool.h>
 #include <pthread.h>
-#include <stdio.h>
 #include "array.h"
 #include "list.h"
 #include "node.h"
@@ -20,13 +19,14 @@ typedef struct
 typedef enum
 {
 	MBS_CREATED,
-	MBS_INITIALIZING,
 	MBS_READY,
-	MBS_UNSENT,
-	MBS_SENDING,
+	MBS_MODIFIED,
+	MBS_PROCESSING,
 } MapBlockState;
 
 typedef MapNode MapBlockData[16][16][16];
+
+typedef u64 MapBlockHeader;
 
 typedef struct
 {
@@ -53,20 +53,20 @@ typedef struct
 } Map;
 
 Map *map_create();
-void map_delete(Map *map);
+void map_delete(Map *map, void (*callback)(void *extra));
 
 MapSector *map_get_sector_raw(Map *map, size_t idx);
 MapBlock *map_get_block_raw(MapSector *sector, size_t idx);
 MapSector *map_get_sector(Map *map, v2s32 pos, bool create);
 MapBlock *map_get_block(Map *map, v3s32 pos, bool create);
 
+MapBlock *map_allocate_block(v3s32 pos);
+void map_clear_meta(MapBlock *block);
 void map_free_block(MapBlock *block);
 
 bool map_deserialize_node(int fd, MapNode *buf);
-bool map_serialize_block(FILE *file, MapBlock *block);
-bool map_deserialize_block(int fd, Map *map, MapBlock **blockptr, bool dummy);
-bool map_serialize(FILE *file, Map *map);
-void map_deserialize(int fd, Map *map);
+void map_serialize_block(MapBlock *block, char **dataptr, size_t *sizeptr);
+bool map_deserialize_block(MapBlock *block, const char *data, size_t size);
 
 v3s32 map_node_to_block_pos(v3s32 pos, v3u8 *offset);
 
