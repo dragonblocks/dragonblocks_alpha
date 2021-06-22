@@ -15,7 +15,7 @@ or alternatively:
 ./singleplayer.sh
 ```
 
-The server will save the map to a file named "map" in the directory it is run in. It will also load the map from there at startup, given that the file exists.
+The server stores the map in map.sqlite (in the current directory).
 
 Interrupt handlers for SIGINT und SIGTERM are implemented.
 
