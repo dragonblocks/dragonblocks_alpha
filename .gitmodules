@@ -4,3 +4,6 @@
 [submodule "deps/perlin"]
 	path = deps/perlin
 	url = https://github.com/czinn/perlin
+[submodule "deps/stb"]
+	path = deps/stb
+	url = https://github.com/nothings/stb

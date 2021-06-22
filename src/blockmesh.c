@@ -1,53 +1,54 @@
 #include "blockmesh.h"
+#include "clientnode.h"
 
-static v3f vpos[6][6] = {
+Vertex cube_vertices[6][6] = {
 	{
-		{-0.5f, -0.5f, -0.5f},
-		{+0.5f, -0.5f, -0.5f},
-		{+0.5f, +0.5f, -0.5f},
-		{+0.5f, +0.5f, -0.5f},
-		{-0.5f, +0.5f, -0.5f},
-		{-0.5f, -0.5f, -0.5f},
+		{-0.5, -0.5, -0.5, +0.0, +0.0},
+		{+0.5, -0.5, -0.5, +1.0, +0.0},
+		{+0.5, +0.5, -0.5, +1.0, +1.0},
+		{+0.5, +0.5, -0.5, +1.0, +1.0},
+		{-0.5, +0.5, -0.5, +0.0, +1.0},
+		{-0.5, -0.5, -0.5, +0.0, +0.0},
 	},
 	{
-		{-0.5f, -0.5f, +0.5f},
-		{+0.5f, +0.5f, +0.5f},
-		{+0.5f, -0.5f, +0.5f},
-		{+0.5f, +0.5f, +0.5f},
-		{-0.5f, -0.5f, +0.5f},
-		{-0.5f, +0.5f, +0.5f},
+		{-0.5, -0.5, +0.5, +0.0, +0.0},
+		{+0.5, +0.5, +0.5, +1.0, +1.0},
+		{+0.5, -0.5, +0.5, +1.0, +0.0},
+		{+0.5, +0.5, +0.5, +1.0, +1.0},
+		{-0.5, -0.5, +0.5, +0.0, +0.0},
+		{-0.5, +0.5, +0.5, +0.0, +1.0},
 	},
 	{
-		{-0.5f, +0.5f, +0.5f},
-		{-0.5f, -0.5f, -0.5f},
-		{-0.5f, +0.5f, -0.5f},
-		{-0.5f, -0.5f, -0.5f},
-		{-0.5f, +0.5f, +0.5f},
-		{-0.5f, -0.5f, +0.5f},
+		{-0.5, +0.5, +0.5, +1.0, +1.0},
+		{-0.5, -0.5, -0.5, +0.0, +0.0},
+		{-0.5, +0.5, -0.5, +0.0, +1.0},
+		{-0.5, -0.5, -0.5, +0.0, +0.0},
+		{-0.5, +0.5, +0.5, +1.0, +1.0},
+		{-0.5, -0.5, +0.5, +1.0, +0.0},
 	},
 	{
-		{+0.5f, +0.5f, +0.5f},
-		{+0.5f, +0.5f, -0.5f},
-		{+0.5f, -0.5f, -0.5f},
-		{+0.5f, -0.5f, -0.5f},
-		{+0.5f, -0.5f, +0.5f},
-		{+0.5f, +0.5f, +0.5f},
+		{+0.5, +0.5, +0.5, +1.0, +1.0},
+		{+0.5, +0.5, -0.5, +0.0, +1.0},
+		{+0.5, -0.5, -0.5, +0.0, +0.0},
+		{+0.5, -0.5, -0.5, +0.0, +0.0},
+		{+0.5, -0.5, +0.5, +1.0, +0.0},
+		{+0.5, +0.5, +0.5, +1.0, +1.0},
 	},
 	{
-		{-0.5f, -0.5f, -0.5f},
-		{+0.5f, -0.5f, -0.5f},
-		{+0.5f, -0.5f, +0.5f},
-		{+0.5f, -0.5f, +0.5f},
-		{-0.5f, -0.5f, +0.5f},
-		{-0.5f, -0.5f, -0.5f},
+		{-0.5, -0.5, -0.5, +0.0, +1.0},
+		{+0.5, -0.5, -0.5, +1.0, +1.0},
+		{+0.5, -0.5, +0.5, +1.0, +0.0},
+		{+0.5, -0.5, +0.5, +1.0, +0.0},
+		{-0.5, -0.5, +0.5, +0.0, +0.0},
+		{-0.5, -0.5, -0.5, +0.0, +1.0},
 	},
 	{
-		{-0.5f, +0.5f, -0.5f},
-		{+0.5f, +0.5f, -0.5f},
-		{+0.5f, +0.5f, +0.5f},
-		{+0.5f, +0.5f, +0.5f},
-		{-0.5f, +0.5f, +0.5f},
-		{-0.5f, +0.5f, -0.5f},
+		{-0.5, +0.5, -0.5, +0.0, +1.0},
+		{+0.5, +0.5, -0.5, +1.0, +1.0},
+		{+0.5, +0.5, +0.5, +1.0, +0.0},
+		{+0.5, +0.5, +0.5, +1.0, +0.0},
+		{-0.5, +0.5, +0.5, +0.0, +0.0},
+		{-0.5, +0.5, -0.5, +0.0, +1.0},
 	},
 };
 
@@ -60,44 +61,41 @@ static v3s8 fdir[6] = {
 	{+0, +1, +0},
 };
 
-#define GNODDEF(block, x, y, z) node_definitions[block->data[x][y][z].type]
+#define VISIBLE(block, x, y, z) node_definitions[block->data[x][y][z].type].visible
 #define VALIDPOS(pos) (pos.x >= 0 && pos.x < 16 && pos.y >= 0 && pos.y < 16 && pos.z >= 0 && pos.z < 16)
 
-static Array make_vertices(MapBlock *block)
+static VertexBuffer make_vertices(MapBlock *block)
 {
-	Array vertices = array_create(sizeof(Vertex));
+	VertexBuffer buffer = vertexbuffer_create();
 
 	ITERATE_MAPBLOCK {
-		NodeDefintion *def = &GNODDEF(block, x, y, z);
-		if (def->visible) {
-			v3u8 pos = {x, y, z};
+		if (VISIBLE(block, x, y, z)) {
 			v3f offset = {x + 8.5f, y + 8.5f, z + 8.5f};
-			v3f color = get_node_color(def);
+
+			vertexbuffer_set_texture(&buffer, client_node_definitions[block->data[x][y][z].type].texture);
+
 			for (int f = 0; f < 6; f++) {
-				v3s8 *noff = &fdir[f];
 				v3s8 npos = {
-					pos.x + noff->x,
-					pos.y + noff->y,
-					pos.z + noff->z,
+					x + fdir[f].x,
+					y + fdir[f].y,
+					z + fdir[f].z,
 				};
-				if (! VALIDPOS(npos) || ! GNODDEF(block, npos.x, npos.y, npos.z).visible) {
+
+				if (! VALIDPOS(npos) || ! VISIBLE(block, npos.x, npos.y, npos.z)) {
 					for (int v = 0; v < 6; v++) {
-						Vertex vertex = {
-							vpos[f][v].x + offset.x,
-							vpos[f][v].y + offset.y,
-							vpos[f][v].z + offset.z,
-							color.x,
-							color.y,
-							color.z,
-						};
-						array_append(&vertices, &vertex);
+						Vertex vertex = cube_vertices[f][v];
+						vertex.x += offset.x;
+						vertex.y += offset.y;
+						vertex.z += offset.z;
+
+						vertexbuffer_add_vertex(&buffer, &vertex);
 					}
 				}
 			}
 		}
 	}
 
-	return vertices;
+	return buffer;
 }
 
 #undef GNODDEF
@@ -105,17 +103,7 @@ static Array make_vertices(MapBlock *block)
 
 void make_block_mesh(MapBlock *block, Scene *scene)
 {
-	Array vertices = make_vertices(block);
-	Mesh *mesh = NULL;
-
-	if (vertices.siz > 0) {
-		mesh = mesh_create(vertices.ptr, vertices.siz);
-		mesh->pos = (v3f) {block->pos.x * 16.0f - 8.0f, block->pos.y * 16.0f - 8.0f, block->pos.z * 16.0f - 8.0f};
-		mesh_transform(mesh);
-		scene_add_mesh(scene, mesh);
-	}
-
 	if (block->extra)
-		((Mesh *) block->extra)->remove = true;
-	block->extra = mesh;
+		((MeshObject *) block->extra)->remove = true;
+	block->extra = meshobject_create(make_vertices(block), scene, (v3f) {block->pos.x * 16.0f - 8.0f, block->pos.y * 16.0f - 8.0f, block->pos.z * 16.0f - 8.0f});
 }

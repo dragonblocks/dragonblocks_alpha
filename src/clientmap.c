@@ -17,10 +17,8 @@ static void set_block_ready(void *block)
 	((MapBlock *) block)->state = MBS_READY;
 }
 
-static void *meshgen_thread(void *unused)
+static void *meshgen_thread(__attribute__((unused)) void *unused)
 {
-	(void) unused;
-
 	while (! meshgen.cancel) {
 		MapBlock *block;
 		if ((block = dequeue_callback(meshgen.queue, &set_block_ready)))
@@ -36,13 +34,19 @@ void clientmap_init(Client *cli)
 {
 	client = cli;
 	meshgen.queue = create_queue();
+}
+
+void clientmap_start_meshgen()
+{
 	pthread_create(&meshgen.thread, NULL, &meshgen_thread, NULL);
 }
 
 void clientmap_deinit()
 {
 	meshgen.cancel = true;
-	pthread_join(meshgen.thread, NULL);
+	delete_queue(meshgen.queue);
+	if (meshgen.thread)
+		pthread_join(meshgen.thread, NULL);
 }
 
 void clientmap_block_changed(MapBlock *block)

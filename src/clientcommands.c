@@ -4,10 +4,8 @@
 #include "clientmap.h"
 #include "types.h"
 
-static bool disconnect_handler(Client *client, bool good)
+static bool disconnect_handler(__attribute__((unused)) Client *client, bool good)
 {
-	(void) client;
-
 	if (good)
 		client_disconnect(false, NULL);
 	return true;

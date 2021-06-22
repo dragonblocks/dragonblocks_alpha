@@ -25,6 +25,7 @@ typedef struct
 Array array_create(size_t membsiz);
 void array_insert(Array *array, void *elem, size_t idx);
 void array_append(Array *array, void *elem);
+void array_copy(Array *array, void **ptr, size_t *count);
 ArraySearchResult array_search(Array *array, void *search);
 
 #endif

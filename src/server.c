@@ -89,6 +89,11 @@ static void server_accept_client()
 	printf("Connected %s\n", client->address);
 }
 
+static void list_disconnect_client(void *key, __attribute__((unused)) void *value, __attribute__((unused)) void *unused)
+{
+	server_disconnect_client(key, DISCO_NO_REMOVE | DISCO_NO_MESSAGE, "");
+}
+
 void server_start(int fd)
 {
 	server.sockfd = fd;
@@ -108,8 +113,7 @@ void server_start(int fd)
 	servermap_deinit();
 
 	pthread_rwlock_wrlock(&server.clients_rwlck);
-	ITERATE_LIST(&server.clients, pair) server_disconnect_client(pair->key, DISCO_NO_REMOVE | DISCO_NO_MESSAGE, "");
-	list_clear(&server.clients);
+	list_clear_func(&server.clients, &list_disconnect_client, NULL);
 	pthread_rwlock_unlock(&server.clients_rwlck);
 	pthread_rwlock_wrlock(&server.players_rwlck);
 	list_clear(&server.players);

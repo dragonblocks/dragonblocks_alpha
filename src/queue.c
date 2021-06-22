@@ -13,6 +13,7 @@ void delete_queue(Queue *queue)
 {
 	pthread_mutex_destroy(&queue->mtx);
 	list_clear(&queue->list);
+	free(queue);
 }
 
 void enqueue(Queue *queue, void *elem)

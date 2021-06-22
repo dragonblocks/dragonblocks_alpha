@@ -11,6 +11,7 @@
 #include <GLFW/glfw3.h>
 #include "client.h"
 #include "clientmap.h"
+#include "clientnode.h"
 #include "signal.h"
 #include "shaders.h"
 #include "util.h"
@@ -33,10 +34,8 @@ void client_disconnect(bool send, const char *detail)
 
 #include "network.c"
 
-static void *reciever_thread(void *unused)
+static void *reciever_thread(__attribute__((unused)) void *unused)
 {
-	(void) unused;
-
 	handle_packets(&client);
 
 	if (errno != EINTR)
@@ -83,19 +82,14 @@ static void client_loop()
 
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 
-	const char *shader_path;
-
-#ifdef RELEASE
-	shader_path = "shaders";
-#else
-	shader_path = "../shaders";
-#endif
-
-	ShaderProgram *prog = create_shader_program(shader_path);
+	ShaderProgram *prog = create_shader_program(RESSOURCEPATH "shaders");
 	if (! prog) {
 		fprintf(stderr, "Failed to create shader program\n");
 		return;
 	}
+
+	init_client_node_definitions();
+	clientmap_start_meshgen();
 
 	mat4x4 view, projection;
 

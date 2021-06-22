@@ -7,8 +7,6 @@
 #include "map.h"
 #include "util.h"
 
-#define CMPBOUNDS(x) x == 0 ? 0 : x > 0 ? 1 : -1
-
 static s8 sector_compare(void *hash, void *sector)
 {
 	s64 d = *((u64 *) hash) - (*(MapSector **) sector)->hash;

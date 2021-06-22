@@ -47,6 +47,14 @@ void array_append(Array *array, void *elem)
 	memcpy((char *) array->ptr + oldsiz * array->membsiz, elem, array->membsiz);
 }
 
+void array_copy(Array *array, void **ptr, size_t *count)
+{
+	*count = array->siz;
+	size_t size = array->siz * array->membsiz;
+	*ptr = malloc(size);
+	memcpy(*ptr, array->ptr, size);
+}
+
 ArraySearchResult array_search(Array *array, void *search)
 {
 	assert(array->cmp);

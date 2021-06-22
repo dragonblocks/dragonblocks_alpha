@@ -24,6 +24,14 @@ static void initialize_block(MapBlock *block)
 	block->state = MBS_MODIFIED;
 }
 
+static void reset_client_block(void *key, __attribute__((unused)) void *value, void *block)
+{
+	Client *client = list_get(&server->players, key);
+	if (client)
+		list_delete(&client->sent_blocks, block);
+	free(key);
+}
+
 static void reset_block(MapBlock *block)
 {
 	MapBlockExtraData *extra = block->extra;
@@ -41,12 +49,7 @@ static void reset_block(MapBlock *block)
 
 	save_block(servermap.db, block);
 
-	ITERATE_LIST(&extra->clients, pair) {
-		Client *client = list_get(&server->players, pair->key);
-		if (client)
-			list_delete(&client->sent_blocks, block);
-		free(pair->key);
-	}
+	list_clear_func(&extra->clients, &reset_client_block, block);
 	list_clear(&extra->clients);
 
 	block->state = MBS_READY;
@@ -129,10 +132,8 @@ static void map_step()
 	pthread_rwlock_unlock(&server->players_rwlck);
 }
 
-static void *map_thread(void *unused)
+static void *map_thread(__attribute__((unused)) void *unused)
 {
-	(void) unused;
-
 	servermap.db = open_mapdb("map.sqlite");
 
 	while (! servermap.cancel)
@@ -149,13 +150,17 @@ void servermap_init(Server *srv)
 	pthread_create(&servermap.thread, NULL, &map_thread, NULL);
 }
 
+static void list_delete_extra_data(void *key, __attribute__((unused)) void *value, __attribute__((unused)) void *unused)
+{
+	free(key);
+}
+
 void servermap_delete_extra_data(void *ext)
 {
 	MapBlockExtraData *extra = ext;
 
 	if (extra) {
-		ITERATE_LIST(&extra->clients, pair) free(pair->key);
-		list_clear(&extra->clients);
+		list_clear_func(&extra->clients, &list_delete_extra_data, NULL);
 		free(extra->data);
 		free(extra);
 	}

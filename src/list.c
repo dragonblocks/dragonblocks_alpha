@@ -22,8 +22,15 @@ List list_create(ListComparator cmp)
 
 void list_clear(List *list)
 {
+	list_clear_func(list, NULL, NULL);
+}
+
+void list_clear_func(List *list, void (*func)(void *key, void *value, void *arg), void *arg)
+{
 	for (ListPair *pair = list->first; pair != NULL;) {
 		ListPair *next = pair->next;
+		if (func)
+			func(pair->key, pair->value, arg);
 		free(pair);
 		pair = next;
 	}
@@ -48,6 +55,16 @@ bool list_put(List *list, void *key, void *value)
 	}
 	*pairptr = make_pair(key, value);
 	return true;
+}
+
+void *list_get_cached(List *list, void *key, void *(*provider)(void *key))
+{
+	ListPair **pairptr;
+	for (pairptr = &list->first; *pairptr != NULL; pairptr = &(*pairptr)->next) {
+		if (list->cmp((*pairptr)->key, key))
+			return (*pairptr)->value;
+	}
+	return (*pairptr = make_pair(key, provider(key)))->value;
 }
 
 void list_set(List *list, void *key, void *value)

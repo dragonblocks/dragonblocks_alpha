@@ -9,6 +9,12 @@
 #include "network.h"
 #include "scene.h"
 
+#ifdef RELEASE
+	#define RESSOURCEPATH ""
+#else
+	#define RESSOURCEPATH "../"
+#endif
+
 typedef struct Client
 {
 	int fd;

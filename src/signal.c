@@ -11,9 +11,8 @@ static void interrupt_handler(int sig)
 	fprintf(stderr, "%s\n", strsignal(sig));
 }
 
-static void silent_handler(int sig)
+static void silent_handler(__attribute__((unused)) int sig)
 {
-	(void) sig;
 }
 
 static struct sigaction sigact_interrupt = {0};
