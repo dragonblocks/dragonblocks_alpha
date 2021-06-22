@@ -3,19 +3,19 @@
 GNU make is used for compiling. The code and the Makefile are located in the src/ directory.
 
 ## Dependencies
-To build anything you need g++ and GNU make. The ZLib development library is needed as well.
+To build anything you need gcc and GNU make. The ZLib development library is needed as well.
 
 ```bash
 sudo apt install build-essential make zlib1g-dev
 ```
 
-The development versions OpenGL, GLFW3, GLEW are required to build the client.
+The development versions of OpenGL, GLFW3, GLEW are required to build the client.
 
 ```bash
 sudo apt install libgl1-mesa-dev libglfw3-dev libglew-dev
 ```
 
-For building the server, the SQLite3 development library is required.
+For building the server the SQLite3 development library is required.
 
 ```bash
 sudo apt install libsqlite3-dev
