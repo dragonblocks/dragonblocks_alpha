@@ -21,7 +21,7 @@ Interrupt handlers for SIGINT und SIGTERM are implemented.
 
 ## Controls
 
-Use W, A, S and D to move forward / left / backward / right.
+Use W, A, S and D to fly forward / left / backward / right and Space / Shift to fly up / down.
 
 ## Dependencies
 
