@@ -1,6 +1,6 @@
 COMMON = array.o list.o map.o signal.o util.o types.o node.o queue.o
 SERVER = $(COMMON) server.o servercommands.o servermap.o perlin.o facecache.o mapgen.o mapdb.o
-CLIENT = $(COMMON) camera.o client.o clientcommands.o clientmap.o clientnode.o mesh.o scene.o shaders.o blockmesh.o texture.o
+CLIENT = $(COMMON) camera.o client.o clientcommands.o clientmap.o clientnode.o input.o mesh.o scene.o shaders.o blockmesh.o texture.o
 LIBRARIES = -lpthread -lm -lz
 FLAGS = -g -fmax-errors=4
 

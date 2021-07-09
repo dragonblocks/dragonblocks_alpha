@@ -24,6 +24,7 @@ typedef struct Client
 	Map *map;
 	Scene *scene;
 	v3f pos;
+	double yaw, pitch;
 } Client;
 
 void client_disconnect(bool send, const char *detail);

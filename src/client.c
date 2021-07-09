@@ -13,6 +13,7 @@
 #include "client.h"
 #include "clientmap.h"
 #include "clientnode.h"
+#include "input.h"
 #include "signal.h"
 #include "shaders.h"
 #include "util.h"
@@ -76,6 +77,7 @@ static void client_loop()
 	}
 
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	ShaderProgram *prog = create_shader_program(RESSOURCEPATH "shaders");
 	if (! prog) {
@@ -89,43 +91,20 @@ static void client_loop()
 	glUseProgram(prog->id);
 
 	init_camera(window, prog);
+
+	set_camera_position(client.pos);
+	set_camera_angle(client.yaw, client.pitch);
+
 	set_window_size(width, height);
 
-	bool pos_changed = true;
+	init_input(&client, window);
 
 	while (! glfwWindowShouldClose(window) && client.state != CS_DISCONNECTED && ! interrupted) {
 		glEnable(GL_DEPTH_TEST);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClearColor(0.52941176470588f, 0.8078431372549f, 0.92156862745098f, 1.0f);
 
-		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-			pos_changed = true;
-			client.pos.z -= 1.0f;
-		} else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-			pos_changed = true;
-			client.pos.z += 1.0f;
-		} if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-			pos_changed = true;
-			client.pos.x -= 1.0f;
-		} else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-			pos_changed = true;
-			client.pos.x += 1.0f;
-		} if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-			pos_changed = true;
-			client.pos.y -= 1.0f;
-		} else if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-			pos_changed = true;
-			client.pos.y += 1.0f;
-		}
-
-		if (pos_changed) {
-			set_camera_position(client.pos);
-			pos_changed = false;
-
-			pthread_mutex_lock(&client.mtx);
-			(void) (write_u32(client.fd, SC_POS) && write_v3f32(client.fd, client.pos));
-			pthread_mutex_unlock(&client.mtx);
-		}
+		process_input();
 
 		scene_render(client.scene, prog);
 
@@ -186,6 +165,7 @@ static void client_start(int fd)
 	client.map = map_create();
 	client.scene = scene_create();
 	client.pos = (v3f) {0.0f, 0.0f, 0.0f};
+	client.yaw = client.pitch = 0.0;
 
 	clientmap_init(&client);
 
