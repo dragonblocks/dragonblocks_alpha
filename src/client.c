@@ -9,6 +9,7 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
+#include "camera.h"
 #include "client.h"
 #include "clientmap.h"
 #include "clientnode.h"
@@ -42,12 +43,6 @@ static void *reciever_thread(__attribute__((unused)) void *unused)
 		client_disconnect(false, "network error");
 
 	return NULL;
-}
-
-static void update_view_matrix(ShaderProgram *prog, mat4x4 view)
-{
-	mat4x4_translate(view, -client.pos.x, -client.pos.y, -client.pos.z);
-	glUniformMatrix4fv(prog->loc_view, 1, GL_FALSE, view[0]);
 }
 
 static void client_loop()
@@ -91,21 +86,17 @@ static void client_loop()
 	init_client_node_definitions();
 	clientmap_start_meshgen();
 
-	mat4x4 view, projection;
-
-	update_view_matrix(prog, view);
-	mat4x4_perspective(projection, 86.1f / 180.0f * M_PI, (float) width / (float) height, 0.01f, 1000.0f);
-
 	glUseProgram(prog->id);
-	glUniformMatrix4fv(prog->loc_view, 1, GL_FALSE, view[0]);
-	glUniformMatrix4fv(prog->loc_projection, 1, GL_FALSE, projection[0]);
+
+	init_camera(window, prog);
+	set_window_size(width, height);
+
+	bool pos_changed = true;
 
 	while (! glfwWindowShouldClose(window) && client.state != CS_DISCONNECTED && ! interrupted) {
 		glEnable(GL_DEPTH_TEST);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClearColor(0.52941176470588f, 0.8078431372549f, 0.92156862745098f, 1.0f);
-
-		bool pos_changed = false;
 
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
 			pos_changed = true;
@@ -128,7 +119,9 @@ static void client_loop()
 		}
 
 		if (pos_changed) {
-			update_view_matrix(prog, view);
+			set_camera_position(client.pos);
+			pos_changed = false;
+
 			pthread_mutex_lock(&client.mtx);
 			(void) (write_u32(client.fd, SC_POS) && write_v3f32(client.fd, client.pos));
 			pthread_mutex_unlock(&client.mtx);
