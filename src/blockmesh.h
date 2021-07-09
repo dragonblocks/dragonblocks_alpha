@@ -4,6 +4,6 @@
 #include "map.h"
 #include "scene.h"
 
-void make_block_mesh(MapBlock *block, Scene *scene);
+void make_block_mesh(MapBlock *block, Map *map, Scene *scene);
 
 #endif

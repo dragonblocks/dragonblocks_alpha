@@ -71,7 +71,7 @@ void list_set(List *list, void *key, void *value)
 {
 	ListPair **pairptr;
 	for (pairptr = &list->first; *pairptr != NULL; pairptr = &(*pairptr)->next) {
-		if (strcmp((*pairptr)->key, key) == 0)
+		if (list->cmp((*pairptr)->key, key))
 			break;
 	}
 	*pairptr = make_pair(key, value);
