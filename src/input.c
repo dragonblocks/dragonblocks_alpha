@@ -21,7 +21,7 @@ static void cursor_pos_callback(__attribute__((unused)) GLFWwindow* window, doub
 	input.client->player.yaw += (f32) delta_x * M_PI / 180.0f / 8.0f;
 	input.client->player.pitch -= (f32) delta_y * M_PI / 180.0f / 8.0f;
 
-	input.client->player.pitch = fmax(fmin(input.client->player.pitch, 89.0f), -89.0f);
+	input.client->player.pitch = fmax(fmin(input.client->player.pitch, M_PI / 2.0f - 0.01f), -M_PI / 2.0f + 0.01f);
 
 	set_camera_angle(input.client->player.yaw, input.client->player.pitch);
 }
