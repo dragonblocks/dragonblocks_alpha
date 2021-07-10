@@ -33,7 +33,7 @@ void set_camera_position(v3f pos)
 	update_camera();
 }
 
-void set_camera_angle(float yaw, float pitch)
+void set_camera_angle(f32 yaw, f32 pitch)
 {
 	camera.front[0] = movement_dirs.front[0] = cos(yaw) * cos(pitch);
 	camera.front[1] = sin(pitch);

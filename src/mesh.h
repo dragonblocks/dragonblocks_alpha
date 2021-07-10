@@ -38,7 +38,7 @@ typedef struct
 typedef struct
 {
 	v3f pos, rot, scale;
-	float angle;
+	f32 angle;
 	mat4x4 transform;
 	bool remove;
 	Mesh **meshes;

@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include "servercommands.h"
 #include "clientcommands.h"
+#include "clientplayer.h"
 #include "map.h"
 #include "network.h"
 #include "scene.h"
@@ -23,8 +24,7 @@ typedef struct Client
 	char *name;
 	Map *map;
 	Scene *scene;
-	v3f pos;
-	double yaw, pitch;
+	ClientPlayer player;
 } Client;
 
 void client_disconnect(bool send, const char *detail);

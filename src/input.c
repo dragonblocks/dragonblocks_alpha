@@ -18,17 +18,17 @@ static void cursor_pos_callback(__attribute__((unused)) GLFWwindow* window, doub
 	last_x = current_x;
 	last_y = current_y;
 
-	input.client->yaw += (float) delta_x * M_PI / 180.0f / 8.0f;
-	input.client->pitch -= (float) delta_y * M_PI / 180.0f / 8.0f;
+	input.client->player.yaw += (f32) delta_x * M_PI / 180.0f / 8.0f;
+	input.client->player.pitch -= (f32) delta_y * M_PI / 180.0f / 8.0f;
 
-	input.client->pitch = fmax(fmin(input.client->pitch, 89.0f), -89.0f);
+	input.client->player.pitch = fmax(fmin(input.client->player.pitch, 89.0f), -89.0f);
 
-	set_camera_angle(input.client->yaw, input.client->pitch);
+	set_camera_angle(input.client->player.yaw, input.client->player.pitch);
 }
 
 static bool move(int forward, int backward, vec3 speed)
 {
-	float sign;
+	f32 sign;
 
 	if (glfwGetKey(input.window, forward) == GLFW_PRESS)
 		sign = +1.0f;
@@ -37,9 +37,9 @@ static bool move(int forward, int backward, vec3 speed)
 	else
 		return false;
 
-	input.client->pos.x += speed[0] * sign;
-	input.client->pos.y += speed[1] * sign;
-	input.client->pos.z += speed[2] * sign;
+	input.client->player.pos.x += speed[0] * sign;
+	input.client->player.pos.y += speed[1] * sign;
+	input.client->player.pos.z += speed[2] * sign;
 
 	return true;
 }
@@ -51,11 +51,8 @@ void process_input()
 	bool moved_right = move(GLFW_KEY_D, GLFW_KEY_A, movement_dirs.right);
 
 	if (moved_forward || moved_up || moved_right) {
-		set_camera_position(input.client->pos);
-
-		pthread_mutex_lock(&input.client->mtx);
-		(void) (write_u32(input.client->fd, SC_POS) && write_v3f32(input.client->fd, input.client->pos));
-		pthread_mutex_unlock(&input.client->mtx);
+		set_camera_position(input.client->player.pos);
+		clientplayer_send_pos(&input.client->player);
 	}
 }
 

@@ -92,8 +92,8 @@ static void client_loop()
 
 	init_camera(window, prog);
 
-	set_camera_position(client.pos);
-	set_camera_angle(client.yaw, client.pitch);
+	set_camera_position(client.player.pos);
+	set_camera_angle(client.player.yaw, client.player.pitch);
 
 	set_window_size(width, height);
 
@@ -164,8 +164,9 @@ static void client_start(int fd)
 	client.name = NULL;
 	client.map = map_create();
 	client.scene = scene_create();
-	client.pos = (v3f) {0.0f, 0.0f, 0.0f};
-	client.yaw = client.pitch = 0.0;
+	client.player.client = &client;
+	client.player.pos = (v3f) {0.0f, 0.0f, 0.0f};
+	client.player.yaw = client.player.pitch = 0.0;
 
 	clientmap_init(&client);
 

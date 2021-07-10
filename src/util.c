@@ -54,5 +54,5 @@ v3f html_to_v3f(const char *html)
 {
 	unsigned int r, g, b;
 	sscanf(html, "#%2x%2x%2x", &r, &g, &b);
-	return (v3f) {(float) r / 255.0f, (float) g / 255.0f, (float) b / 255.0f};
+	return (v3f) {(f32) r / 255.0f, (f32) g / 255.0f, (f32) b / 255.0f};
 }
