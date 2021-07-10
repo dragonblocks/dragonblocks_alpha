@@ -44,22 +44,22 @@ static bool collision(ClientPlayer *player)
 void clientplayer_tick(ClientPlayer *player, f64 dtime)
 {
 	v3f old_pos = player->pos;
+	v3f old_velocity = player->velocity;
 
-#define CALC_PHYSICS(pos, velocity, old) \
-	pos += velocity * dtime; \
+	player->velocity.y -= 9.81f * dtime;
+
+#define CALC_PHYSICS(pos, velocity, old_pos, old_velocity) \
+	pos += (velocity + old_velocity) / 2.0f * dtime; \
 	if (collision(player)) { \
-		pos = old; \
+		pos = old_pos; \
 		velocity = 0.0f; \
 	}
 
-	CALC_PHYSICS(player->pos.x, player->velocity.x, old_pos.x)
-	CALC_PHYSICS(player->pos.y, player->velocity.y, old_pos.y)
-	CALC_PHYSICS(player->pos.z, player->velocity.z, old_pos.z)
+	CALC_PHYSICS(player->pos.x, player->velocity.x, old_pos.x, old_velocity.x)
+	CALC_PHYSICS(player->pos.y, player->velocity.y, old_pos.y, old_velocity.y)
+	CALC_PHYSICS(player->pos.z, player->velocity.z, old_pos.z, old_velocity.z)
 
 #undef CALC_PHYSICS
-
-	// gravity
-	player->velocity.y -= 9.81f * dtime;
 
 	if (old_pos.x != player->pos.x || old_pos.y != player->pos.y || old_pos.z != player->pos.z) {
 		clientplayer_send_pos(player);
