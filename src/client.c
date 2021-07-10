@@ -112,7 +112,6 @@ static void client_loop()
 		glEnable(GL_DEPTH_TEST);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClearColor(0.52941176470588f, 0.8078431372549f, 0.92156862745098f, 1.0f);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 		process_input();
 		clientplayer_tick(&client.player, dtime);
