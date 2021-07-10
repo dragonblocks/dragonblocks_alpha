@@ -92,12 +92,14 @@ static void client_loop()
 
 	init_camera(window, prog);
 
-	set_camera_position(client.player.pos);
-	set_camera_angle(client.player.yaw, client.player.pitch);
+	set_camera_position((v3f) {0.0f, 0.0f, 0.0f});
+	set_camera_angle(0.0f, 0.0f);
 
 	set_window_size(width, height);
 
 	init_input(&client, window);
+
+	clientplayer_send_pos(&client.player);
 
 	struct timespec ts, ts_old;
 	clock_gettime(CLOCK_REALTIME, &ts_old);
@@ -172,10 +174,8 @@ static void client_start(int fd)
 	client.name = NULL;
 	client.map = map_create();
 	client.scene = scene_create();
-	client.player.client = &client;
-	client.player.pos = (v3f) {0.0f, 0.0f, 0.0f};
-	client.player.yaw = client.player.pitch = 0.0;
 
+	clientplayer_init(&client);
 	clientmap_init(&client);
 
 	pthread_t recv_thread;

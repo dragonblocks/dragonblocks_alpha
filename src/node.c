@@ -2,9 +2,29 @@
 #include "util.h"
 
 NodeDefintion node_definitions[NODE_UNLOADED] = {
-	{true},
-	{false},
-	{true},
-	{true},
-	{true},
+	// invalid
+	{
+		.visible = true,
+		.solid = true,
+	},
+	// air
+	{
+		.visible = false,
+		.solid = false,
+	},
+	// grass
+	{
+		.visible = true,
+		.solid = true,
+	},
+	// dirt
+	{
+		.visible = true,
+		.solid = true,
+	},
+	// stone
+	{
+		.visible = true,
+		.solid = true,
+	},
 };

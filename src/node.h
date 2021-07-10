@@ -17,6 +17,7 @@ typedef enum
 typedef struct
 {
 	bool visible;
+	bool solid;
 } NodeDefintion;
 
 extern NodeDefintion node_definitions[];
