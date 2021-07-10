@@ -16,7 +16,6 @@ extern struct movement_dirs
 {
 	vec3 front;
 	vec3 right;
-	vec3 up;
 } movement_dirs;
 
 #endif

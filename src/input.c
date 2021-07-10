@@ -29,7 +29,7 @@ static void cursor_pos_callback(__attribute__((unused)) GLFWwindow* window, doub
 static bool move(int forward, int backward, vec3 dir)
 {
 	f32 sign;
-	f32 speed = 10.0f;
+	f32 speed = 4.0f;
 
 	if (glfwGetKey(input.window, forward) == GLFW_PRESS)
 		sign = +1.0f;
@@ -39,7 +39,6 @@ static bool move(int forward, int backward, vec3 dir)
 		return false;
 
 	input.client->player.velocity.x += dir[0] * speed * sign;
-	// input.client->player.velocity.y += dir[1] * speed * sign;
 	input.client->player.velocity.z += dir[2] * speed * sign;
 
 	return true;
@@ -48,12 +47,13 @@ static bool move(int forward, int backward, vec3 dir)
 void process_input()
 {
 	input.client->player.velocity.x = 0.0f;
-	// input.client->player.velocity.y = 0.0f;
 	input.client->player.velocity.z = 0.0f;
 
 	move(GLFW_KEY_W, GLFW_KEY_S, movement_dirs.front);
-	move(GLFW_KEY_SPACE, GLFW_KEY_LEFT_SHIFT, movement_dirs.up);
 	move(GLFW_KEY_D, GLFW_KEY_A, movement_dirs.right);
+
+	if (glfwGetKey(input.window, GLFW_KEY_SPACE) == GLFW_PRESS)
+		clientplayer_jump(&input.client->player);
 }
 
 void init_input(Client *client, GLFWwindow *window)

@@ -52,8 +52,6 @@ void set_camera_angle(f32 yaw, f32 pitch)
 	vec3_mul_cross(camera.up, camera.right, camera.front);
 	vec3_norm(camera.up, camera.up);
 
-	movement_dirs.up[1] = world_up[1];
-
 	update_camera();
 }
 

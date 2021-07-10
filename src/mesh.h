@@ -39,6 +39,7 @@ typedef struct
 {
 	v3f pos, rot, scale;
 	f32 angle;
+	bool visible;
 	mat4x4 transform;
 	bool remove;
 	Mesh **meshes;

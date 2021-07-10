@@ -61,6 +61,7 @@ MeshObject *meshobject_create(VertexBuffer buffer, struct Scene *scene, v3f pos)
 	obj->rot = (v3f) {0.0f, 0.0f, 0.0f};
 	obj->scale = (v3f) {1.0f, 1.0f, 1.0f};
 	obj->angle = 0.0f;
+	obj->visible = true;
 	meshobject_transform(obj);
 
 	qsort(buffer.faces.ptr, buffer.faces.siz, sizeof(Face), &qsort_compare_faces);
@@ -147,6 +148,9 @@ static void mesh_configure(Mesh *mesh)
 
 void meshobject_render(MeshObject *obj, ShaderProgram *prog)
 {
+	if (! obj->visible)
+		return;
+
 	glUniformMatrix4fv(prog->loc_model, 1, GL_FALSE, obj->transform[0]);
 
 	glActiveTexture(GL_TEXTURE0);

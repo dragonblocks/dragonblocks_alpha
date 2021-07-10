@@ -13,7 +13,7 @@ __attribute((constructor)) static void init_face_cache()
 {
 	facecache.size = 0;
 	facecache.positions = array_create(sizeof(v3s32));
-	v3s32 pos = {0};
+	v3s32 pos = {0, 0, 0};
 	array_append(&facecache.positions, &pos);
 	pthread_mutex_init(&facecache.mtx, NULL);
 }
@@ -86,5 +86,5 @@ v3s32 get_face(size_t i, v3s32 *base)
 size_t get_face_count(u32 size)
 {
 	size_t len = 1 + size * 2;
-	return len * len * len;
+	return 1 + len * len * len;
 }
