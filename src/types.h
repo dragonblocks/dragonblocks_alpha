@@ -11,11 +11,16 @@ bool read_full(int fd, char *buffer, size_t size);
 	bool read_ ## type(int fd, type *ptr); \
 	bool write_ ## type(int fd, type val);
 
+#define DEFBOX(type) \
+	typedef struct {v ## type min; v ## type max;} aabb ## type;
+
 #define DEFVEC(type) \
 	typedef struct {type x, y;} v2 ## type; \
 	DEFRW(v2 ## type) \
+	DEFBOX(2 ## type) \
 	typedef struct {type x, y, z;} v3 ## type; \
-	DEFRW(v3 ## type)
+	DEFRW(v3 ## type) \
+	DEFBOX(3 ## type)
 
 #define DEFTYP(from, to) \
 	typedef from to; \
@@ -40,7 +45,11 @@ DEFTYP(double, f64)
 typedef v2f32 v2f;
 typedef v3f32 v3f;
 
+typedef aabb2f32 aabb2f;
+typedef aabb3f32 aabb3f;
+
 #undef DEFRW
+#undef DEFBOX
 #undef DEFVEC
 #undef DEFTYP
 #undef DEFTYPES
