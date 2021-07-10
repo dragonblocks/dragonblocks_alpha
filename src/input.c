@@ -39,7 +39,7 @@ static bool move(int forward, int backward, vec3 dir)
 		return false;
 
 	input.client->player.velocity.x += dir[0] * speed * sign;
-	input.client->player.velocity.y += dir[1] * speed * sign;
+	// input.client->player.velocity.y += dir[1] * speed * sign;
 	input.client->player.velocity.z += dir[2] * speed * sign;
 
 	return true;
@@ -48,7 +48,7 @@ static bool move(int forward, int backward, vec3 dir)
 void process_input()
 {
 	input.client->player.velocity.x = 0.0f;
-	input.client->player.velocity.y = 0.0f;
+	// input.client->player.velocity.y = 0.0f;
 	input.client->player.velocity.z = 0.0f;
 
 	move(GLFW_KEY_W, GLFW_KEY_S, movement_dirs.front);

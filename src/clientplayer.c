@@ -17,6 +17,8 @@ void clientplayer_tick(ClientPlayer *player, f64 dtime)
 	player->pos.y += player->velocity.y * dtime;
 	player->pos.z += player->velocity.z * dtime;
 
+	player->velocity.y -= 9.81f * dtime;
+
 	if (old_pos.x != player->pos.x || old_pos.y != player->pos.y || old_pos.z != player->pos.z) {
 		send_pos(player);
 		set_camera_position(player->pos);
