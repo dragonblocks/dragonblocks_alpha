@@ -23,6 +23,7 @@ Map *map_create()
 {
 	Map *map = malloc(sizeof(Map));
 	pthread_rwlock_init(&map->rwlck, NULL);
+	pthread_rwlock_init(&map->cached_rwlck, NULL);
 	map->sectors = array_create(sizeof(MapSector *));
 	map->sectors.cmp = &sector_compare;
 	map->cached = NULL;
@@ -32,6 +33,7 @@ Map *map_create()
 void map_delete(Map *map, void (*callback)(void *extra))
 {
 	pthread_rwlock_destroy(&map->rwlck);
+	pthread_rwlock_destroy(&map->cached_rwlck);
 	for (size_t s = 0; s < map->sectors.siz; s++) {
 		MapSector *sector = map_get_sector_raw(map, s);
 		for (size_t b = 0; b < sector->blocks.siz; b++) {
@@ -93,8 +95,14 @@ MapSector *map_get_sector(Map *map, v2s32 pos, bool create)
 
 MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 {
-	if (map->cached && map->cached->pos.x == pos.x && map->cached->pos.y == pos.y && map->cached->pos.z == pos.z)
-		return map->cached;
+	MapBlock *cached = NULL;
+
+	pthread_rwlock_rdlock(&map->cached_rwlck);
+	cached = map->cached;
+	pthread_rwlock_unlock(&map->cached_rwlck);
+
+	if (cached && cached->pos.x == pos.x && cached->pos.y == pos.y && cached->pos.z == pos.z)
+		return cached;
 
 	MapSector *sector = map_get_sector(map, (v2s32) {pos.x, pos.z}, create);
 	if (! sector)
@@ -111,8 +119,14 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 
 	if (res.success) {
 		block = map_get_block_raw(sector, res.index);
-		if (block->state < MBS_READY && ! create)
-			block = NULL;
+		if (block->state < MBS_READY) {
+			if (! create)
+				block = NULL;
+		} else {
+			pthread_rwlock_wrlock(&map->cached_rwlck);
+			map->cached = block;
+			pthread_rwlock_unlock(&map->cached_rwlck);
+		}
 	} else if (create) {
 		block = map_allocate_block(pos);
 		array_insert(&sector->blocks, &block, res.index);
@@ -120,7 +134,7 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 
 	pthread_rwlock_unlock(&sector->rwlck);
 
-	return map->cached = block;
+	return block;
 }
 
 MapBlock *map_allocate_block(v3s32 pos)

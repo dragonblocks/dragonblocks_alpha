@@ -50,6 +50,7 @@ typedef struct
 {
 	pthread_rwlock_t rwlck;
 	Array sectors;
+	pthread_rwlock_t cached_rwlck;
 	MapBlock *cached;
 } Map;
 
