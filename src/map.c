@@ -25,6 +25,7 @@ Map *map_create()
 	pthread_rwlock_init(&map->rwlck, NULL);
 	map->sectors = array_create(sizeof(MapSector *));
 	map->sectors.cmp = &sector_compare;
+	map->cached = NULL;
 	return map;
 }
 
@@ -92,6 +93,9 @@ MapSector *map_get_sector(Map *map, v2s32 pos, bool create)
 
 MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 {
+	if (map->cached && map->cached->pos.x == pos.x && map->cached->pos.y == pos.y && map->cached->pos.z == pos.z)
+		return map->cached;
+
 	MapSector *sector = map_get_sector(map, (v2s32) {pos.x, pos.z}, create);
 	if (! sector)
 		return NULL;
@@ -116,7 +120,7 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 
 	pthread_rwlock_unlock(&sector->rwlck);
 
-	return block;
+	return map->cached = block;
 }
 
 MapBlock *map_allocate_block(v3s32 pos)
