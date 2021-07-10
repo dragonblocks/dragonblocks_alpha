@@ -99,12 +99,20 @@ static void client_loop()
 
 	init_input(&client, window);
 
+	struct timespec ts, ts_old;
+	clock_gettime(CLOCK_REALTIME, &ts_old);
+
 	while (! glfwWindowShouldClose(window) && client.state != CS_DISCONNECTED && ! interrupted) {
+		clock_gettime(CLOCK_REALTIME, &ts);
+		f64 dtime = (f64) (ts.tv_sec - ts_old.tv_sec) + (f64) (ts.tv_nsec - ts_old.tv_nsec) / 1000000000.0;
+		ts_old = ts;
+
 		glEnable(GL_DEPTH_TEST);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClearColor(0.52941176470588f, 0.8078431372549f, 0.92156862745098f, 1.0f);
 
 		process_input();
+		clientplayer_tick(&client.player, dtime);
 
 		scene_render(client.scene, prog);
 

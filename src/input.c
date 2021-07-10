@@ -26,9 +26,10 @@ static void cursor_pos_callback(__attribute__((unused)) GLFWwindow* window, doub
 	set_camera_angle(input.client->player.yaw, input.client->player.pitch);
 }
 
-static bool move(int forward, int backward, vec3 speed)
+static bool move(int forward, int backward, vec3 dir)
 {
 	f32 sign;
+	f32 speed = 10.0f;
 
 	if (glfwGetKey(input.window, forward) == GLFW_PRESS)
 		sign = +1.0f;
@@ -37,23 +38,22 @@ static bool move(int forward, int backward, vec3 speed)
 	else
 		return false;
 
-	input.client->player.pos.x += speed[0] * sign;
-	input.client->player.pos.y += speed[1] * sign;
-	input.client->player.pos.z += speed[2] * sign;
+	input.client->player.velocity.x += dir[0] * speed * sign;
+	input.client->player.velocity.y += dir[1] * speed * sign;
+	input.client->player.velocity.z += dir[2] * speed * sign;
 
 	return true;
 }
 
 void process_input()
 {
-	bool moved_forward = move(GLFW_KEY_W, GLFW_KEY_S, movement_dirs.front);
-	bool moved_up = move(GLFW_KEY_SPACE, GLFW_KEY_LEFT_SHIFT, movement_dirs.up);
-	bool moved_right = move(GLFW_KEY_D, GLFW_KEY_A, movement_dirs.right);
+	input.client->player.velocity.x = 0.0f;
+	input.client->player.velocity.y = 0.0f;
+	input.client->player.velocity.z = 0.0f;
 
-	if (moved_forward || moved_up || moved_right) {
-		set_camera_position(input.client->player.pos);
-		clientplayer_send_pos(&input.client->player);
-	}
+	move(GLFW_KEY_W, GLFW_KEY_S, movement_dirs.front);
+	move(GLFW_KEY_SPACE, GLFW_KEY_LEFT_SHIFT, movement_dirs.up);
+	move(GLFW_KEY_D, GLFW_KEY_A, movement_dirs.right);
 }
 
 void init_input(Client *client, GLFWwindow *window)
