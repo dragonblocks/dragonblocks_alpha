@@ -44,6 +44,7 @@ typedef struct
 	bool remove;
 	Mesh **meshes;
 	size_t meshes_count;
+	bool wireframe;
 } MeshObject;
 
 struct Scene;

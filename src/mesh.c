@@ -62,6 +62,7 @@ MeshObject *meshobject_create(VertexBuffer buffer, struct Scene *scene, v3f pos)
 	obj->scale = (v3f) {1.0f, 1.0f, 1.0f};
 	obj->angle = 0.0f;
 	obj->visible = true;
+	obj->wireframe = false;
 	meshobject_transform(obj);
 
 	qsort(buffer.faces.ptr, buffer.faces.siz, sizeof(Face), &qsort_compare_faces);
@@ -155,6 +156,9 @@ void meshobject_render(MeshObject *obj, ShaderProgram *prog)
 
 	glActiveTexture(GL_TEXTURE0);
 
+	if (obj->wireframe)
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
 	for (size_t i = 0; i < obj->meshes_count; i++) {
 		Mesh *mesh = obj->meshes[i];
 
@@ -169,4 +173,7 @@ void meshobject_render(MeshObject *obj, ShaderProgram *prog)
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindVertexArray(0);
+
+	if (obj->wireframe)
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
