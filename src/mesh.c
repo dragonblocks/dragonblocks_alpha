@@ -89,22 +89,23 @@ MeshObject *meshobject_create(VertexBuffer buffer, struct Scene *scene, v3f pos)
 	array_copy(&meshes, (void *) &obj->meshes, &obj->meshes_count);
 	free(meshes.ptr);
 
-	scene_add_object(scene, obj);
+	if (scene)
+		scene_add_object(scene, obj);
 
 	return obj;
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
 
 void meshobject_transform(MeshObject *obj)
 {
 	mat4x4_translate(obj->transform, obj->pos.x, obj->pos.y, obj->pos.z);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 	mat4x4_rotate(obj->transform, obj->transform, obj->rot.x, obj->rot.y, obj->rot.z, obj->angle);
 	mat4x4_scale_aniso(obj->transform, obj->transform, obj->scale.x, obj->scale.y, obj->scale.z);
+#pragma GCC diagnostic pop
 }
 
-#pragma GCC diagnostic pop
 
 void meshobject_delete(MeshObject *obj)
 {
@@ -113,12 +114,16 @@ void meshobject_delete(MeshObject *obj)
 
 		if (mesh->vertices)
 			free(mesh->vertices);
+
 		if (mesh->VAO)
 			glDeleteVertexArrays(1, &mesh->VAO);
+
 		if (mesh->VBO)
 			glDeleteBuffers(1, &mesh->VAO);
+
 		free(mesh);
 	}
+
 	free(obj);
 }
 
@@ -132,13 +137,11 @@ static void mesh_configure(Mesh *mesh)
 
 	glBufferData(GL_ARRAY_BUFFER, mesh->vertices_count * sizeof(Vertex), mesh->vertices, GL_STATIC_DRAW);
 
-
 	glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex), (GLvoid *) offsetof(Vertex, x));
 	glEnableVertexAttribArray(0);
 
 	glVertexAttribPointer(1, 2, GL_FLOAT, false, sizeof(Vertex), (GLvoid *) offsetof(Vertex, s));
 	glEnableVertexAttribArray(1);
-
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);

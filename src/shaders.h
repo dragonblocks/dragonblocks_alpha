@@ -12,7 +12,7 @@ typedef struct
 	GLint loc_projection;
 } ShaderProgram;
 
-ShaderProgram *create_shader_program(const char *path);	// ToDo
+ShaderProgram *create_shader_program(const char *path);
 void delete_shader_program(ShaderProgram *prog);
 
 #endif
