@@ -29,7 +29,7 @@ static void cursor_pos_callback(__attribute__((unused)) GLFWwindow* window, doub
 static bool move(int forward, int backward, vec3 dir)
 {
 	f32 sign;
-	f32 speed = 4.0f;
+	f32 speed = 4.317f;
 
 	if (glfwGetKey(input.window, forward) == GLFW_PRESS)
 		sign = +1.0f;

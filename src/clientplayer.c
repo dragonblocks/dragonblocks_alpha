@@ -89,7 +89,7 @@ static bool can_jump(ClientPlayer *player)
 void clientplayer_jump(ClientPlayer *player)
 {
 	if (can_jump(player))
-		player->velocity.y += 6.5f;
+		player->velocity.y += 10.0f;
 }
 
 void clientplayer_tick(ClientPlayer *player, f64 dtime)
@@ -97,7 +97,7 @@ void clientplayer_tick(ClientPlayer *player, f64 dtime)
 	v3f old_pos = player->pos;
 	v3f old_velocity = player->velocity;
 
-	player->velocity.y -= 9.81f * dtime;
+	player->velocity.y -= 32.0f * dtime;
 
 #define GETS(vec, comp) *(s32 *) ((char *) &vec + offsetof(v3s32, comp))
 #define GETF(vec, comp) *(f32 *) ((char *) &vec + offsetof(v3f32, comp))
