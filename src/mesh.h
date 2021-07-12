@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include "array.h"
 #include "shaders.h"
+#include "texture.h"
 #include "types.h"
 
 typedef struct
@@ -50,7 +51,7 @@ typedef struct
 struct Scene;
 
 VertexBuffer vertexbuffer_create();
-void vertexbuffer_set_texture(VertexBuffer *buffer, GLuint texture);
+void vertexbuffer_set_texture(VertexBuffer *buffer, Texture *texture);
 void vertexbuffer_add_vertex(VertexBuffer *buffer, Vertex *vertex);
 
 MeshObject *meshobject_create(VertexBuffer buffer, struct Scene *scene, v3f pos);

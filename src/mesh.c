@@ -11,12 +11,12 @@ VertexBuffer vertexbuffer_create()
 	};
 }
 
-void vertexbuffer_set_texture(VertexBuffer *buffer, GLuint texture)
+void vertexbuffer_set_texture(VertexBuffer *buffer, Texture *texture)
 {
-	if (buffer->current && buffer->current->texture == texture)
+	if (buffer->current && buffer->current->texture == texture->id)
 		return;
 	Face face = {
-		.texture = texture,
+		.texture = texture->id,
 		.vertices = array_create(sizeof(Vertex)),
 	};
 	array_append(&buffer->faces, &face);

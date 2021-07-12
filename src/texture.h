@@ -4,6 +4,12 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 
-GLuint get_texture(char *path);
+typedef struct
+{
+	GLuint id;
+	int width, height;
+} Texture;
+
+Texture *get_texture(char *path);
 
 #endif

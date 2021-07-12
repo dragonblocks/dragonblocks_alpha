@@ -4,11 +4,11 @@
 #include "texture.h"
 
 ClientNodeDefintion client_node_definitions[NODE_UNLOADED] = {
-	{RESSOURCEPATH "textures/invalid.png", 0},
-	{NULL, 0},
-	{RESSOURCEPATH "textures/grass.png", 0},
-	{RESSOURCEPATH "textures/dirt.png", 0},
-	{RESSOURCEPATH "textures/stone.png", 0},
+	{RESSOURCEPATH "textures/invalid.png", NULL},
+	{NULL, NULL},
+	{RESSOURCEPATH "textures/grass.png", NULL},
+	{RESSOURCEPATH "textures/dirt.png", NULL},
+	{RESSOURCEPATH "textures/stone.png", NULL},
 };
 
 void init_client_node_definitions()

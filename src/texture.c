@@ -15,8 +15,9 @@ __attribute((constructor(101))) static void init_textures()
 
 static void list_delete_texture(__attribute__((unused)) void *key, void *value, __attribute__((unused)) void *unused)
 {
-	glDeleteTextures(1, value);
-	free(value);
+	Texture *texture = value;
+	glDeleteTextures(1, &texture->id);
+	free(texture);
 }
 
 __attribute((destructor)) static void delete_textures()
@@ -26,36 +27,35 @@ __attribute((destructor)) static void delete_textures()
 
 static void *create_texture(void *key)
 {
-	int width, height, channels;
+	Texture *texture = malloc(sizeof(Texture));
+	int channels;
 
-	unsigned char *data = stbi_load(key, &width, &height, &channels, 0);
+	unsigned char *data = stbi_load(key, &texture->width, &texture->height, &channels, 0);
 	if (! data) {
 		printf("Failed to load texture %s\n", (char *) key);
 		return 0;
 	}
 
-	GLuint *id = malloc(sizeof(GLuint));
+	glGenTextures(1, &texture->id);
 
-	glGenTextures(1, id);
-
-	glBindTexture(GL_TEXTURE_2D, *id);
+	glBindTexture(GL_TEXTURE_2D, texture->id);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture->width, texture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	stbi_image_free(data);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	return id;
+	return texture;
 }
 
-GLuint get_texture(char *path)
+Texture *get_texture(char *path)
 {
-	return *(GLuint *)list_get_cached(&textures, path, &create_texture);
+	return list_get_cached(&textures, path, &create_texture);
 }
