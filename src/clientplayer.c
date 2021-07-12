@@ -19,7 +19,7 @@ static void update_pos(ClientPlayer *player)
 void clientplayer_init(Client *client)
 {
 	client->player.client = client;
-	client->player.pos = (v3f) {0.0f, 25.0f, 0.0f};
+	client->player.pos = (v3f) {0.0f, 150.0f, 0.0f};
 	client->player.velocity = (v3f) {0.0f, 0.0f, 0.0f};
 	client->player.box = (aabb3f) {{-0.3f, 0.0f, -0.3f}, {0.3f, 1.75f, 0.3f}};
 	client->player.yaw = client->player.pitch = 0.0f;
