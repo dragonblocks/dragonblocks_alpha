@@ -125,7 +125,7 @@ void server_start(int fd)
 	shutdown(server.sockfd, SHUT_RDWR);
 	close(server.sockfd);
 
-	map_delete(server.map, &servermap_delete_extra_data);
+	map_delete(server.map);
 
 	exit(EXIT_SUCCESS);
 }

@@ -7,85 +7,57 @@
 #include "map.h"
 #include "util.h"
 
-static s8 sector_compare(void *hash, void *sector)
-{
-	s64 d = *((u64 *) hash) - (*(MapSector **) sector)->hash;
-	return CMPBOUNDS(d);
-}
-
-static s8 block_compare(void *level, void *block)
-{
-	s32 d = *((s32 *) level) - (*(MapBlock **) block)->pos.y;
-	return CMPBOUNDS(d);
-}
-
 Map *map_create()
 {
 	Map *map = malloc(sizeof(Map));
 	pthread_rwlock_init(&map->rwlck, NULL);
 	pthread_rwlock_init(&map->cached_rwlck, NULL);
-	map->sectors = array_create(sizeof(MapSector *));
-	map->sectors.cmp = &sector_compare;
+	map->sectors = bintree_create(sizeof(v2s32));
 	map->cached = NULL;
 	return map;
 }
 
-void map_delete(Map *map, void (*callback)(void *extra))
+static void free_block(void *block)
+{
+	map_free_block(block);
+}
+
+static void free_sector(void *sector_void)
+{
+	MapSector *sector = sector_void;
+	bintree_clear(&sector->blocks, &free_block);
+	pthread_rwlock_destroy(&sector->rwlck);
+	free(sector);
+}
+
+void map_delete(Map *map)
 {
 	pthread_rwlock_destroy(&map->rwlck);
 	pthread_rwlock_destroy(&map->cached_rwlck);
-	for (size_t s = 0; s < map->sectors.siz; s++) {
-		MapSector *sector = map_get_sector_raw(map, s);
-		for (size_t b = 0; b < sector->blocks.siz; b++) {
-			MapBlock *block = map_get_block_raw(sector, b);
-			if (callback)
-				callback(block->extra);
-			map_free_block(block);
-		}
-		if (sector->blocks.ptr)
-			free(sector->blocks.ptr);
-		pthread_rwlock_destroy(&sector->rwlck);
-		free(sector);
-	}
-	if (map->sectors.ptr)
-		free(map->sectors.ptr);
+	bintree_clear(&map->sectors, &free_sector);
 	free(map);
-}
-
-MapSector *map_get_sector_raw(Map *map, size_t idx)
-{
-	return ((MapSector **) map->sectors.ptr)[idx];
-}
-
-MapBlock *map_get_block_raw(MapSector *sector, size_t idx)
-{
-	return ((MapBlock **) sector->blocks.ptr)[idx];
 }
 
 MapSector *map_get_sector(Map *map, v2s32 pos, bool create)
 {
-	u64 hash = ((u64) pos.x << 32) + (u64) pos.y;
-
 	if (create)
 		pthread_rwlock_wrlock(&map->rwlck);
 	else
 		pthread_rwlock_rdlock(&map->rwlck);
 
-	ArraySearchResult res = array_search(&map->sectors, &hash);
+	BintreeNode **nodeptr = bintree_search(&map->sectors, &pos);
 
 	MapSector *sector = NULL;
 
-	if (res.success) {
-		sector = map_get_sector_raw(map, res.index);
+	if (*nodeptr) {
+		sector = (*nodeptr)->value;
 	} else if (create) {
 		sector = malloc(sizeof(MapSector));
 		pthread_rwlock_init(&sector->rwlck, NULL);
 		sector->pos = pos;
-		sector->hash = hash;
-		sector->blocks = array_create(sizeof(MapBlock *));
-		sector->blocks.cmp = &block_compare;
+		sector->blocks = bintree_create(sizeof(s32));
 
-		array_insert(&map->sectors, &sector, res.index);
+		bintree_add_node(&map->sectors, nodeptr, &pos, sector);
 	}
 
 	pthread_rwlock_unlock(&map->rwlck);
@@ -113,12 +85,13 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 	else
 		pthread_rwlock_rdlock(&sector->rwlck);
 
-	ArraySearchResult res = array_search(&sector->blocks, &pos.y);
+	BintreeNode **nodeptr = bintree_search(&sector->blocks, &pos.y);
 
 	MapBlock *block = NULL;
 
-	if (res.success) {
-		block = map_get_block_raw(sector, res.index);
+	if (*nodeptr) {
+		block = (*nodeptr)->value;
+
 		if (block->state < MBS_READY) {
 			if (! create)
 				block = NULL;
@@ -129,7 +102,8 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 		}
 	} else if (create) {
 		block = map_allocate_block(pos);
-		array_insert(&sector->blocks, &block, res.index);
+
+		bintree_add_node(&sector->blocks, nodeptr, &pos.y, block);
 	}
 
 	pthread_rwlock_unlock(&sector->rwlck);
@@ -143,6 +117,7 @@ MapBlock *map_allocate_block(v3s32 pos)
 	block->pos = pos;
 	block->state = MBS_CREATED;
 	block->extra = NULL;
+	block->free_extra = NULL;
 	pthread_mutex_init(&block->mtx, NULL);
 	return block;
 }
@@ -158,6 +133,8 @@ void map_free_block(MapBlock *block)
 {
 	map_clear_meta(block);
 	pthread_mutex_destroy(&block->mtx);
+	if (block->free_extra)
+		block->free_extra(block->extra);
 	free(block);
 }
 

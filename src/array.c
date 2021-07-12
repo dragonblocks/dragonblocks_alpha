@@ -10,7 +10,6 @@ Array array_create(size_t membsiz)
 		.siz = 0,
 		.cap = 0,
 		.ptr = NULL,
-		.cmp = NULL,
 	};
 }
 
@@ -53,29 +52,4 @@ void array_copy(Array *array, void **ptr, size_t *count)
 	size_t size = array->siz * array->membsiz;
 	*ptr = malloc(size);
 	memcpy(*ptr, array->ptr, size);
-}
-
-ArraySearchResult array_search(Array *array, void *search)
-{
-	assert(array->cmp);
-	size_t low, high, index;
-
-	low = index = 0;
-	high = array->siz;
-
-	while (low < high) {
-		index = low;
-
-		size_t mid = (low + high) / 2;
-		s8 state = array->cmp(search, (char *) array->ptr + mid * array->membsiz);
-
-		if (state == 0)
-			return (ArraySearchResult) {true, mid};
-		else if (state > 0)
-			high = mid;
-		else
-			low = mid + 1;
-	}
-
-	return (ArraySearchResult) {false, index};
 }

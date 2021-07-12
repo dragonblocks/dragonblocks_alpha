@@ -32,6 +32,22 @@ static void reset_client_block(void *key, __attribute__((unused)) void *value, v
 	free(key);
 }
 
+static void list_delete_extra_data(void *key, __attribute__((unused)) void *value, __attribute__((unused)) void *unused)
+{
+	free(key);
+}
+
+static void free_extra_data(void *ext)
+{
+	MapBlockExtraData *extra = ext;
+
+	if (extra) {
+		list_clear_func(&extra->clients, &list_delete_extra_data, NULL);
+		free(extra->data);
+		free(extra);
+	}
+}
+
 static void reset_block(MapBlock *block)
 {
 	MapBlockExtraData *extra = block->extra;
@@ -46,6 +62,7 @@ static void reset_block(MapBlock *block)
 	map_serialize_block(block, &extra->data, &extra->size);
 
 	block->extra = extra;
+	block->free_extra = &free_extra_data;
 
 	save_block(servermap.db, block);
 
@@ -148,22 +165,6 @@ void servermap_init(Server *srv)
 	servermap.max_blocks = get_face_count(3);
 
 	pthread_create(&servermap.thread, NULL, &map_thread, NULL);
-}
-
-static void list_delete_extra_data(void *key, __attribute__((unused)) void *value, __attribute__((unused)) void *unused)
-{
-	free(key);
-}
-
-void servermap_delete_extra_data(void *ext)
-{
-	MapBlockExtraData *extra = ext;
-
-	if (extra) {
-		list_clear_func(&extra->clients, &list_delete_extra_data, NULL);
-		free(extra->data);
-		free(extra);
-	}
 }
 
 void servermap_deinit()

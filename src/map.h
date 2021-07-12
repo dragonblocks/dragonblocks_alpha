@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include <pthread.h>
-#include "array.h"
+#include "bintree.h"
 #include "list.h"
 #include "node.h"
 #include "types.h"
@@ -36,12 +36,13 @@ typedef struct
 	MapBlockState state;
 	pthread_mutex_t mtx;
 	void *extra;
+	void (*free_extra)(void *ptr);
 } MapBlock;
 
 typedef struct
 {
 	pthread_rwlock_t rwlck;
-	Array blocks;
+	Bintree blocks;
 	v2s32 pos;
 	u64 hash;
 } MapSector;
@@ -49,16 +50,14 @@ typedef struct
 typedef struct
 {
 	pthread_rwlock_t rwlck;
-	Array sectors;
+	Bintree sectors;
 	pthread_rwlock_t cached_rwlck;
 	MapBlock *cached;
 } Map;
 
 Map *map_create();
-void map_delete(Map *map, void (*callback)(void *extra));
+void map_delete(Map *map);
 
-MapSector *map_get_sector_raw(Map *map, size_t idx);
-MapBlock *map_get_block_raw(MapSector *sector, size_t idx);
 MapSector *map_get_sector(Map *map, v2s32 pos, bool create);
 MapBlock *map_get_block(Map *map, v3s32 pos, bool create);
 

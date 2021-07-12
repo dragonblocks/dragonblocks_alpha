@@ -12,6 +12,5 @@ typedef struct
 
 void servermap_init(Server *srv);
 void servermap_deinit();
-void servermap_delete_extra_data(void *ext);
 
 #endif
