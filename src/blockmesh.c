@@ -57,7 +57,8 @@ static VertexBuffer make_vertices(MapBlock *block, Map *map)
 
 void make_block_mesh(MapBlock *block, Map *map, Scene *scene)
 {
-	if (block->extra)
-		((MeshObject *) block->extra)->remove = true;
+	MeshObject *old = block->extra;
 	block->extra = meshobject_create(make_vertices(block, map), scene, (v3f) {block->pos.x * 16.0f - 8.0f, block->pos.y * 16.0f - 8.0f, block->pos.z * 16.0f - 8.0f});
+	if (old)
+		old->remove = true;
 }
