@@ -192,7 +192,7 @@ static void client_start(int fd)
 
 	clientmap_deinit();
 
-	map_delete(client.map, NULL);
+	map_delete(client.map);
 	scene_delete(client.scene);
 
 	pthread_mutex_destroy(&client.mtx);
