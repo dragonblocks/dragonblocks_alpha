@@ -65,16 +65,8 @@ void set_window_size(int width, int height)
 	mat4x4_perspective(camera.projection, 86.1f / 180.0f * M_PI, (float) width / (float) height, 0.01f, 1000.0f);
 }
 
-static void framebuffer_size_callback(__attribute__((unused)) GLFWwindow* window, int width, int height)
-{
-	glViewport(0, 0, width, height);
-	set_window_size(width, height);
-}
-
 void init_camera(GLFWwindow *window, ShaderProgram *prog)
 {
 	camera.window = window;
 	camera.prog = prog;
-
-	glfwSetFramebufferSizeCallback(camera.window, &framebuffer_size_callback);
 }

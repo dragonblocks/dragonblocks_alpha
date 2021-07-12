@@ -48,6 +48,13 @@ static void *reciever_thread(__attribute__((unused)) void *unused)
 	return NULL;
 }
 
+static void framebuffer_size_callback(__attribute__((unused)) GLFWwindow* window, int width, int height)
+{
+	glViewport(0, 0, width, height);
+	set_window_size(width, height);
+	hud_rescale(width, height);
+}
+
 static void client_loop()
 {
 	if(! glfwInit()) {
@@ -79,7 +86,6 @@ static void client_loop()
 	}
 
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	ShaderProgram *prog = create_shader_program(RESSOURCEPATH "shaders");
 	if (! prog) {
@@ -99,14 +105,16 @@ static void client_loop()
 
 	set_window_size(width, height);
 
+	hud_init(prog);
+	hud_rescale(width, height);
+
+	hud_add(RESSOURCEPATH "textures/crosshair.png", (v3f) {0.0f, 0.0f, 0.0f}, (v2f) {1.0f, 1.0f}, HUD_SCALE_TEXTURE);
+
 	init_input(&client, window);
 
 	clientplayer_add_to_scene(&client.player);
 
-	hud_init(prog);
-	hud_rescale(width, height);
-
-	hud_add(RESSOURCEPATH "textures/crosshair.png", (v2f) {0.0f, 0.0f}, (v2f) {1.0f, 1.0f}, HUD_SCALE_TEXTURE);
+	glfwSetFramebufferSizeCallback(window, &framebuffer_size_callback);
 
 	struct timespec ts, ts_old;
 	clock_gettime(CLOCK_REALTIME, &ts_old);

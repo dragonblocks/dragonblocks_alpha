@@ -18,7 +18,7 @@ typedef struct
 {
 	Texture *texture;
 	bool visible;
-	v2f pos;
+	v3f pos;
 	v2f scale;
 	HUDScaleType scale_type;
 	mat4x4 transform;
@@ -28,6 +28,6 @@ void hud_init(ShaderProgram *prog);
 void hud_deinit();
 void hud_rescale(int width, int height);
 void hud_render();
-HUDElement *hud_add(char *texture, v2f pos, v2f scale, HUDScaleType scale_type);
+HUDElement *hud_add(char *texture, v3f pos, v2f scale, HUDScaleType scale_type);
 
 #endif

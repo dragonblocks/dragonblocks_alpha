@@ -48,7 +48,7 @@ void hud_deinit()
 
 static void element_transform(HUDElement *element)
 {
-	mat4x4_translate(element->transform, (1.0f + element->pos.x) / 2.0f * (f32) hud.width, (1.0f + element->pos.y) / 2.0f * (f32) hud.height, 0.0f);
+	mat4x4_translate(element->transform, (1.0f + element->pos.x) / 2.0f * (f32) hud.width, (1.0f + element->pos.y) / 2.0f * (f32) hud.height, element->pos.z);
 
 	v2f scale = element->scale;
 
@@ -87,8 +87,6 @@ void hud_rescale(int width, int height)
 
 void hud_render()
 {
-	glDisable(GL_DEPTH_TEST);
-
 	glUniformMatrix4fv(hud.prog->loc_view, 1, GL_FALSE, hud.view[0]);
 	glUniformMatrix4fv(hud.prog->loc_projection, 1, GL_FALSE, hud.projection[0]);
 
@@ -103,7 +101,7 @@ void hud_render()
 	}
 }
 
-HUDElement *hud_add(char *texture, v2f pos, v2f scale, HUDScaleType scale_type)
+HUDElement *hud_add(char *texture, v3f pos, v2f scale, HUDScaleType scale_type)
 {
 	HUDElement *element = malloc(sizeof(HUDElement));
 	element->texture = get_texture(texture);
