@@ -4,13 +4,20 @@
 #include "hud.h"
 #include "input.h"
 
+typedef struct
+{
+	int key;
+	bool was_pressed;
+	bool fired;
+} KeyListener;
+
 static struct
 {
 	GLFWwindow *window;
 	Client *client;
 	HUDElement *pause_menu_hud;
 	bool paused;
-	bool pause_pressed;
+	KeyListener pause_listener;
 } input;
 
 static void cursor_pos_callback(__attribute__((unused)) GLFWwindow* window, double current_x, double current_y)
@@ -57,12 +64,27 @@ static void enter_game()
 	input.pause_menu_hud->visible = false;
 }
 
+static void do_key_listener(KeyListener *listener)
+{
+	bool is_pressed = glfwGetKey(input.window, listener->key) == GLFW_PRESS;
+	listener->fired = listener->was_pressed && ! is_pressed;
+	listener->was_pressed = is_pressed;
+}
+
+static KeyListener create_key_listener(int key)
+{
+	return (KeyListener) {
+		.key = key,
+		.was_pressed = false,
+		.fired = false,
+	};
+}
+
 void process_input()
 {
-	bool pause_was_pressed = input.pause_pressed;
-	input.pause_pressed = glfwGetKey(input.window, GLFW_KEY_ESCAPE) == GLFW_PRESS;
+	do_key_listener(&input.pause_listener);
 
-	if (pause_was_pressed && ! input.pause_pressed) {
+	if (input.pause_listener.fired) {
 		input.paused = ! input.paused;
 
 		if (input.paused) {
@@ -91,7 +113,8 @@ void init_input(Client *client, GLFWwindow *window)
 	input.window = window;
 
 	input.paused = false;
-	input.pause_pressed = false;
+
+	input.pause_listener = create_key_listener(GLFW_KEY_ESCAPE);
 
 	glfwSetCursorPosCallback(input.window, &cursor_pos_callback);
 	input.pause_menu_hud = hud_add(RESSOURCEPATH "textures/pause_layer.png", (v3f) {-1.0f, -1.0f, 0.5f}, (v2f) {1.0f, 1.0f}, HUD_SCALE_SCREEN);
