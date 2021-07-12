@@ -9,4 +9,6 @@ uniform sampler2D texture0;
 void main()
 {
 	outColor = texture(texture0, fragmentTextureCoords);
+	if (outColor.a == 0.0)
+        discard;
 }
