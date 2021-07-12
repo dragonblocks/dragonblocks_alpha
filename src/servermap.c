@@ -162,7 +162,7 @@ static void *map_thread(__attribute__((unused)) void *unused)
 void servermap_init(Server *srv)
 {
 	server = srv;
-	servermap.max_blocks = get_face_count(3);
+	servermap.max_blocks = get_face_count(10);
 
 	pthread_create(&servermap.thread, NULL, &map_thread, NULL);
 }
