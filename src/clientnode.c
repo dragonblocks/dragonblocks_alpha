@@ -9,6 +9,7 @@ ClientNodeDefintion client_node_definitions[NODE_UNLOADED] = {
 	{RESSOURCEPATH "textures/grass.png", NULL},
 	{RESSOURCEPATH "textures/dirt.png", NULL},
 	{RESSOURCEPATH "textures/stone.png", NULL},
+	{RESSOURCEPATH "textures/snow.png", NULL},
 };
 
 void init_client_node_definitions()

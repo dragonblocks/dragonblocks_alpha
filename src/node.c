@@ -27,4 +27,9 @@ NodeDefintion node_definitions[NODE_UNLOADED] = {
 		.visible = true,
 		.solid = true,
 	},
+	// snow
+	{
+		.visible = true,
+		.solid = true,
+	},
 };

@@ -11,6 +11,7 @@ typedef enum
 	NODE_GRASS,
 	NODE_DIRT,
 	NODE_STONE,
+	NODE_SNOW,
 	NODE_UNLOADED,		// Used for nodes in unloaded blocks
 } Node;
 
