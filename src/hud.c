@@ -60,8 +60,8 @@ static void element_transform(HUDElement *element)
 			break;
 
 		case HUD_SCALE_SCREEN:
-			scale.x *= hud.width;
-			scale.y *= hud.height;
+			scale.x *= hud.width * 2.0f;
+			scale.y *= hud.height * 2.0f;
 
 			break;
 

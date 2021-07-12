@@ -117,6 +117,8 @@ static void client_loop()
 		ts_old = ts;
 
 		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClearColor(0.52941176470588f, 0.8078431372549f, 0.92156862745098f, 1.0f);
 
