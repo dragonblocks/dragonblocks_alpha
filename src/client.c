@@ -106,7 +106,7 @@ static void client_loop()
 	hud_init(prog);
 	hud_rescale(width, height);
 
-	hud_add(RESSOURCEPATH "textures/crosshair.png", (v2f) {0.0f, 0.0f}, (v2f) {1.0f, 1.0f});
+	hud_add(RESSOURCEPATH "textures/crosshair.png", (v2f) {0.0f, 0.0f}, (v2f) {1.0f, 1.0f}, HUD_SCALE_TEXTURE);
 
 	struct timespec ts, ts_old;
 	clock_gettime(CLOCK_REALTIME, &ts_old);

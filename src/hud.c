@@ -49,9 +49,29 @@ void hud_deinit()
 static void element_transform(HUDElement *element)
 {
 	mat4x4_translate(element->transform, (1.0f + element->pos.x) / 2.0f * (f32) hud.width, (1.0f + element->pos.y) / 2.0f * (f32) hud.height, 0.0f);
+
+	v2f scale = element->scale;
+
+	switch (element->scale_type) {
+		case HUD_SCALE_TEXTURE:
+			scale.x *= element->texture->width;
+			scale.y *= element->texture->height;
+
+			break;
+
+		case HUD_SCALE_SCREEN:
+			scale.x *= hud.width;
+			scale.y *= hud.height;
+
+			break;
+
+		default:
+			break;
+	}
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-	mat4x4_scale_aniso(element->transform, element->transform, element->scale.x, element->scale.y, 1.0f);
+	mat4x4_scale_aniso(element->transform, element->transform, scale.x, scale.y, 1.0f);
 #pragma GCC diagnostic pop
 }
 
@@ -83,16 +103,14 @@ void hud_render()
 	}
 }
 
-HUDElement *hud_add(char *texture, v2f pos, v2f scale)
+HUDElement *hud_add(char *texture, v2f pos, v2f scale, HUDScaleType scale_type)
 {
 	HUDElement *element = malloc(sizeof(HUDElement));
 	element->texture = get_texture(texture);
 	element->visible = true;
 	element->pos = pos;
-
 	element->scale = scale;
-	element->scale.x *= (f32) element->texture->width;
-	element->scale.y *= (f32) element->texture->height;
+	element->scale_type = scale_type;
 
 	element_transform(element);
 
