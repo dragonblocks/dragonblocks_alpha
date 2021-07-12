@@ -13,6 +13,8 @@
 #include "client.h"
 #include "clientmap.h"
 #include "clientnode.h"
+#include "cube.h"
+#include "hud.h"
 #include "input.h"
 #include "signal.h"
 #include "shaders.h"
@@ -101,6 +103,11 @@ static void client_loop()
 
 	clientplayer_add_to_scene(&client.player);
 
+	hud_init(prog);
+	hud_rescale(width, height);
+
+	hud_add(RESSOURCEPATH "textures/crosshair.png", (v2f) {0.0f, 0.0f}, (v2f) {1.0f, 1.0f});
+
 	struct timespec ts, ts_old;
 	clock_gettime(CLOCK_REALTIME, &ts_old);
 
@@ -116,13 +123,17 @@ static void client_loop()
 		process_input();
 		clientplayer_tick(&client.player, dtime);
 
+		camera_enable();
 		scene_render(client.scene, prog);
+
+		hud_render();
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
 
 	delete_shader_program(prog);
+	hud_deinit();
 }
 
 static bool client_name_prompt()

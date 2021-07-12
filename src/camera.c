@@ -21,7 +21,12 @@ static void update_camera()
 	vec3_add(center, camera.eye, camera.front);
 
 	mat4x4_look_at(camera.view, camera.eye, center, camera.up);
+}
+
+void camera_enable()
+{
 	glUniformMatrix4fv(camera.prog->loc_view, 1, GL_FALSE, camera.view[0]);
+	glUniformMatrix4fv(camera.prog->loc_projection, 1, GL_FALSE, camera.projection[0]);
 }
 
 void set_camera_position(v3f pos)
@@ -58,7 +63,6 @@ void set_camera_angle(f32 yaw, f32 pitch)
 void set_window_size(int width, int height)
 {
 	mat4x4_perspective(camera.projection, 86.1f / 180.0f * M_PI, (float) width / (float) height, 0.01f, 1000.0f);
-	glUniformMatrix4fv(camera.prog->loc_projection, 1, GL_FALSE, camera.projection[0]);
 }
 
 static void framebuffer_size_callback(__attribute__((unused)) GLFWwindow* window, int width, int height)
