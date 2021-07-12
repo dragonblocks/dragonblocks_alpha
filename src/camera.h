@@ -10,7 +10,7 @@
 void init_camera(GLFWwindow *window, ShaderProgram *prog);
 void set_camera_position(v3f pos);
 void set_camera_angle(f32 yaw, f32 pitch);
-void set_window_size(int width, int height);
+void camera_on_resize(int width, int height);
 void camera_enable();
 
 extern struct movement_dirs

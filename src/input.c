@@ -17,10 +17,13 @@ static struct
 	Client *client;
 	HUDElement *pause_menu_hud;
 	bool paused;
+	bool fullscreen;
 	KeyListener pause_listener;
+	KeyListener fullscreen_listener;
+	int small_x, small_y, small_width, small_height;
 } input;
 
-static void cursor_pos_callback(__attribute__((unused)) GLFWwindow* window, double current_x, double current_y)
+void input_on_cursor_pos(double current_x, double current_y)
 {
 	if (input.paused)
 		return;
@@ -38,6 +41,22 @@ static void cursor_pos_callback(__attribute__((unused)) GLFWwindow* window, doub
 	input.client->player.pitch = fmax(fmin(input.client->player.pitch, M_PI / 2.0f - 0.01f), -M_PI / 2.0f + 0.01f);
 
 	set_camera_angle(input.client->player.yaw, input.client->player.pitch);
+}
+
+void input_on_resize(int width, int height)
+{
+	if (! input.fullscreen) {
+		input.small_width = width;
+		input.small_height = height;
+	}
+}
+
+void input_on_window_pos(int x, int y)
+{
+	if (! input.fullscreen) {
+		input.small_x = x;
+		input.small_y = y;
+	}
 }
 
 static bool move(int forward, int backward, vec3 dir)
@@ -83,6 +102,7 @@ static KeyListener create_key_listener(int key)
 void process_input()
 {
 	do_key_listener(&input.pause_listener);
+	do_key_listener(&input.fullscreen_listener);
 
 	if (input.pause_listener.fired) {
 		input.paused = ! input.paused;
@@ -92,6 +112,18 @@ void process_input()
 			input.pause_menu_hud->visible = true;
 		} else {
 			enter_game();
+		}
+	}
+
+	if (input.fullscreen_listener.fired) {
+		input.fullscreen = ! input.fullscreen;
+
+		if (input.fullscreen) {
+			GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+			const GLFWvidmode *vidmode = glfwGetVideoMode(monitor);
+			glfwSetWindowMonitor(input.window, monitor, 0, 0, vidmode->width, vidmode->height, 0);
+		} else {
+			glfwSetWindowMonitor(input.window, NULL, input.small_x, input.small_y, input.small_width, input.small_height, 0);
 		}
 	}
 
@@ -115,8 +147,8 @@ void init_input(Client *client, GLFWwindow *window)
 	input.paused = false;
 
 	input.pause_listener = create_key_listener(GLFW_KEY_ESCAPE);
+	input.fullscreen_listener = create_key_listener(GLFW_KEY_F11);
 
-	glfwSetCursorPosCallback(input.window, &cursor_pos_callback);
 	input.pause_menu_hud = hud_add(RESSOURCEPATH "textures/pause_layer.png", (v3f) {-1.0f, -1.0f, 0.5f}, (v2f) {1.0f, 1.0f}, HUD_SCALE_SCREEN);
 
 	enter_game();

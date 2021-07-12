@@ -60,7 +60,7 @@ void set_camera_angle(f32 yaw, f32 pitch)
 	update_camera();
 }
 
-void set_window_size(int width, int height)
+void camera_on_resize(int width, int height)
 {
 	mat4x4_perspective(camera.projection, 86.1f / 180.0f * M_PI, (float) width / (float) height, 0.01f, 1000.0f);
 }

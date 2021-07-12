@@ -75,7 +75,7 @@ static void element_transform(HUDElement *element)
 #pragma GCC diagnostic pop
 }
 
-void hud_rescale(int width, int height)
+void hud_on_resize(int width, int height)
 {
 	hud.width = width;
 	hud.height = height;
