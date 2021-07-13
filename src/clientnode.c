@@ -1,15 +1,51 @@
 #include "client.h"
 #include "clientnode.h"
 #include "node.h"
-#include "texture.h"
+
+static void render_state_biome(MapNode *node, Vertex *vertex)
+{
+	vertex->r = node->state.biome.x;
+	vertex->g = node->state.biome.y;
+	vertex->b = node->state.biome.z;
+}
 
 ClientNodeDefintion client_node_definitions[NODE_UNLOADED] = {
-	{RESSOURCEPATH "textures/invalid.png", NULL},
-	{NULL, NULL},
-	{RESSOURCEPATH "textures/grass.png", NULL},
-	{RESSOURCEPATH "textures/dirt.png", NULL},
-	{RESSOURCEPATH "textures/stone.png", NULL},
-	{RESSOURCEPATH "textures/snow.png", NULL},
+	// invalid
+	{
+		.texture_path = RESSOURCEPATH "textures/invalid.png",
+		.texture = NULL,
+		.render = NULL,
+	},
+	// air
+	{
+		.texture_path = NULL,
+		.texture = NULL,
+		.render = NULL,
+	},
+	// grass
+	{
+		.texture_path = RESSOURCEPATH "textures/grass.png",
+		.texture = NULL,
+		.render = &render_state_biome,
+	},
+	// dirt
+	{
+		.texture_path = RESSOURCEPATH "textures/dirt.png",
+		.texture = NULL,
+		.render = NULL,
+	},
+	// stone
+	{
+		.texture_path = RESSOURCEPATH "textures/stone.png",
+		.texture = NULL,
+		.render = NULL,
+	},
+	// snow
+	{
+		.texture_path = RESSOURCEPATH "textures/snow.png",
+		.texture = NULL,
+		.render = NULL,
+	},
 };
 
 void init_client_node_definitions()

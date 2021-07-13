@@ -10,10 +10,10 @@
 
 #define ITERATE_MAPBLOCK for (u8 x = 0; x < 16; x++) for (u8 y = 0; y < 16; y++) for (u8 z = 0; z < 16; z++)
 
-typedef struct
+typedef struct MapNode
 {
 	Node type;
-	// here will be a NodeState (union)
+	NodeState state;
 } MapNode;
 
 typedef enum
@@ -26,7 +26,7 @@ typedef enum
 
 typedef MapNode MapBlockData[16][16][16];
 
-typedef u16 MapBlockHeader;
+typedef u32 MapBlockHeader;
 
 typedef struct
 {

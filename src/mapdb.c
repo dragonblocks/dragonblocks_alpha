@@ -56,7 +56,7 @@ bool load_block(sqlite3 *db, MapBlock *block)
 
 	if (found) {
 		const char *data = sqlite3_column_blob(stmt, 0);
-		map_deserialize_block(block, data + sizeof(MapBlockHeader), be64toh(*(MapBlockHeader *) data));
+		map_deserialize_block(block, data + sizeof(MapBlockHeader), be32toh(*(MapBlockHeader *) data));
 	} else if (rc != SQLITE_DONE) {
 		print_error(db, block, "loading");
 	}

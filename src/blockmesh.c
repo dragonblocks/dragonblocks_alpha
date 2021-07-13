@@ -16,10 +16,13 @@ static VertexBuffer make_vertices(MapBlock *block, Map *map)
 	VertexBuffer buffer = vertexbuffer_create();
 
 	ITERATE_MAPBLOCK {
-		if (node_definitions[block->data[x][y][z].type].visible) {
+		MapNode *node = &block->data[x][y][z];
+
+		if (node_definitions[node->type].visible) {
 			v3f offset = {x + 8.0f, y + 8.0f, z + 8.0f};
 
-			vertexbuffer_set_texture(&buffer, client_node_definitions[block->data[x][y][z].type].texture);
+			ClientNodeDefintion *client_def = &client_node_definitions[node->type];
+			vertexbuffer_set_texture(&buffer, client_def->texture);
 
 			for (int f = 0; f < 6; f++) {
 				v3s8 npos = {
@@ -41,6 +44,9 @@ static VertexBuffer make_vertices(MapBlock *block, Map *map)
 						vertex.x += offset.x;
 						vertex.y += offset.y;
 						vertex.z += offset.z;
+
+						if (client_def->render)
+							client_def->render(node, &vertex);
 
 						vertexbuffer_add_vertex(&buffer, &vertex);
 					}

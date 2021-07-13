@@ -161,6 +161,10 @@ void map_serialize_block(MapBlock *block, char **dataptr, size_t *sizeptr)
 	MapBlockData blockdata;
 	ITERATE_MAPBLOCK {
 		MapNode node = block->data[x][y][z];
+
+		if (node_definitions[node.type].serialize)
+			node_definitions[node.type].serialize(&node);
+
 		node.type = htobe32(node.type);
 		blockdata[x][y][z] = node;
 	}
@@ -185,8 +189,8 @@ void map_serialize_block(MapBlock *block, char **dataptr, size_t *sizeptr)
 
 	size_t size = sizeof(MapBlockHeader) + sizeof(MapBlockHeader) + compressed_size;
 	char *data = malloc(size);
-	*(MapBlockHeader *) data = htobe16(sizeof(MapBlockHeader) + compressed_size);
-	*(MapBlockHeader *) (data + sizeof(MapBlockHeader)) = htobe16(uncompressed_size);
+	*(MapBlockHeader *) data = htobe32(sizeof(MapBlockHeader) + compressed_size);
+	*(MapBlockHeader *) (data + sizeof(MapBlockHeader)) = htobe32(uncompressed_size);
 	memcpy(data + sizeof(MapBlockHeader) + sizeof(MapBlockHeader), compressed_data, compressed_size);
 
 	*sizeptr = size;
@@ -198,7 +202,7 @@ bool map_deserialize_block(MapBlock *block, const char *data, size_t size)
 	if (size < sizeof(MapBlockHeader))
 		return false;
 
-	MapBlockHeader uncompressed_size = be16toh(*(MapBlockHeader *) data);
+	MapBlockHeader uncompressed_size = be32toh(*(MapBlockHeader *) data);
 
 	if (uncompressed_size < sizeof(MapBlockData))
 		return false;
@@ -231,6 +235,9 @@ bool map_deserialize_block(MapBlock *block, const char *data, size_t size)
 
 		if (node.type >= NODE_UNLOADED)
 			node.type = NODE_INVALID;
+
+		if (node_definitions[node.type].deserialize)
+			node_definitions[node.type].deserialize(&node);
 
 		block->data[x][y][z] = node;
 
@@ -274,5 +281,12 @@ void map_set_node(Map *map, v3s32 pos, MapNode node)
 
 MapNode map_node_create(Node type)
 {
-	return (MapNode) {type};
+	MapNode node;
+	node.type = type;
+	memset(&node.state, 0, sizeof(NodeState));
+
+	if (node_definitions[node.type].create)
+		node_definitions[node.type].create(&node);
+
+	return node;
 }

@@ -40,7 +40,7 @@ static bool block_handler(Client *client, bool good)
 
 	MapBlockHeader header;
 
-	if (! read_u16(client->fd, &header))
+	if (! read_u32(client->fd, &header))
 		return false;
 
 	char data[header];

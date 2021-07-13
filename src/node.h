@@ -4,6 +4,13 @@
 #include <stdbool.h>
 #include "types.h"
 
+typedef v3f NodeStateBiome;
+
+typedef union
+{
+	NodeStateBiome biome;
+} NodeState;
+
 typedef enum
 {
 	NODE_INVALID,		// Used for unknown nodes received from server (caused by outdated clients)
@@ -15,10 +22,15 @@ typedef enum
 	NODE_UNLOADED,		// Used for nodes in unloaded blocks
 } Node;
 
+struct MapNode;
+
 typedef struct
 {
 	bool visible;
 	bool solid;
+	void (*create)(struct MapNode *node);
+	void (*serialize)(struct MapNode *node);
+	void (*deserialize)(struct MapNode *node);
 } NodeDefintion;
 
 extern NodeDefintion node_definitions[];
