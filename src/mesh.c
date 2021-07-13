@@ -143,6 +143,9 @@ static void mesh_configure(Mesh *mesh)
 	glVertexAttribPointer(1, 2, GL_FLOAT, false, sizeof(Vertex), (GLvoid *) offsetof(Vertex, s));
 	glEnableVertexAttribArray(1);
 
+	glVertexAttribPointer(2, 3, GL_FLOAT, false, sizeof(Vertex), (GLvoid *) offsetof(Vertex, r));
+	glEnableVertexAttribArray(2);
+
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 

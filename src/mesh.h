@@ -14,6 +14,7 @@ typedef struct
 {
 	GLfloat x, y, z;
 	GLfloat s, t;
+	GLfloat r, g, b;
 } __attribute__((packed)) Vertex;
 
 typedef struct
