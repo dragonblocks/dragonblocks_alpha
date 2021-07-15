@@ -40,9 +40,7 @@ static void game_loop(Client *client)
 		ts_old = ts;
 
 		if ((fps_update_timer -= dtime) <= 0.0) {
-			// I don't think anyone will have more than 9999 FPS lol, but I have seen 1000 in jordan4ibanez' video yet so...
-			// 4 digits for FPS + space + "FPS" + \0
-			char fps[4 + 1 + 3 + 1];
+			char fps[((int) log10(frames) + 1) + 1 + 3 + 1];
 			sprintf(fps, "%d FPS", frames);
 			hud_change_text(fps_hud, fps);
 			fps_update_timer += 1.0;
