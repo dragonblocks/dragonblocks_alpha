@@ -19,7 +19,7 @@ static void game_loop(Client *client)
 	HUDElement *fps_hud = hud_add((HUDElementDefinition) {
 		.type = HUD_TEXT,
 		.pos = {-1.0f, -1.0f, 0.0f},
-		.offset = {5, 32},
+		.offset = {2, 2 + 16 + 2},
 		.type_def = {
 			.text = {
 				.text = "",
@@ -110,7 +110,7 @@ void game(Client *client)
 	hud_add((HUDElementDefinition) {
 		.type = HUD_TEXT,
 		.pos = {-1.0f, -1.0f, 0.0f},
-		.offset = {5, 0},
+		.offset = {2, 2},
 		.type_def = {
 			.text = {
 				.text = "Dragonblocks Alpha",

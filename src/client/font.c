@@ -67,13 +67,13 @@ bool font_init()
 		return false;
 	}
 
-	if (FT_New_Face(font.library, RESSOURCEPATH "fonts/Ubuntu.ttf", 0, &font.face)) {
-		fprintf(stderr, "Failed to load Ubuntu.ttf\n");
+	if (FT_New_Face(font.library, RESSOURCEPATH "fonts/Minecraftia.ttf", 0, &font.face)) {
+		fprintf(stderr, "Failed to load Minecraftia.ttf\n");
 		return false;
 	}
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	FT_Set_Pixel_Sizes(font.face, 0, 24);
+	FT_Set_Pixel_Sizes(font.face, 0, 16);
 
 	for (unsigned char c = 0; c < NUM_CHARS; c++) {
 		if (FT_Load_Char(font.face, c, FT_LOAD_RENDER)) {
