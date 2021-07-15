@@ -55,5 +55,6 @@ void hud_deinit();
 void hud_on_resize(int width, int height);
 void hud_render();
 HUDElement *hud_add(HUDElementDefinition def);
+void hud_change_text(HUDElement *element, char *text);
 
 #endif

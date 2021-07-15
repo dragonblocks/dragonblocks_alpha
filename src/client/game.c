@@ -16,6 +16,21 @@
 
 static void game_loop(Client *client)
 {
+	HUDElement *fps_hud = hud_add((HUDElementDefinition) {
+		.type = HUD_TEXT,
+		.pos = {-1.0f, -1.0f, 0.0f},
+		.offset = {5, 32},
+		.type_def = {
+			.text = {
+				.text = "",
+				.color = {1.0f, 1.0f, 1.0f},
+			},
+		},
+	});
+
+	f64 fps_update_timer = 1.0f;
+	int frames = 0;
+
 	struct timespec ts, ts_old;
 	clock_gettime(CLOCK_REALTIME, &ts_old);
 
@@ -23,6 +38,18 @@ static void game_loop(Client *client)
 		clock_gettime(CLOCK_REALTIME, &ts);
 		f64 dtime = (f64) (ts.tv_sec - ts_old.tv_sec) + (f64) (ts.tv_nsec - ts_old.tv_nsec) / 1000000000.0;
 		ts_old = ts;
+
+		if ((fps_update_timer -= dtime) <= 0.0) {
+			// I don't think anyone will have more than 9999 FPS lol, but I have seen 1000 in jordan4ibanez' video yet so...
+			// 4 digits for FPS + space + "FPS" + \0
+			char fps[4 + 1 + 3 + 1];
+			sprintf(fps, "%d FPS", frames);
+			hud_change_text(fps_hud, fps);
+			fps_update_timer += 1.0;
+			frames = 0;
+		}
+
+		frames++;
 
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);

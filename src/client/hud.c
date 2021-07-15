@@ -93,7 +93,6 @@ bool hud_init()
 	hud.font_loc_projection = glGetUniformLocation(hud.font_prog, "projection");
 	hud.font_loc_text_color = glGetUniformLocation(hud.font_prog, "textColor");
 
-
 	hud.elements = list_create(NULL);
 
 	hud.image_mesh = mesh_create();
@@ -108,8 +107,10 @@ static void free_element(void *key, __attribute__((unused)) void *value, __attri
 {
 	HUDElement *element = key;
 
-	if (element->def.type == HUD_TEXT)
+	if (element->def.type == HUD_TEXT) {
 		font_delete(element->type_data.text);
+		free(element->def.type_def.text.text);
+	}
 
 	free(element);
 }
@@ -209,10 +210,21 @@ HUDElement *hud_add(HUDElementDefinition def)
 
 	element_transform(element);
 
-	if (element->def.type == HUD_TEXT)
+	if (element->def.type == HUD_TEXT) {
+		element->def.type_def.text.text = strdup(element->def.type_def.text.text);
 		element->type_data.text = font_create(element->def.type_def.text.text);
+	}
 
 	list_set(&hud.elements, element, NULL);
 
 	return element;
+}
+
+void hud_change_text(HUDElement *element, char *text)
+{
+	if (strcmp(element->def.type_def.text.text, text)) {
+		element->def.type_def.text.text = strdup(text);
+		font_delete(element->type_data.text);
+		element->type_data.text = font_create(text);
+	}
 }
