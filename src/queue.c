@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "queue.h"
 
-Queue *create_queue()
+Queue *queue_create()
 {
 	Queue *queue = malloc(sizeof(Queue));
 	queue->list = list_create(NULL);
@@ -9,14 +9,14 @@ Queue *create_queue()
 	return queue;
 }
 
-void delete_queue(Queue *queue)
+void queue_delete(Queue *queue)
 {
 	pthread_mutex_destroy(&queue->mtx);
 	list_clear(&queue->list);
 	free(queue);
 }
 
-void enqueue(Queue *queue, void *elem)
+void queue_enqueue(Queue *queue, void *elem)
 {
 	pthread_mutex_lock(&queue->mtx);
 	list_put(&queue->list, elem, NULL);
@@ -25,10 +25,10 @@ void enqueue(Queue *queue, void *elem)
 
 void *dequeue(Queue *queue)
 {
-	return dequeue_callback(queue, NULL);
+	return queue_dequeue_callback(queue, NULL);
 }
 
-void *dequeue_callback(Queue *queue, void (*callback)(void *elem))
+void *queue_dequeue_callback(Queue *queue, void (*callback)(void *elem))
 {
 	pthread_mutex_lock(&queue->mtx);
 	void *elem = NULL;

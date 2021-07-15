@@ -18,7 +18,7 @@ static void silent_handler(__attribute__((unused)) int sig)
 static struct sigaction sigact_interrupt = {0};
 static struct sigaction sigact_silent = {0};
 
-void init_signal_handlers()
+void signal_handlers_init()
 {
 	sigact_interrupt.sa_handler = &interrupt_handler;
 	sigaction(SIGINT, &sigact_interrupt, NULL);

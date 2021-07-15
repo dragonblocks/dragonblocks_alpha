@@ -10,10 +10,10 @@ typedef struct
 	pthread_mutex_t mtx;
 } Queue;
 
-Queue *create_queue();
-void delete_queue(Queue *queue);
-void enqueue(Queue *queue, void *elem);
-void *dequeue(Queue *queue);
-void *dequeue_callback(Queue *queue, void (*callback)(void *elem));
+Queue *queue_create();
+void queue_delete(Queue *queue);
+void queue_enqueue(Queue *queue, void *elem);
+void *queue_dequeue(Queue *queue);
+void *queue_dequeue_callback(Queue *queue, void (*callback)(void *elem));
 
 #endif

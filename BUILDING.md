@@ -9,10 +9,10 @@ To build anything you need gcc and GNU make. The ZLib development library is nee
 sudo apt install build-essential make zlib1g-dev
 ```
 
-The development versions of OpenGL, GLFW3, GLEW are required to build the client.
+The development versions of OpenGL, GLFW3, GLEW and Freetype are required to build the client.
 
 ```bash
-sudo apt install libgl1-mesa-dev libglfw3-dev libglew-dev
+sudo apt install libgl1-mesa-dev libglfw3-dev libglew-dev libfreetype-dev
 ```
 
 For building the server the SQLite3 development library is required.

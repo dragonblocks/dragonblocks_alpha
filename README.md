@@ -25,10 +25,10 @@ Use W, A, S and D to move forward / left / backward / right and Space to jump.
 
 ## Dependencies
 
-The client depends on GLFW3, OpenGL and GLEW.
+The client depends on GLFW3, OpenGL, GLEW and Freetype.
 
 ```bash
-sudo apt install libgl1-mesa-dri libglfw3 libglew2.1
+sudo apt install libgl1-mesa-dri libglfw3 libglew2.1 libfreetype6
 ```
 
 The server depends on SQLite3.

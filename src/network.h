@@ -2,7 +2,7 @@
 #define _NETWORK_H_
 
 #include <stdbool.h>
-#define NAME_MAX 64
+#define PLAYER_NAME_MAX 64
 
 typedef enum
 {

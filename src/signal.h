@@ -4,6 +4,6 @@
 #include <stdbool.h>
 
 extern bool interrupted;
-void init_signal_handlers();
+void signal_handlers_init();
 
 #endif
