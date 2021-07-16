@@ -2,7 +2,8 @@
 mkdir .build
 cp -r * .build/
 cd .build/src
-if ! (make clobber && make all RELEASE=TRUE -j$(nproc) && make clean); then
+rm -rf CMakeCache.txt
+if ! (cmake . -DCMAKE_BUILD_TYPE=Release && make clean && make -j$(nproc)); then
     cd ../..
     rm -rf .build
 	exit 1
