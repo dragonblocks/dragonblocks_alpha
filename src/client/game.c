@@ -12,7 +12,7 @@
 #include "client/input.h"
 #include "client/font.h"
 #include "client/window.h"
-#include "signal.h"
+#include "signal_handlers.h"
 
 static void game_loop(Client *client)
 {

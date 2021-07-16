@@ -5,7 +5,7 @@
 #include <netdb.h>
 #include "server/server.h"
 #include "server/server_map.h"
-#include "signal.h"
+#include "signal_handlers.h"
 #include "util.h"
 
 Server server;

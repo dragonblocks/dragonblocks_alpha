@@ -1,5 +1,5 @@
-#ifndef _SIGNAL_H_
-#define _SIGNAL_H_
+#ifndef _SIGNAL_HANDLERS_H_
+#define _SIGNAL_HANDLERS_H_
 
 #include <stdbool.h>
 

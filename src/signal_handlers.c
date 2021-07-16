@@ -1,7 +1,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
-#include "signal.h"
+#include "signal_handlers.h"
 
 bool interrupted = false;
 

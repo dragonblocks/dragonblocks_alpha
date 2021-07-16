@@ -10,7 +10,7 @@
 #include "client/client_player.h"
 #include "client/game.h"
 #include "client/input.h"
-#include "signal.h"
+#include "signal_handlers.h"
 #include "util.h"
 
 Client client;
