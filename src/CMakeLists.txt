@@ -6,6 +6,8 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
 endif()
 
+find_package(Freetype REQUIRED)
+
 link_libraries(
 	pthread
 	m
@@ -20,11 +22,7 @@ include_directories(BEFORE
 	${CMAKE_SOURCE_DIR}
 )
 
-if (MSVC)
-    add_compile_options(/W4 /WX)
-else()
-    add_compile_options(-Wall -Wextra -Wpedantic -Werror)
-endif()
+add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 
 set(SOURCES_COMMON
 	array.c
@@ -65,11 +63,11 @@ target_link_libraries(Dragonblocks
 	GL
 	GLEW
 	glfw
-	freetype
+	${FREETYPE_LIBRARIES}
 )
 
 target_include_directories(Dragonblocks PUBLIC
-	/usr/include/freetype2/
+	${FREETYPE_INCLUDE_DIRS}
 )
 
 add_executable(DragonblocksServer
