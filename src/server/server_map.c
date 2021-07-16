@@ -161,7 +161,7 @@ static void *map_thread(__attribute__((unused)) void *unused)
 void server_map_init(Server *server)
 {
 	server_map.server = server;
-	server_map.max_blocks = facecache_count(10);
+	server_map.max_blocks = facecache_count(16);
 
 	pthread_create(&server_map.thread, NULL, &map_thread, NULL);
 }
