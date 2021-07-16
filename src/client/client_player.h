@@ -2,6 +2,7 @@
 #define _CLIENT_PLAYER_H_
 
 #include "client/client.h"
+#include "client/hud.h"
 #include "client/object.h"
 #include "types.h"
 
@@ -14,6 +15,7 @@ extern struct ClientPlayer
 	f32 eye_height;
 	Object *obj;
 	Map *map;
+	HUDElement *pos_display;
 } client_player;
 
 void client_player_init(Map *map);

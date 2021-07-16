@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "client/camera.h"
 #include "client/client.h"
 #include "client/client_player.h"
@@ -13,6 +14,11 @@ static void update_pos()
 
 	client_player.obj->pos = client_player.pos;
 	object_transform(client_player.obj);
+
+	char pos_text[BUFSIZ];
+	sprintf(pos_text, "(%.1f %.1f %.1f)", client_player.pos.x, client_player.pos.y, client_player.pos.z);
+
+	hud_change_text(client_player.pos_display, pos_text);
 }
 
 void client_player_init(Map *map)
@@ -40,6 +46,18 @@ void client_player_add_to_scene()
 			object_add_vertex(client_player.obj, &vertex);
 		}
 	}
+
+	client_player.pos_display = hud_add((HUDElementDefinition) {
+		.type = HUD_TEXT,
+		.pos = {-1.0f, -1.0f, 0.0f},
+		.offset = {2, 2 + 16 + 2 + 16 + 2},
+		.type_def = {
+			.text = {
+				.text = "",
+				.color = {1.0f, 1.0f, 1.0f},
+			},
+		},
+	});
 
 	update_pos();
 }
