@@ -1,12 +1,16 @@
 # Building instructions
 
-GNU make is used for compiling. The code and the Makefile are located in the src/ directory.
+CMake is used for compiling. Make sure to clone the repository recursively:
+
+``bash
+git clone --recurse-submodules https://github.com/dragonblocks/dragonblocks_alpha.git
+```
 
 ## Dependencies
-To build anything you need gcc and GNU make. The ZLib development library is needed as well.
+To build anything you need CMake. The ZLib development library is needed as well.
 
 ```bash
-sudo apt install build-essential make zlib1g-dev
+sudo apt install build-essential cmake zlib1g-dev
 ```
 
 The development versions of OpenGL, GLFW3, GLEW and Freetype are required to build the client.
@@ -21,22 +25,19 @@ For building the server the SQLite3 development library is required.
 sudo apt install libsqlite3-dev
 ```
 
-Don't forget to pull the submodules before building.
+## Building a debug build
+By default CMake will make a Debug build if nothing else is specified. Simply use
 
-``bash
-git submodule update --init
+```bash
+cd src
+cmake .
+make -j$(nproc)
 ```
 
-## Available targets
-- `all` (default)
-- `Dragonblocks`
-- `DragonblocksServer`
-- `clean`
-- `clobber`
+to build the dragonblocks client and server.
+If you use a debug build, the singleplayer script should be invoked from the src/ directory, because that's where the binaries are located.
 
-The debug flag (`-g`) is set by default (RELEASE=TRUE will disable it).
-
-## Release
+## Building a snapshot
 
 ```bash
 ./snapshot.sh
