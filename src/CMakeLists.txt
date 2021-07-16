@@ -6,8 +6,10 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-find_package(Freetype REQUIRED)
 find_package(OpenGL REQUIRED)
+find_package(GLEW REQUIRED)
+find_package(glfw3 3.3 REQUIRED)
+find_package(Freetype REQUIRED)
 
 link_libraries(
 	pthread
@@ -61,9 +63,9 @@ add_executable(Dragonblocks
 )
 
 target_link_libraries(Dragonblocks
-	GLEW
-	glfw
 	${OPENGL_LIBRARIES}
+	${GLEW_LIBRARIES}
+	glfw
 	${FREETYPE_LIBRARIES}
 )
 
