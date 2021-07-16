@@ -87,6 +87,6 @@ target_link_libraries(DragonblocksServer
 	sqlite3
 )
 
-if (CMAKE_BUILD_TYPE EQUAL "Release")
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
 	add_compile_definitions(RELEASE)
 endif()
