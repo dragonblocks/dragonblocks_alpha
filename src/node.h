@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include "types.h"
 
-typedef v3f NodeStateBiome;
+typedef v3f32 NodeStateBiome;
 
 typedef union
 {

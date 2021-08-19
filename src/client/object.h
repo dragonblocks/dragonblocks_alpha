@@ -39,7 +39,7 @@ typedef struct
 
 typedef struct
 {
-	v3f pos, rot, scale;
+	v3f32 pos, rot, scale;
 	f32 angle;
 	bool remove;
 	Mesh **meshes;

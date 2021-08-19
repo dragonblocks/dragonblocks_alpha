@@ -7,6 +7,7 @@ typedef enum
 	CC_DISCONNECT,
 	CC_AUTH,
 	CC_BLOCK,
+	CC_SIMULATION_DISTANCE,
 	CLIENT_COMMAND_COUNT
 } ClientCommand;
 

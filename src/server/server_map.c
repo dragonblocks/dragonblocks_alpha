@@ -2,173 +2,244 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
-#include "server/facecache.h"
 #include "server/mapdb.h"
 #include "server/mapgen.h"
 #include "server/server_map.h"
 #include "map.h"
+#include "util.h"
 
-static struct {
-	Server *server;
-	size_t max_blocks;
-	pthread_t thread;
-	sqlite3 *db;
-	bool cancel;
-} server_map;
+struct ServerMap server_map;
+static Server *server;
 
-static void initialize_block(MapBlock *block)
-{
-	if (! mapdb_load_block(server_map.db, block))
-		mapgen_generate_block(block);
-	block->state = MBS_MODIFIED;
-}
+// utility functions
 
-static void reset_client_block(void *key, __attribute__((unused)) void *value, void *block)
-{
-	Client *client = list_get(&server_map.server->players, key);
-	if (client)
-		list_delete(&client->sent_blocks, block);
-	free(key);
-}
-
-static void list_delete_extra_data(void *key, __attribute__((unused)) void *value, __attribute__((unused)) void *unused)
-{
-	free(key);
-}
-
-static void free_extra_data(void *ext)
-{
-	MapBlockExtraData *extra = ext;
-
-	if (extra) {
-		list_clear_func(&extra->clients, &list_delete_extra_data, NULL);
-		free(extra->data);
-		free(extra);
-	}
-}
-
-static void reset_block(MapBlock *block)
-{
-	MapBlockExtraData *extra = block->extra;
-
-	if (extra) {
-		free(extra->data);
-	} else {
-		extra = malloc(sizeof(MapBlockExtraData));
-		extra->clients = list_create(&list_compare_string);
-	}
-
-	map_serialize_block(block, &extra->data, &extra->size);
-
-	block->extra = extra;
-	block->free_extra = &free_extra_data;
-
-	mapdb_save_block(server_map.db, block);
-
-	list_clear_func(&extra->clients, &reset_client_block, block);
-	list_clear(&extra->clients);
-
-	block->state = MBS_READY;
-}
-
+// send a block to a client and reset block request
 static void send_block(Client *client, MapBlock *block)
 {
 	MapBlockExtraData *extra = block->extra;
 
-	list_put(&client->sent_blocks, block, block);
-	list_put(&extra->clients, strdup(client->name), NULL);
-
 	pthread_mutex_lock(&client->mtx);
 	if (client->state == CS_ACTIVE)
-		(void) (write_u32(client->fd, CC_BLOCK) && write_v3s32(client->fd, block->pos) && write(client->fd, extra->data, extra->size) != -1);
+		(void) (write_u32(client->fd, CC_BLOCK) && write_v3s32(client->fd, block->pos) && write_u64(client->fd, extra->size) && write(client->fd, extra->data, extra->size) != -1);
 	pthread_mutex_unlock(&client->mtx);
 }
 
-static void reset_modified_blocks(Client *client)
+// send block to near clients
+// block mutex has to be locked
+static void send_block_to_near(MapBlock *block)
 {
-	for (ListPair **pairptr = &client->sent_blocks.first; *pairptr != NULL; pairptr = &(*pairptr)->next) {
+	MapBlockExtraData *extra = block->extra;
 
-		MapBlock *block = (*pairptr)->key;
+	if (extra->state == MBS_GENERATING)
+		return;
 
-		pthread_mutex_lock(&block->mtx);
-		if (block->state == MBS_MODIFIED) {
-			reset_block(block);
+	map_serialize_block(block, &extra->data, &extra->size);
+	mapdb_save_block(server_map.db, block);
 
-			ListPair *next = (*pairptr)->next;
-			free(*pairptr);
-			*pairptr = next;
-		}
-		pthread_mutex_unlock(&block->mtx);
+	if (extra->state == MBS_CREATED)
+		return;
+
+	pthread_rwlock_rdlock(&server->players_rwlck);
+	ITERATE_LIST(&server->players, pair) {
+		Client *client = pair->value;
+
+		if (within_simulation_distance(client->pos, block->pos, server->config.simulation_distance))
+			send_block(client, block);
 	}
+	pthread_rwlock_unlock(&server->players_rwlck);
 }
 
-static void send_blocks(Client *client)
+// list_clear_func callback for sending changed blocks to near clients
+static void list_send_block(void *key, __attribute__((unused)) void *value, __attribute__((unused)) void *arg)
 {
-	v3s32 pos = map_node_to_block_pos((v3s32) {client->pos.x, client->pos.y, client->pos.z}, NULL);
+	MapBlock *block = key;
 
-	for (size_t i = 0; i < server_map.max_blocks; i++) {
-		MapBlock *block = map_get_block(client->server->map, facecache_face(i, &pos), true);
+	pthread_mutex_lock(&block->mtx);
+	send_block_to_near(block);
+	pthread_mutex_unlock(&block->mtx);
+}
 
-		pthread_mutex_lock(&block->mtx);
-		switch (block->state) {
-			case MBS_CREATED:
+// pthread start routine for mapgen thread
+static void *mapgen_thread(void *arg)
+{
+	MapBlock *block = arg;
+	MapBlockExtraData *extra = block->extra;
 
-				initialize_block(block);
+	pthread_mutex_lock(&block->mtx);
+	extra->state = MBS_GENERATING;
+	pthread_mutex_unlock(&block->mtx);
 
-			__attribute__ ((fallthrough)); case MBS_MODIFIED:
+	List changed_blocks = list_create(NULL);
+	list_put(&changed_blocks, block, NULL);
 
-				reset_block(block);
+	mapgen_generate_block(block, &changed_blocks);
 
-				send:
-				send_block(client, block);
+	pthread_mutex_lock(&block->mtx);
+	extra->state = MBS_READY;
+	pthread_mutex_unlock(&block->mtx);
 
-				pthread_mutex_unlock(&block->mtx);
-				return;
+	list_clear_func(&changed_blocks, &list_send_block, NULL);
 
-			case MBS_READY:
-
-				if (! list_get(&client->sent_blocks, block))
-					goto send;
-				else
-					break;
-
-			default:
-
-				break;
-		}
-		pthread_mutex_unlock(&block->mtx);
+	if (! server_map.shutting_down) {
+		pthread_mutex_lock(&server_map.mapgen_threads_mtx);
+		list_delete(&server_map.mapgen_threads, &extra->mapgen_thread);
+		pthread_mutex_unlock(&server_map.mapgen_threads_mtx);
 	}
-}
-
-static void map_step()
-{
-	pthread_rwlock_rdlock(&server_map.server->players_rwlck);
-	ITERATE_LIST(&server_map.server->players, pair) reset_modified_blocks(pair->value);
-	ITERATE_LIST(&server_map.server->players, pair) send_blocks(pair->value);
-	pthread_rwlock_unlock(&server_map.server->players_rwlck);
-}
-
-static void *map_thread(__attribute__((unused)) void *unused)
-{
-	server_map.db = mapdb_open("map.sqlite");
-
-	while (! server_map.cancel)
-		map_step();
 
 	return NULL;
 }
 
-void server_map_init(Server *server)
+// launch mapgen thread for block
+// block mutex has to be locked
+static void launch_mapgen_thread(MapBlock *block)
 {
-	server_map.server = server;
-	server_map.max_blocks = facecache_count(16);
-
-	pthread_create(&server_map.thread, NULL, &map_thread, NULL);
+	pthread_mutex_lock(&server_map.mapgen_threads_mtx);
+	pthread_t *thread_ptr = &((MapBlockExtraData *) block->extra)->mapgen_thread;
+	pthread_create(thread_ptr, NULL, mapgen_thread, block);
+	list_put(&server_map.mapgen_threads, thread_ptr, NULL);
+	pthread_mutex_unlock(&server_map.mapgen_threads_mtx);
 }
 
+// list_clear_func callback used to join running generator threads on shutdown
+static void list_join_thread(void *key, __attribute__((unused)) void *value, __attribute__((unused)) void *arg)
+{
+	pthread_join(*(pthread_t *) key, NULL);
+}
+
+// map callbacks
+// note: all these functions require the block mutex to be locked, which is always the case when a map callback is invoked
+
+// callback for initializing a newly created block
+// load block from database or initialize state, mgstage buffer and data
+static void on_create_block(MapBlock *block)
+{
+	MapBlockExtraData *extra = block->extra = malloc(sizeof(MapBlockExtraData));
+
+	if (! mapdb_load_block(server_map.db, block)) {
+		extra->state = MBS_CREATED;
+		extra->data = NULL;
+
+		ITERATE_MAPBLOCK {
+			block->data[x][y][z] = map_node_create(NODE_AIR);
+			block->metadata[x][y][z] = list_create(&list_compare_string);
+			extra->mgs_buffer[x][y][z] = MGS_VOID;
+		}
+	}
+}
+
+// callback for deleting a block
+// free extra data
+static void on_delete_block(MapBlock *block)
+{
+	MapBlockExtraData *extra = block->extra;
+
+	if (extra->data)
+		free(extra->data);
+
+	free(extra);
+}
+
+// callback for determining whether a block should be returned by map_get_block
+// hold back blocks that are not fully generated except when the create flag is set to true
+static bool on_get_block(MapBlock *block, bool create)
+{
+	MapBlockExtraData *extra = block->extra;
+
+	if (extra->state < MBS_READY && ! create)
+		return false;
+
+	return true;
+}
+
+// callback for deciding whether a set_node call succeeds or not
+// reject set_node calls that try to override nodes placed by later mapgen stages, else update mgs buffer - also make sure block is inserted into changed blocks list
+static bool on_set_node(MapBlock *block, v3u8 offset, __attribute__((unused)) MapNode *node, void *arg)
+{
+	MapgenSetNodeArg *msn_arg = arg;
+
+	MapgenStage mgs;
+
+	if (msn_arg)
+		mgs = msn_arg->mgs;
+	else
+		mgs = MGS_PLAYER;
+
+	MapgenStage *old_mgs = &((MapBlockExtraData *) block->extra)->mgs_buffer[offset.x][offset.y][offset.z];
+
+	if (mgs >= *old_mgs) {
+		*old_mgs = mgs;
+
+		if (msn_arg)
+			list_put(msn_arg->changed_blocks, block, NULL);
+
+		return true;
+	}
+
+	return false;
+}
+
+// callback for when a block changes
+// send block to near clients if not part of map generation
+static void on_after_set_node(MapBlock *block, __attribute__((unused)) v3u8 offset, void *arg)
+{
+	if (! arg)
+		send_block_to_near(block);
+}
+
+// public functions
+
+// ServerMap singleton constructor
+void server_map_init(Server *srv)
+{
+	server = srv;
+
+	server_map.map = map_create((MapCallbacks) {
+		.create_block = &on_create_block,
+		.delete_block = &on_delete_block,
+		.get_block = &on_get_block,
+		.set_node = &on_set_node,
+		.after_set_node = &on_after_set_node,
+	});
+	server_map.shutting_down = false;
+	server_map.db = mapdb_open("map.sqlite");
+	server_map.mapgen_threads = list_create(NULL);
+	pthread_mutex_init(&server_map.mapgen_threads_mtx, NULL);
+}
+
+// ServerMap singleton destructor
 void server_map_deinit()
 {
-	server_map.cancel = true;
-	pthread_join(server_map.thread, NULL);
+	server_map.shutting_down = true;
+
+	pthread_mutex_lock(&server_map.mapgen_threads_mtx);
+	list_clear_func(&server_map.mapgen_threads, &list_join_thread, NULL);
+	// pthread_mutex_unlock(&server_map.mapgen_threads_mtx);
+	pthread_mutex_destroy(&server_map.mapgen_threads_mtx);
+
 	sqlite3_close(server_map.db);
+	map_delete(server_map.map);
+}
+
+// handle block request from client (thread safe)
+void server_map_requested_block(Client *client, v3s32 pos)
+{
+	if (within_simulation_distance(client->pos, pos, server->config.simulation_distance)) {
+		MapBlock *block = map_get_block(server_map.map, pos, true);
+
+		pthread_mutex_lock(&block->mtx);
+		MapBlockExtraData *extra = block->extra;
+
+		switch (extra->state) {
+			case MBS_CREATED:
+				launch_mapgen_thread(block);
+				break;
+
+			case MBS_GENERATING:
+				break;
+
+			case MBS_READY:
+				send_block(client, block);
+		};
+		pthread_mutex_unlock(&block->mtx);
+	}
 }

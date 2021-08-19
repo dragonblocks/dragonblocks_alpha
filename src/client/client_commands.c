@@ -38,33 +38,48 @@ static bool block_handler(Client *client, bool good)
 	if (! read_v3s32(client->fd, &pos))
 		return false;
 
-	MapBlockHeader header;
+	size_t size;
 
-	if (! read_u32(client->fd, &header))
+	if (! read_u64(client->fd, &size))
 		return false;
 
-	char data[header];
-	if (! read_full(client->fd, data, header))
+	if (size > sizeof(MapBlockData))	// guard to prevent malicious or malfunctioning packets from allocating huge unnecessary amounts of memory
+		return false;
+
+	char data[size];
+	if (! read_full(client->fd, data, size))
 		return false;
 
 	MapBlock *block;
 
 	if (good)
-		block = map_get_block(client->map, pos, true);
+		block = map_get_block(client_map.map, pos, true);
 	else
 		block = map_allocate_block(pos);
 
-	if (block->state != MBS_CREATED)
-		map_clear_meta(block);
+	map_clear_meta(block);
 
-	bool ret = map_deserialize_block(block, data, header);
+	bool ret = map_deserialize_block(block, data, size);
 
 	if (good)
-		client_map_block_changed(block);
+		client_map_block_received(block);
 	else
 		map_free_block(block);
 
 	return ret;
+}
+
+static bool simulation_distance_handler(Client *client, bool good)
+{
+	u32 simulation_distance;
+
+	if (! read_u32(client->fd, &simulation_distance))
+		return false;
+
+	if (good)
+		client_map_set_simulation_distance(simulation_distance);
+
+	return true;
 }
 
 CommandHandler command_handlers[CLIENT_COMMAND_COUNT] = {
@@ -72,4 +87,5 @@ CommandHandler command_handlers[CLIENT_COMMAND_COUNT] = {
 	{&disconnect_handler, "DISCONNECT", CS_CREATED | CS_AUTH | CS_ACTIVE},
 	{&auth_handler, "AUTH", CS_AUTH},
 	{&block_handler, "BLOCK", CS_ACTIVE},
+	{&simulation_distance_handler, "SIMULATION_DISTANCE", CS_ACTIVE},
 };

@@ -1,4 +1,5 @@
 #include "client/blockmesh.h"
+#include "client/client_map.h"
 #include "client/client_node.h"
 #include "client/cube.h"
 
@@ -11,13 +12,13 @@ static v3s8 fdir[6] = {
 	{+0, +1, +0},
 };
 
-static void make_vertices(Object *object, MapBlock *block, Map *map)
+static void make_vertices(Object *object, MapBlock *block)
 {
 	ITERATE_MAPBLOCK {
 		MapNode *node = &block->data[x][y][z];
 
 		if (node_definitions[node->type].visible) {
-			v3f offset = {x + 8.0f, y + 8.0f, z + 8.0f};
+			v3f32 offset = {x + (f32) MAPBLOCK_SIZE / 2.0f, y + (f32) MAPBLOCK_SIZE / 2.0f, z + (f32) MAPBLOCK_SIZE / 2.0f};
 
 			ClientNodeDefintion *client_def = &client_node_definitions[node->type];
 			object_set_texture(object, client_def->texture);
@@ -31,10 +32,12 @@ static void make_vertices(Object *object, MapBlock *block, Map *map)
 
 				Node neighbor;
 
-				if (npos.x >= 0 && npos.x < 16 && npos.y >= 0 && npos.y < 16 && npos.z >= 0 && npos.z < 16)
+				if (npos.x >= 0 && npos.x < MAPBLOCK_SIZE && npos.y >= 0 && npos.y < MAPBLOCK_SIZE && npos.z >= 0 && npos.z < MAPBLOCK_SIZE)
 					neighbor = block->data[npos.x][npos.y][npos.z].type;
-				else
-					neighbor = map_get_node(map, (v3s32) {npos.x + block->pos.x * 16, npos.y + block->pos.y * 16, npos.z + block->pos.z * 16}).type;
+				else {
+					MapNode nn = map_get_node(client_map.map, (v3s32) {npos.x + block->pos.x * MAPBLOCK_SIZE, npos.y + block->pos.y * MAPBLOCK_SIZE, npos.z + block->pos.z * MAPBLOCK_SIZE});
+					neighbor = nn.type;
+				}
 
 				if (neighbor != NODE_UNLOADED && ! node_definitions[neighbor].visible) {
 					for (int v = 0; v < 6; v++) {
@@ -54,20 +57,22 @@ static void make_vertices(Object *object, MapBlock *block, Map *map)
 	}
 }
 
-void blockmesh_make(MapBlock *block, Map *map)
+void blockmesh_make(MapBlock *block)
 {
 	Object *obj = object_create();
-	obj->pos = (v3f) {block->pos.x * 16.0f - 8.0f, block->pos.y * 16.0f - 8.0f, block->pos.z * 16.0f - 8.0f};
+	obj->pos = (v3f32) {block->pos.x * (f32) MAPBLOCK_SIZE - (f32) MAPBLOCK_SIZE / 2.0f, block->pos.y * (f32) MAPBLOCK_SIZE - (f32) MAPBLOCK_SIZE / 2.0f, block->pos.z * (f32) MAPBLOCK_SIZE - (f32) MAPBLOCK_SIZE / 2.0};
 
-	make_vertices(obj, block, map);
+	make_vertices(obj, block);
 
 	if (! object_add_to_scene(obj)) {
 		object_delete(obj);
 		obj = NULL;
 	}
 
-	if (block->extra)
-		((Object *) block->extra)->remove = true;
+	MapBlockExtraData *extra = block->extra;
 
-	block->extra = obj;
+	if (extra->obj)
+		extra->obj->remove = true;
+
+	extra->obj = obj;
 }

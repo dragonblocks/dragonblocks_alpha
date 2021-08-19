@@ -40,20 +40,22 @@ void bintree_add_node(Bintree *tree, BintreeNode **nodeptr, void *key, void *val
 	(*nodeptr)->left = (*nodeptr)->right = NULL;
 }
 
-static void free_recursive(BintreeNode *node, BintreeFreeFunction func)
+static void free_recursive(BintreeNode *node, BintreeFreeFunction func, void *arg)
 {
 	if (node) {
+		free_recursive(node->left, func, arg);
+		free_recursive(node->right, func, arg);
 		free(node->key);
-		free_recursive(node->left, func);
-		free_recursive(node->right, func);
+		if (func)
+			func(node->value, arg);
 		free(node);
 	}
 }
 
-void bintree_clear(Bintree *tree, BintreeFreeFunction func)
+void bintree_clear(Bintree *tree, BintreeFreeFunction func, void *arg)
 {
 	if (tree) {
-		free_recursive(tree->root, func);
+		free_recursive(tree->root, func, arg);
 		tree->root = NULL;
 	}
 }

@@ -61,7 +61,6 @@ static void game_loop(Client *client)
 
 		scene_render();
 		hud_render();
-		// font_render();
 
 		glfwSwapBuffers(window.handle);
 		glfwPollEvents();
@@ -86,9 +85,9 @@ void game(Client *client)
 	scene_on_resize(width, height);
 
 	client_node_init();
-	client_map_start_meshgen();
+	client_map_start();
 
-	camera_set_position((v3f) {0.0f, 0.0f, 0.0f});
+	camera_set_position((v3f32) {0.0f, 0.0f, 0.0f});
 	camera_set_angle(0.0f, 0.0f);
 
 	hud_init();
@@ -113,7 +112,7 @@ void game(Client *client)
 		.offset = {2, 2},
 		.type_def = {
 			.text = {
-				.text = "Dragonblocks Alpha",
+				.text = "Dragonblocks Alpha",	// ToDo: add version
 				.color = {1.0f, 1.0f, 1.0f},
 			},
 		},
@@ -124,6 +123,8 @@ void game(Client *client)
 	client_player_add_to_scene();
 
 	game_loop(client);
+
+	client_map_stop();
 
 	font_deinit();
 	hud_deinit();

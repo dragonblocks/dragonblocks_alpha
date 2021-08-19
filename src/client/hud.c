@@ -125,7 +125,7 @@ void hud_deinit()
 
 static void element_transform(HUDElement *element)
 {
-	v3f pos = {
+	v3f32 pos = {
 		(f32) element->def.offset.x + (1.0f + element->def.pos.x) / 2.0f * (f32) hud.width,
 		(f32) element->def.offset.y + (1.0f + element->def.pos.y) / 2.0f * (f32) hud.height,
 		element->def.pos.z,
@@ -134,7 +134,7 @@ static void element_transform(HUDElement *element)
 	mat4x4_translate(element->transform, pos.x, pos.y, pos.z);
 
 	if (element->def.type == HUD_IMAGE) {
-		v2f scale = element->def.type_def.image.scale;
+		v2f32 scale = element->def.type_def.image.scale;
 
 		switch (element->def.type_def.image.scale_type) {
 			case HUD_SCALE_TEXTURE:

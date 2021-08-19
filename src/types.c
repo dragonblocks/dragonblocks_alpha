@@ -48,6 +48,10 @@ bool read_full(int fd, char *buffer, size_t size)
 		type vec[2] = {val.x, val.y}; \
 		WRITEVEC(type, 2) \
 	} \
+	bool v2 ## type ## _equals(v2 ## type a, v2 ## type b) \
+	{ \
+		return a.x == b.x && a.y == b.y; \
+	} \
 	bool read_v3 ## type(int fd, v3 ## type *ptr) \
 	{ \
 		READVEC(type, 3) \
@@ -60,6 +64,10 @@ bool read_full(int fd, char *buffer, size_t size)
 	{ \
 		type vec[3] = {val.x, val.y, val.z}; \
 		WRITEVEC(type, 3) \
+	} \
+	bool v3 ## type ## _equals(v3 ## type a, v3 ## type b) \
+	{ \
+		return a.x == b.x && a.y == b.y && a.z == b.z; \
 	}
 
 #define DEFTYP(type, bits) \

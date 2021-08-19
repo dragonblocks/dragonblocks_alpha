@@ -4,7 +4,7 @@
 
 static void create_state_biome(MapNode *node)
 {
-	node->state.biome = (v3f) {1.0f, 0.0f, 1.0f};
+	node->state.biome = (v3f32) {1.0f, 0.0f, 1.0f};
 }
 
 NodeDefintion node_definitions[NODE_UNLOADED] = {

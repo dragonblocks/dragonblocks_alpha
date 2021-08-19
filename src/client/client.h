@@ -6,7 +6,6 @@
 #include "client/client_commands.h"
 #include "client/scene.h"
 #include "server/server_commands.h"
-#include "map.h"
 #include "network.h"
 #include "types.h"
 
@@ -22,10 +21,9 @@ typedef struct Client
 	pthread_mutex_t mtx;
 	ClientState state;
 	char *name;
-	Map *map;
 } Client;
 
 void client_disconnect(bool send, const char *detail);
-void client_send_position(v3f pos);
+void client_send_position(v3f64 pos);
 
 #endif

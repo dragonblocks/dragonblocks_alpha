@@ -17,11 +17,11 @@ typedef struct
 	size_t key_size;
 } Bintree;
 
-typedef void (*BintreeFreeFunction)(void *value);
+typedef void (*BintreeFreeFunction)(void *value, void *arg);
 
 Bintree bintree_create(size_t key_size);
 BintreeNode **bintree_search(Bintree *tree, void *key);
 void bintree_add_node(Bintree *tree, BintreeNode **nodeptr, void *key, void *value);
-void bintree_clear(Bintree *tree, BintreeFreeFunction func);
+void bintree_clear(Bintree *tree, BintreeFreeFunction func, void *arg);
 
 #endif

@@ -25,7 +25,7 @@ void camera_enable(GLint loc_view)
 	glUniformMatrix4fv(loc_view, 1, GL_FALSE, camera.view[0]);
 }
 
-void camera_set_position(v3f pos)
+void camera_set_position(v3f32 pos)
 {
 	camera.eye[0] = pos.x;
 	camera.eye[1] = pos.y;

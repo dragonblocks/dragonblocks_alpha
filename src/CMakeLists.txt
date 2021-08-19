@@ -49,6 +49,7 @@ add_executable(Dragonblocks
 	client/client_node.c
 	client/client_player.c
 	client/cube.c
+	client/facecache.c
 	client/font.c
 	client/game.c
 	client/hud.c
@@ -75,7 +76,6 @@ target_include_directories(Dragonblocks PUBLIC
 
 add_executable(DragonblocksServer
 	${SOURCES_COMMON}
-	server/facecache.c
 	server/mapdb.c
 	server/mapgen.c
 	server/perlin.c

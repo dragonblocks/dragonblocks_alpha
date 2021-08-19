@@ -5,6 +5,7 @@
 #include <linmath.h/linmath.h>
 #include "client/font.h"
 #include "client/texture.h"
+#include "list.h"
 #include "types.h"
 
 typedef enum
@@ -23,18 +24,18 @@ typedef enum
 typedef struct
 {
 	HUDElementType type;
-	v3f pos;
+	v3f32 pos;
 	v2s32 offset;
 	union
 	{
 		struct {
 			Texture *texture;
-			v2f scale;
+			v2f32 scale;
 			HUDImageScaleType scale_type;
 		} image;
 		struct {
 			char *text;
-			v3f color;
+			v3f32 color;
 		} text;
 	} type_def;
 } HUDElementDefinition;

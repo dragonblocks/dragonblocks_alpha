@@ -13,7 +13,7 @@
 #include "signal_handlers.h"
 #include "util.h"
 
-Client client;
+static Client client;
 
 void client_disconnect(bool send, const char *detail)
 {
@@ -29,16 +29,16 @@ void client_disconnect(bool send, const char *detail)
 	pthread_mutex_unlock(&client.mtx);
 }
 
-void client_send_position(v3f pos)
+void client_send_position(v3f64 pos)
 {
 	pthread_mutex_lock(&client.mtx);
-	(void) (write_u32(client.fd, SC_POS) && write_v3f32(client.fd, pos));
+	(void) (write_u32(client.fd, SC_POS) && write_v3f64(client.fd, pos));
 	pthread_mutex_unlock(&client.mtx);
 }
 
 #include "network.c"
 
-static void *reciever_thread(__attribute__((unused)) void *unused)
+static void *reciever_thread(__attribute__((unused)) void *arg)
 {
 	handle_packets(&client);
 
@@ -95,10 +95,9 @@ static void client_start(int fd)
 	pthread_mutex_init(&client.mtx, NULL);
 	client.state = CS_CREATED;
 	client.name = NULL;
-	client.map = map_create();
 
-	client_player_init(client.map);
-	client_map_init(client.map);
+	client_map_init(&client);
+	client_player_init();
 
 	pthread_t recv_thread;
 	pthread_create(&recv_thread, NULL, &reciever_thread, NULL);
@@ -112,9 +111,10 @@ static void client_start(int fd)
 	if (client.name)
 		free(client.name);
 
-	client_map_deinit();
+	pthread_join(recv_thread, NULL);
 
-	map_delete(client.map);
+	client_player_deinit();
+	client_map_deinit();
 
 	pthread_mutex_destroy(&client.mtx);
 }

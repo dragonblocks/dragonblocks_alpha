@@ -3,29 +3,36 @@
 #include <unistd.h>
 #include <math.h>
 #include <endian.h>
-#include <zlib.h>
+#include <string.h>
 #include "map.h"
 #include "util.h"
 
-Map *map_create()
+Map *map_create(MapCallbacks callbacks)
 {
 	Map *map = malloc(sizeof(Map));
 	pthread_rwlock_init(&map->rwlck, NULL);
 	pthread_rwlock_init(&map->cached_rwlck, NULL);
 	map->sectors = bintree_create(sizeof(v2s32));
 	map->cached = NULL;
+	map->callbacks = callbacks;
 	return map;
 }
 
-static void free_block(void *block)
+static void free_block(void *value, void *arg)
 {
-	map_free_block(block);
+	Map *map = arg;
+
+	if (map->callbacks.delete_block)
+		map->callbacks.delete_block(value);
+
+	map_free_block(value);
 }
 
-static void free_sector(void *sector_void)
+static void free_sector(void *value, void *arg)
 {
-	MapSector *sector = sector_void;
-	bintree_clear(&sector->blocks, &free_block);
+	MapSector *sector = value;
+
+	bintree_clear(&sector->blocks, &free_block, arg);
 	pthread_rwlock_destroy(&sector->rwlck);
 	free(sector);
 }
@@ -34,7 +41,7 @@ void map_delete(Map *map)
 {
 	pthread_rwlock_destroy(&map->rwlck);
 	pthread_rwlock_destroy(&map->cached_rwlck);
-	bintree_clear(&map->sectors, &free_sector);
+	bintree_clear(&map->sectors, &free_sector, map);
 	free(map);
 }
 
@@ -73,7 +80,7 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 	cached = map->cached;
 	pthread_rwlock_unlock(&map->cached_rwlck);
 
-	if (cached && cached->pos.x == pos.x && cached->pos.y == pos.y && cached->pos.z == pos.z)
+	if (cached && v3s32_equals(cached->pos, pos))
 		return cached;
 
 	MapSector *sector = map_get_sector(map, (v2s32) {pos.x, pos.z}, create);
@@ -92,18 +99,21 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create)
 	if (*nodeptr) {
 		block = (*nodeptr)->value;
 
-		if (block->state < MBS_READY) {
-			if (! create)
-				block = NULL;
+		pthread_mutex_lock(&block->mtx);
+		if (map->callbacks.get_block && ! map->callbacks.get_block(block, create)) {
+			pthread_mutex_unlock(&block->mtx);
+			block = NULL;
 		} else {
+			pthread_mutex_unlock(&block->mtx);
 			pthread_rwlock_wrlock(&map->cached_rwlck);
 			map->cached = block;
 			pthread_rwlock_unlock(&map->cached_rwlck);
 		}
 	} else if (create) {
-		block = map_allocate_block(pos);
+		bintree_add_node(&sector->blocks, nodeptr, &pos.y, block = map_allocate_block(pos));
 
-		bintree_add_node(&sector->blocks, nodeptr, &pos.y, block);
+		if (map->callbacks.create_block)
+			map->callbacks.create_block(block);
 	}
 
 	pthread_rwlock_unlock(&sector->rwlck);
@@ -115,10 +125,11 @@ MapBlock *map_allocate_block(v3s32 pos)
 {
 	MapBlock *block = malloc(sizeof(MapBlock));
 	block->pos = pos;
-	block->state = MBS_CREATED;
 	block->extra = NULL;
-	block->free_extra = NULL;
-	pthread_mutex_init(&block->mtx, NULL);
+	pthread_mutexattr_t attr;
+	pthread_mutexattr_init(&attr);
+	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+	pthread_mutex_init(&block->mtx, &attr);
 	return block;
 }
 
@@ -133,8 +144,6 @@ void map_free_block(MapBlock *block)
 {
 	map_clear_meta(block);
 	pthread_mutex_destroy(&block->mtx);
-	if (block->free_extra)
-		block->free_extra(block->extra);
 	free(block);
 }
 
@@ -155,10 +164,7 @@ bool map_deserialize_node(int fd, MapNode *node)
 
 void map_serialize_block(MapBlock *block, char **dataptr, size_t *sizeptr)
 {
-	size_t uncompressed_size = sizeof(MapBlockData);
-	char uncompressed_data[uncompressed_size];
-
-	MapBlockData blockdata;
+	MapBlockData uncompressed;
 	ITERATE_MAPBLOCK {
 		MapNode node = block->data[x][y][z];
 
@@ -166,71 +172,21 @@ void map_serialize_block(MapBlock *block, char **dataptr, size_t *sizeptr)
 			node_definitions[node.type].serialize(&node);
 
 		node.type = htobe32(node.type);
-		blockdata[x][y][z] = node;
+		uncompressed[x][y][z] = node;
 	}
-	memcpy(uncompressed_data, blockdata, sizeof(MapBlockData));
 
-	char compressed_data[uncompressed_size];
-
-	z_stream stream;
-	stream.zalloc = Z_NULL;
-	stream.zfree = Z_NULL;
-	stream.opaque = Z_NULL;
-
-	stream.avail_in = stream.avail_out = uncompressed_size;
-    stream.next_in = (Bytef *) uncompressed_data;
-    stream.next_out = (Bytef *) compressed_data;
-
-    deflateInit(&stream, Z_BEST_COMPRESSION);
-    deflate(&stream, Z_FINISH);
-    deflateEnd(&stream);
-
-	size_t compressed_size = stream.total_out;
-
-	size_t size = sizeof(MapBlockHeader) + sizeof(MapBlockHeader) + compressed_size;
-	char *data = malloc(size);
-	*(MapBlockHeader *) data = htobe32(sizeof(MapBlockHeader) + compressed_size);
-	*(MapBlockHeader *) (data + sizeof(MapBlockHeader)) = htobe32(uncompressed_size);
-	memcpy(data + sizeof(MapBlockHeader) + sizeof(MapBlockHeader), compressed_data, compressed_size);
-
-	*sizeptr = size;
-	*dataptr = data;
+	my_compress(&uncompressed, sizeof(MapBlockData), dataptr, sizeptr);
 }
 
 bool map_deserialize_block(MapBlock *block, const char *data, size_t size)
 {
-	if (size < sizeof(MapBlockHeader))
+	MapBlockData decompressed;
+
+	if (! my_decompress(data, size, &decompressed, sizeof(MapBlockData)))
 		return false;
-
-	MapBlockHeader uncompressed_size = be32toh(*(MapBlockHeader *) data);
-
-	if (uncompressed_size < sizeof(MapBlockData))
-		return false;
-
-	char decompressed_data[uncompressed_size];
-
-	z_stream stream;
-	stream.zalloc = Z_NULL;
-    stream.zfree = Z_NULL;
-    stream.opaque = Z_NULL;
-
-	stream.avail_in = size - sizeof(MapBlockHeader);
-    stream.next_in = (Bytef *) (data + sizeof(MapBlockHeader));
-    stream.avail_out = uncompressed_size;
-    stream.next_out = (Bytef *) decompressed_data;
-
-    inflateInit(&stream);
-    inflate(&stream, Z_NO_FLUSH);
-    inflateEnd(&stream);
-
-    if (stream.total_out < uncompressed_size)
-		return false;
-
-	MapBlockData blockdata;
-	memcpy(blockdata, decompressed_data, sizeof(MapBlockData));
 
 	ITERATE_MAPBLOCK {
-		MapNode node = blockdata[x][y][z];
+		MapNode node = decompressed[x][y][z];
 		node.type = be32toh(node.type);
 
 		if (node.type >= NODE_UNLOADED)
@@ -240,11 +196,8 @@ bool map_deserialize_block(MapBlock *block, const char *data, size_t size)
 			node_definitions[node.type].deserialize(&node);
 
 		block->data[x][y][z] = node;
-
 		block->metadata[x][y][z] = list_create(&list_compare_string);
 	}
-
-	block->state = MBS_MODIFIED;
 
 	return true;
 }
@@ -252,8 +205,8 @@ bool map_deserialize_block(MapBlock *block, const char *data, size_t size)
 v3s32 map_node_to_block_pos(v3s32 pos, v3u8 *offset)
 {
 	if (offset)
-		*offset = (v3u8) {(u32) pos.x % 16, (u32) pos.y % 16, (u32) pos.z % 16};
-	return (v3s32) {floor((double) pos.x / 16.0), floor((double) pos.y / 16.0), floor((double) pos.z / 16.0)};
+		*offset = (v3u8) {(u32) pos.x % MAPBLOCK_SIZE, (u32) pos.y % MAPBLOCK_SIZE, (u32) pos.z % MAPBLOCK_SIZE};
+	return (v3s32) {floor((double) pos.x / (double) MAPBLOCK_SIZE), floor((double) pos.y / (double) MAPBLOCK_SIZE), floor((double) pos.z / (double) MAPBLOCK_SIZE)};
 }
 
 MapNode map_get_node(Map *map, v3s32 pos)
@@ -266,15 +219,18 @@ MapNode map_get_node(Map *map, v3s32 pos)
 	return block->data[offset.x][offset.y][offset.z];
 }
 
-void map_set_node(Map *map, v3s32 pos, MapNode node)
+void map_set_node(Map *map, v3s32 pos, MapNode node, bool create, void *arg)
 {
 	v3u8 offset;
-	MapBlock *block = map_get_block(map, map_node_to_block_pos(pos, &offset), false);
+	MapBlock *block = map_get_block(map, map_node_to_block_pos(pos, &offset), create);
 	if (block) {
 		pthread_mutex_lock(&block->mtx);
-		block->state = MBS_MODIFIED;
-		list_clear(&block->metadata[offset.x][offset.y][offset.z]);
-		block->data[offset.x][offset.y][offset.z] = node;
+		if (! map->callbacks.set_node || map->callbacks.set_node(block, offset, &node, arg)) {
+			if (map->callbacks.after_set_node)
+				map->callbacks.after_set_node(block, offset, arg);
+			list_clear(&block->metadata[offset.x][offset.y][offset.z]);
+			block->data[offset.x][offset.y][offset.z] = node;
+		}
 		pthread_mutex_unlock(&block->mtx);
 	}
 }

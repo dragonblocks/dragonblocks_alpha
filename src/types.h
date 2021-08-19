@@ -18,9 +18,11 @@ bool read_full(int fd, char *buffer, size_t size);
 	typedef struct {type x, y;} v2 ## type; \
 	DEFRW(v2 ## type) \
 	DEFBOX(2 ## type) \
+	bool v2 ## type ## _equals(v2 ## type a, v2 ## type b); \
 	typedef struct {type x, y, z;} v3 ## type; \
 	DEFRW(v3 ## type) \
-	DEFBOX(3 ## type)
+	DEFBOX(3 ## type) \
+	bool v3 ## type ## _equals(v3 ## type a, v3 ## type b); \
 
 #define DEFTYP(from, to) \
 	typedef from to; \
@@ -41,12 +43,6 @@ typedef double f64;
 
 DEFTYP(float, f32)
 DEFTYP(double, f64)
-
-typedef v2f32 v2f;
-typedef v3f32 v3f;
-
-typedef aabb2f32 aabb2f;
-typedef aabb3f32 aabb3f;
 
 #undef DEFRW
 #undef DEFBOX

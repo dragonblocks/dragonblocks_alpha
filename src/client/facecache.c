@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "server/facecache.h"
+#include "client/facecache.h"
 #include "array.h"
 
 static struct

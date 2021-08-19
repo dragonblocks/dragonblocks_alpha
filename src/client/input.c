@@ -43,8 +43,8 @@ void input_on_cursor_pos(double current_x, double current_y)
 
 static bool move(int forward, int backward, vec3 dir)
 {
-	f32 sign;
-	f32 speed = 4.317f;
+	f64 sign;
+	f64 speed = 4.317f;
 
 	if (glfwGetKey(window.handle, forward) == GLFW_PRESS)
 		sign = +1.0f;

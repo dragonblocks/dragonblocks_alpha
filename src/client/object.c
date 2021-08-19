@@ -33,9 +33,9 @@ static VertexLayout vertex_layout = {
 Object *object_create()
 {
 	Object *obj = malloc(sizeof(Object));
-	obj->pos = (v3f) {0.0f, 0.0f, 0.0f};
-	obj->rot = (v3f) {0.0f, 0.0f, 0.0f};
-	obj->scale = (v3f) {1.0f, 1.0f, 1.0f};
+	obj->pos = (v3f32) {0.0f, 0.0f, 0.0f};
+	obj->rot = (v3f32) {0.0f, 0.0f, 0.0f};
+	obj->scale = (v3f32) {1.0f, 1.0f, 1.0f};
 	obj->angle = 0.0f;
 	obj->remove = false;
 	obj->meshes = NULL;

@@ -41,7 +41,7 @@ bool scene_init()
 	return true;
 }
 
-static void list_delete_object(void *key, __attribute__((unused)) void *value, __attribute__((unused)) void *unused)
+static void list_delete_object(void *key, __attribute__((unused)) void *value, __attribute__((unused)) void *arg)
 {
 	object_delete(key);
 }

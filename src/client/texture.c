@@ -13,7 +13,7 @@ __attribute((constructor(101))) static void textures_init()
 	textures = list_create(&list_compare_string);
 }
 
-static void list_delete_texture(__attribute__((unused)) void *key, void *value, __attribute__((unused)) void *unused)
+static void list_delete_texture(__attribute__((unused)) void *key, void *value, __attribute__((unused)) void *arg)
 {
 	texture_delete(value);
 }

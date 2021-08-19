@@ -8,8 +8,102 @@
 #include "signal_handlers.h"
 #include "util.h"
 
-Server server;
+static Server server;
 
+// include handle_packets implementation
+
+#include "network.c"
+
+// utility functions
+
+// pthread start routine for reciever thread
+static void *reciever_thread(void *arg)
+{
+	Client *client = arg;
+
+	if (! handle_packets(client))
+		server_disconnect_client(client, DISCO_NO_SEND | DISCO_NO_JOIN, "network error");
+
+	return NULL;
+}
+
+// accept a new connection, initialize client and start reciever thread
+static void accept_client()
+{
+	struct sockaddr_storage client_address = {0};
+	socklen_t client_addrlen = sizeof(client_address);
+
+	int fd = accept(server.sockfd, (struct sockaddr *) &client_address, &client_addrlen);
+
+	if (fd == -1) {
+		if (errno != EINTR)
+			perror("accept");
+		return;
+	}
+
+	Client *client = malloc(sizeof(Client));
+	client->fd = fd;
+	pthread_mutex_init(&client->mtx, NULL);
+	client->state = CS_CREATED;
+	client->address = address_string((struct sockaddr_in6 *) &client_address);
+	client->name = client->address;
+	client->server = &server;
+	client->pos = (v3f64) {0.0f, 0.0f, 0.0f};
+	pthread_create(&client->net_thread, NULL, &reciever_thread, client);
+
+	pthread_rwlock_wrlock(&server.clients_rwlck);
+	list_put(&server.clients, client, NULL);
+	pthread_rwlock_unlock(&server.clients_rwlck);
+
+	printf("Connected %s\n", client->address);
+}
+
+// list_clear_func callback used on server shutdown to disconnect all clients properly
+static void list_disconnect_client(void *key, __attribute__((unused)) void *value, __attribute__((unused)) void *arg)
+{
+	server_disconnect_client(key, DISCO_NO_REMOVE | DISCO_NO_MESSAGE, "");
+}
+
+// start up the server after socket was created, then accept connections until interrupted, then shutdown server
+static void server_run(int fd)
+{
+	server.config.simulation_distance = 16;
+
+	server.sockfd = fd;
+	pthread_rwlock_init(&server.clients_rwlck, NULL);
+	server.clients = list_create(NULL);
+	pthread_rwlock_init(&server.players_rwlck, NULL);
+	server.players = list_create(&list_compare_string);
+
+	server_map_init(&server);
+
+	while (! interrupted)
+		accept_client();
+
+	printf("Shutting down\n");
+
+	pthread_rwlock_wrlock(&server.clients_rwlck);
+	list_clear_func(&server.clients, &list_disconnect_client, NULL);
+	pthread_rwlock_unlock(&server.clients_rwlck);
+
+	pthread_rwlock_wrlock(&server.players_rwlck);
+	list_clear(&server.players);
+	pthread_rwlock_unlock(&server.players_rwlck);
+
+	pthread_rwlock_destroy(&server.clients_rwlck);
+	pthread_rwlock_destroy(&server.players_rwlck);
+
+	shutdown(server.sockfd, SHUT_RDWR);
+	close(server.sockfd);
+
+	server_map_deinit();
+
+	exit(EXIT_SUCCESS);
+}
+
+// public functions
+
+// disconnect a client with various options an an optional detail message (flags: DiscoFlag bitmask)
 void server_disconnect_client(Client *client, int flags, const char *detail)
 {
 	client->state = CS_DISCONNECTED;
@@ -46,90 +140,7 @@ void server_disconnect_client(Client *client, int flags, const char *detail)
 	free(client);
 }
 
-#include "network.c"
-
-static void *server_reciever_thread(void *cli)
-{
-	Client *client = cli;
-
-	if (! handle_packets(client))
-		server_disconnect_client(client, DISCO_NO_SEND | DISCO_NO_JOIN, "network error");
-
-	return NULL;
-}
-
-static void server_accept_client()
-{
-	struct sockaddr_storage client_address = {0};
-	socklen_t client_addrlen = sizeof(client_address);
-
-	int fd = accept(server.sockfd, (struct sockaddr *) &client_address, &client_addrlen);
-
-	if (fd == -1) {
-		if (errno != EINTR)
-			perror("accept");
-		return;
-	}
-
-	Client *client = malloc(sizeof(Client));
-	client->fd = fd;
-	pthread_mutex_init(&client->mtx, NULL);
-	client->state = CS_CREATED;
-	client->address = address_string((struct sockaddr_in6 *) &client_address);
-	client->name = client->address;
-	client->server = &server;
-	client->pos = (v3f) {0.0f, 0.0f, 0.0f};
-	pthread_create(&client->net_thread, NULL, &server_reciever_thread, client);
-	client->sent_blocks = list_create(NULL);
-
-	pthread_rwlock_wrlock(&server.clients_rwlck);
-	list_put(&server.clients, client, NULL);
-	pthread_rwlock_unlock(&server.clients_rwlck);
-
-	printf("Connected %s\n", client->address);
-}
-
-static void list_disconnect_client(void *key, __attribute__((unused)) void *value, __attribute__((unused)) void *unused)
-{
-	server_disconnect_client(key, DISCO_NO_REMOVE | DISCO_NO_MESSAGE, "");
-}
-
-void server_start(int fd)
-{
-	server.sockfd = fd;
-	server.map = map_create(NULL);
-	pthread_rwlock_init(&server.clients_rwlck, NULL);
-	server.clients = list_create(NULL);
-	pthread_rwlock_init(&server.players_rwlck, NULL);
-	server.players = list_create(&list_compare_string);
-
-	server_map_init(&server);
-
-	while (! interrupted)
-		server_accept_client();
-
-	printf("Shutting down\n");
-
-	server_map_deinit();
-
-	pthread_rwlock_wrlock(&server.clients_rwlck);
-	list_clear_func(&server.clients, &list_disconnect_client, NULL);
-	pthread_rwlock_unlock(&server.clients_rwlck);
-	pthread_rwlock_wrlock(&server.players_rwlck);
-	list_clear(&server.players);
-	pthread_rwlock_unlock(&server.players_rwlck);
-
-	pthread_rwlock_destroy(&server.clients_rwlck);
-	pthread_rwlock_destroy(&server.players_rwlck);
-
-	shutdown(server.sockfd, SHUT_RDWR);
-	close(server.sockfd);
-
-	map_delete(server.map);
-
-	exit(EXIT_SUCCESS);
-}
-
+// server entry point
 int main(int argc, char **argv)
 {
 	program_name = argv[0];
@@ -174,7 +185,7 @@ int main(int argc, char **argv)
 	freeaddrinfo(info);
 
 	signal_handlers_init();
-	server_start(fd);
+	server_run(fd);
 
 	return EXIT_SUCCESS;
 }

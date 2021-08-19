@@ -1,13 +1,29 @@
+#include <stdio.h>
 #include <math.h>
 #include "server/mapgen.h"
 #include "server/perlin.h"
+#include "server/server_map.h"
 
-void mapgen_generate_block(MapBlock *block)
+static void set_node(v3s32 pos, MapNode node, MapgenStage mgs, List *changed_blocks)
 {
-	for (u8 x = 0; x < 16; x++) {
-		u32 ux = x + block->pos.x * 16 + ((u32) 1 << 31);
-		for (u8 z = 0; z < 16; z++) {
-			u32 uz = z + block->pos.z * 16 + ((u32) 1 << 31);
+	MapgenSetNodeArg arg = {
+		.mgs = mgs,
+		.changed_blocks = changed_blocks,
+	};
+	map_set_node(server_map.map, pos, node, true, &arg);
+}
+
+// generate a block (does not manage block state or threading)
+void mapgen_generate_block(MapBlock *block, List *changed_blocks)
+{
+	printf("Generating block at (%d, %d, %d)\n", block->pos.x, block->pos.y, block->pos.z);
+
+	MapBlockExtraData *extra = block->extra;
+
+	for (u8 x = 0; x < MAPBLOCK_SIZE; x++) {
+		u32 ux = x + block->pos.x * MAPBLOCK_SIZE + ((u32) 1 << 31);
+		for (u8 z = 0; z < MAPBLOCK_SIZE; z++) {
+			u32 uz = z + block->pos.z * MAPBLOCK_SIZE + ((u32) 1 << 31);
 			s32 height = smooth2d(ux / 32.0, uz / 32.0, 0, 0) * 16.0 + 128.0;
 			bool is_mountain = false;
 
@@ -18,8 +34,8 @@ void mapgen_generate_block(MapBlock *block)
 				is_mountain = true;
 			}
 
-			for (u8 y = 0; y < 16; y++) {
-				s32 ay = block->pos.y * 16 + y;
+			for (u8 y = 0; y < MAPBLOCK_SIZE; y++) {
+				s32 ay = block->pos.y * MAPBLOCK_SIZE + y;
 				s32 diff = ay - height;
 
 				Node node = NODE_AIR;
@@ -33,16 +49,32 @@ void mapgen_generate_block(MapBlock *block)
 				else if (diff < 1)
 					node = (is_mountain && ay > 256) ? NODE_SNOW : NODE_AIR;
 
-				block->data[x][y][z] = map_node_create(node);
-				block->metadata[x][y][z] = list_create(&list_compare_string);
-
-				if (node == NODE_GRASS) {
-					double min, max;
-					min = 0.15;
-					max = 0.45;
-					block->data[x][y][z].state.biome.x = (smooth2d(ux / 128.0, uz / 128.0, 0, 3) * 0.5 + 0.5) * (max - min) + min;
-					block->data[x][y][z].state.biome.y = 1.0;
+				if (! is_mountain && diff == 0 && (smooth2d(x + block->pos.x * 16, z + block->pos.z * 16, 0, 3) * 0.5 + 0.5) < 0.01f) {
+					for (s8 bx = -1; bx <= 1; bx++) {
+						for (s8 by = -1; by <= 1; by++) {
+							for (s8 bz = -1; bz <= 1; bz++) {
+								v3s32 pos = {block->pos.x * MAPBLOCK_SIZE + x + bx, block->pos.y * MAPBLOCK_SIZE + y + by, block->pos.z * MAPBLOCK_SIZE + z + bz};
+								if (smooth3d(pos.x, pos.y, pos.z, 0, 4) > 0.0)
+									set_node(pos, map_node_create(NODE_STONE), MGS_BOULDERS, changed_blocks);
+							}
+						}
+					}
 				}
+
+				pthread_mutex_lock(&block->mtx);
+				if (extra->mgs_buffer[x][y][z] <= MGS_TERRAIN) {
+					block->data[x][y][z] = map_node_create(node);
+					extra->mgs_buffer[x][y][z] = MGS_TERRAIN;
+
+					if (node == NODE_GRASS) {
+						double min, max;
+						min = 0.15;
+						max = 0.45;
+						block->data[x][y][z].state.biome.x = (smooth2d(ux / 128.0, uz / 128.0, 0, 3) * 0.5 + 0.5) * (max - min) + min;
+						block->data[x][y][z].state.biome.y = 1.0;
+					}
+				}
+				pthread_mutex_unlock(&block->mtx);
 			}
 		}
 	}
