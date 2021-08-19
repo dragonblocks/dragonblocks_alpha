@@ -25,15 +25,17 @@ void mapgen_generate_block(MapBlock *block, List *changed_blocks)
 		u32 ux = x + block->pos.x * MAPBLOCK_SIZE + ((u32) 1 << 31);
 		for (u8 z = 0; z < MAPBLOCK_SIZE; z++) {
 			u32 uz = z + block->pos.z * MAPBLOCK_SIZE + ((u32) 1 << 31);
-			s32 height = smooth2d(ux / 32.0, uz / 32.0, 0, seed + SO_HEIGHT) * 16.0 + 128.0;
+			s32 height = pnoise2d(ux / 32.0, uz / 32.0, 0.45, 5, seed + SO_HEIGHT) * 16.0 + 128.0;
 			bool is_mountain = false;
 
 			double mountain_factor = (smooth2d(ux / 1000.0, uz / 1000.0, 0, seed + SO_MOUNTAIN_FACTOR) - 0.3) * 5.0;
 
 			if (mountain_factor > 0.0) {
-				height = pow(height * pow(((smooth2d(ux / 50.0, uz / 50.0, 2, seed + SO_MOUNTAIN_HEIGHT) + 1.0) * 256.0 + 128.0), mountain_factor), 1.0 / (mountain_factor + 1.0));
+				height = pow(height * pow(((smooth2d(ux / 50.0, uz / 50.0, 0, seed + SO_MOUNTAIN_HEIGHT) + 1.0) * 256.0 + 128.0), mountain_factor), 1.0 / (mountain_factor + 1.0));
 				is_mountain = true;
 			}
+
+			height -= 96.0;
 
 			for (u8 y = 0; y < MAPBLOCK_SIZE; y++) {
 				s32 ay = block->pos.y * MAPBLOCK_SIZE + y;
