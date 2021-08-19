@@ -13,9 +13,11 @@ typedef enum
 	SO_WETNESS,
 	SO_TEXTURE_OFFSET_S,
 	SO_TEXTURE_OFFSET_T,
+	SO_TEMPERATURE,
 } SeedOffset;
 
 f64 get_wetness(v3s32 pos);
+f64 get_temperature(v3s32 pos);
 
 extern int seed;
 

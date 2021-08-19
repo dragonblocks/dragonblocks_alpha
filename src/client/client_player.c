@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "biome.h"
 #include "client/camera.h"
 #include "client/client.h"
 #include "client/client_map.h"
@@ -18,10 +19,12 @@ static void update_pos()
 	client_player.obj->pos = (v3f32) {client_player.pos.x, client_player.pos.y, client_player.pos.z};
 	object_transform(client_player.obj);
 
-	char pos_text[BUFSIZ];
-	sprintf(pos_text, "(%.1f %.1f %.1f)", client_player.pos.x, client_player.pos.y, client_player.pos.z);
+	v3s32 node_pos = {client_player.pos.x, client_player.pos.y, client_player.pos.z};
 
-	hud_change_text(client_player.pos_display, pos_text);
+	char info_text[BUFSIZ];
+	sprintf(info_text, "(%.1f %.1f %.1f) wetness: %.2f temperature: %.2f", client_player.pos.x, client_player.pos.y, client_player.pos.z, get_wetness(node_pos), get_temperature(node_pos));
+
+	hud_change_text(client_player.info_hud, info_text);
 }
 
 // get absolute player bounding box
@@ -87,7 +90,7 @@ void client_player_deinit()
 	pthread_rwlock_destroy(&client_player.rwlock);
 }
 
-// create mesh object and hud display
+// create mesh object and info hud
 void client_player_add_to_scene()
 {
 	client_player.obj = object_create();
@@ -104,7 +107,7 @@ void client_player_add_to_scene()
 		}
 	}
 
-	client_player.pos_display = hud_add((HUDElementDefinition) {
+	client_player.info_hud = hud_add((HUDElementDefinition) {
 		.type = HUD_TEXT,
 		.pos = {-1.0f, -1.0f, 0.0f},
 		.offset = {2, 2 + 16 + 2 + 16 + 2},

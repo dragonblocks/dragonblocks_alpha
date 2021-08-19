@@ -4,13 +4,21 @@
 #include "node.h"
 #include "perlin.h"
 
+static f64 clamp(f64 v, f64 min, f64 max)
+{
+	return v < min ? min : v > max ? max : v;
+}
+
 static void render_state_biome(v3s32 pos, __attribute__((unused)) MapNode *node, Vertex3D *vertex)
 {
-	double min, max;
-	min = 0.15;
-	max = 0.45;
+	f32 wet_min, wet_max, temp_max;
+	wet_min = 0.13f;
+	wet_max = 0.33f;
+	temp_max = 0.45f;
 
-	vertex->color.h = get_wetness(pos) * (max - min) + min;
+	f32 temp_f = clamp(0.3f - get_temperature(pos), 0.0f, 0.3f) / 0.3f;
+
+	vertex->color.h = (get_wetness(pos) * (wet_max - wet_min) + wet_min) * (1.0f - temp_f) + temp_max * temp_f;
 	vertex->color.s = 1.0f;
 	vertex->color.v = 1.0f;
 }

@@ -16,7 +16,7 @@ extern struct ClientPlayer
 	f64 eye_height;				// eye height above feet
 	pthread_rwlock_t rwlock;	// used to protect the above properties
 	Object *obj;				// 3D mesh object (currently always invisible), not thread safe
-	HUDElement *pos_display;	// display position on HUD, not thread safe
+	HUDElement *info_hud;		// display position, temperature and wetness on HUD, not thread safe
 } client_player;
 
 void client_player_init();				// ClientPlayer singleton constructor

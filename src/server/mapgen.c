@@ -47,10 +47,10 @@ void mapgen_generate_block(MapBlock *block, List *changed_blocks)
 					node = is_mountain ? NODE_STONE : NODE_DIRT;
 				else if (diff < 0)
 					node = is_mountain ? NODE_STONE : NODE_GRASS;
-				else if (diff < 1)
-					node = (is_mountain && ay > 256) ? NODE_SNOW : NODE_AIR;
+				else if (diff < 1 && get_temperature((v3s32) {block->pos.x * MAPBLOCK_SIZE + x, block->pos.y * MAPBLOCK_SIZE + y, block->pos.z * MAPBLOCK_SIZE + z}) < 0.0)
+					node = NODE_SNOW;
 
-				if (! is_mountain && diff == 0 && (smooth2d(x + block->pos.x * 16, z + block->pos.z * 16, 0, seed + SO_BOULDER_CENTER) * 0.5 + 0.5) < 0.0001f) {
+				if (! is_mountain && diff == 0 && (smooth2d(x + block->pos.x * 16, z + block->pos.z * 16, 0, seed + SO_BOULDER_CENTER) * 0.5 + 0.5) < 0.0001) {
 					for (s8 bx = -1; bx <= 1; bx++) {
 						for (s8 by = -1; by <= 1; by++) {
 							for (s8 bz = -1; bz <= 1; bz++) {
