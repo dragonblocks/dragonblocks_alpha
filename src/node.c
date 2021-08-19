@@ -51,4 +51,12 @@ NodeDefintion node_definitions[NODE_UNLOADED] = {
 		.serialize = NULL,
 		.deserialize = NULL,
 	},
+	// wood
+	{
+		.visible = true,
+		.solid = true,
+		.create = NULL,
+		.serialize = NULL,
+		.deserialize = NULL,
+	},
 };

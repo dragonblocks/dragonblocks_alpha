@@ -7,9 +7,13 @@
 
 typedef struct
 {
-	char *texture_path;
-	Texture *texture;
-	void (*render)(v3s32 pos, MapNode *node, Vertex3D *vertex);
+	struct
+	{
+		char *paths[6];			// input
+		int indices[6];			// input
+		Texture *textures[6];	// output
+	} tiles;
+	void (*render)(v3s32 pos, MapNode *node, Vertex3D *vertex, int f, int v);
 } ClientNodeDefintion;
 
 extern ClientNodeDefintion client_node_definitions[];

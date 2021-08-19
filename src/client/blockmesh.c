@@ -22,8 +22,7 @@ static void make_vertices(Object *object, MapBlock *block)
 		if (node_definitions[node->type].visible) {
 			v3f32 offset = {x + (f32) MAPBLOCK_SIZE / 2.0f, y + (f32) MAPBLOCK_SIZE / 2.0f, z + (f32) MAPBLOCK_SIZE / 2.0f};
 
-			ClientNodeDefintion *client_def = &client_node_definitions[node->type];
-			object_set_texture(object, client_def->texture);
+			ClientNodeDefintion *client_node_def = &client_node_definitions[node->type];
 
 			for (int f = 0; f < 6; f++) {
 				v3s8 npos = {
@@ -42,14 +41,16 @@ static void make_vertices(Object *object, MapBlock *block)
 				}
 
 				if (neighbor != NODE_UNLOADED && ! node_definitions[neighbor].visible) {
+					object_set_texture(object, client_node_def->tiles.textures[f]);
+
 					for (int v = 0; v < 6; v++) {
 						Vertex3D vertex = cube_vertices[f][v];
 						vertex.position.x += offset.x;
 						vertex.position.y += offset.y;
 						vertex.position.z += offset.z;
 
-						if (client_def->render)
-							client_def->render((v3s32) {x + node_bp.x, y + node_bp.y, z + node_bp.z}, node, &vertex);
+						if (client_node_def->render)
+							client_node_def->render((v3s32) {x + node_bp.x, y + node_bp.y, z + node_bp.z}, node, &vertex, f, v);
 
 						object_add_vertex(object, &vertex);
 					}
