@@ -36,6 +36,7 @@ set(SOURCES_COMMON
 	util.c
 	types.c
 	node.c
+	perlin.c
 	queue.c
 )
 
@@ -78,7 +79,6 @@ add_executable(DragonblocksServer
 	${SOURCES_COMMON}
 	server/mapdb.c
 	server/mapgen.c
-	server/perlin.c
 	server/server.c
 	server/server_commands.c
 	server/server_map.c

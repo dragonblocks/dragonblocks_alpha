@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <math.h>
+#include "perlin.h"
 #include "server/mapgen.h"
-#include "server/perlin.h"
 #include "server/server_map.h"
 
 static void set_node(v3s32 pos, MapNode node, MapgenStage mgs, List *changed_blocks)
@@ -49,7 +49,7 @@ void mapgen_generate_block(MapBlock *block, List *changed_blocks)
 				else if (diff < 1)
 					node = (is_mountain && ay > 256) ? NODE_SNOW : NODE_AIR;
 
-				if (! is_mountain && diff == 0 && (smooth2d(x + block->pos.x * 16, z + block->pos.z * 16, 0, 3) * 0.5 + 0.5) < 0.01f) {
+				if (! is_mountain && diff == 0 && (smooth2d(x + block->pos.x * 16, z + block->pos.z * 16, 0, 3) * 0.5 + 0.5) < 0.0001f) {
 					for (s8 bx = -1; bx <= 1; bx++) {
 						for (s8 by = -1; by <= 1; by++) {
 							for (s8 bz = -1; bz <= 1; bz++) {
