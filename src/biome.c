@@ -1,0 +1,9 @@
+#include "biome.h"
+#include "perlin.h"
+
+int seed = 0;
+
+f64 get_wetness(v3s32 pos)
+{
+	return smooth2d((((u32) 1 << 31) + pos.x) / 128.0, (((u32) 1 << 31) + pos.z) / 128.0, 0, 3) * 0.5 + 0.5;
+}

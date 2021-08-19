@@ -4,13 +4,6 @@
 #include <stdbool.h>
 #include "types.h"
 
-typedef v3f32 NodeStateBiome;
-
-typedef union
-{
-	NodeStateBiome biome;
-} NodeState;
-
 typedef enum
 {
 	NODE_INVALID,		// Used for unknown nodes received from server (caused by outdated clients)

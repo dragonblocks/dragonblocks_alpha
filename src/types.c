@@ -52,6 +52,10 @@ bool read_full(int fd, char *buffer, size_t size)
 	{ \
 		return a.x == b.x && a.y == b.y; \
 	} \
+	v2 ## type v2 ## type ## _add(v2 ## type a, v2 ## type b) \
+	{ \
+		return (v2 ## type) {a.x + b.x, a.y + b.y}; \
+	} \
 	bool read_v3 ## type(int fd, v3 ## type *ptr) \
 	{ \
 		READVEC(type, 3) \
@@ -68,6 +72,10 @@ bool read_full(int fd, char *buffer, size_t size)
 	bool v3 ## type ## _equals(v3 ## type a, v3 ## type b) \
 	{ \
 		return a.x == b.x && a.y == b.y && a.z == b.z; \
+	} \
+	v3 ## type v3 ## type ## _add(v3 ## type a, v3 ## type b) \
+	{ \
+		return (v3 ## type) {a.x + b.x, a.y + b.y, a.z + b.z}; \
 	}
 
 #define DEFTYP(type, bits) \

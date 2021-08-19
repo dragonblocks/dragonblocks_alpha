@@ -1,12 +1,17 @@
+#include "biome.h"
 #include "client/client.h"
 #include "client/client_node.h"
 #include "node.h"
 
-static void render_state_biome(MapNode *node, Vertex3D *vertex)
+static void render_state_biome(v3s32 pos, __attribute__((unused)) MapNode *node, Vertex3D *vertex)
 {
-	vertex->color.h = node->state.biome.x;
-	vertex->color.s = node->state.biome.y;
-	vertex->color.v = node->state.biome.z;
+	double min, max;
+	min = 0.15;
+	max = 0.45;
+
+	vertex->color.h = get_wetness(pos) * (max - min) + min;
+	vertex->color.s = 1.0f;
+	vertex->color.v = 1.0f;
 }
 
 ClientNodeDefintion client_node_definitions[NODE_UNLOADED] = {

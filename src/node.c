@@ -2,11 +2,6 @@
 #include "node.h"
 #include "util.h"
 
-static void create_state_biome(MapNode *node)
-{
-	node->state.biome = (v3f32) {1.0f, 0.0f, 1.0f};
-}
-
 NodeDefintion node_definitions[NODE_UNLOADED] = {
 	// invalid
 	{
@@ -28,8 +23,8 @@ NodeDefintion node_definitions[NODE_UNLOADED] = {
 	{
 		.visible = true,
 		.solid = true,
-		.create = &create_state_biome,
-		.serialize = NULL, // currently v3f is not serialized
+		.create = NULL,
+		.serialize = NULL,
 		.deserialize = NULL,
 	},
 	// dirt

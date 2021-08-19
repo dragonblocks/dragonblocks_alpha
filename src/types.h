@@ -19,10 +19,12 @@ bool read_full(int fd, char *buffer, size_t size);
 	DEFRW(v2 ## type) \
 	DEFBOX(2 ## type) \
 	bool v2 ## type ## _equals(v2 ## type a, v2 ## type b); \
+	v2 ## type v2 ## type ## _add(v2 ## type a, v2 ## type b); \
 	typedef struct {type x, y, z;} v3 ## type; \
 	DEFRW(v3 ## type) \
 	DEFBOX(3 ## type) \
 	bool v3 ## type ## _equals(v3 ## type a, v3 ## type b); \
+	v3 ## type v3 ## type ## _add(v3 ## type a, v3 ## type b);
 
 #define DEFTYP(from, to) \
 	typedef from to; \

@@ -14,7 +14,6 @@
 typedef struct MapNode
 {
 	Node type;
-	NodeState state;
 } MapNode;
 
 typedef MapNode MapBlockData[MAPBLOCK_SIZE][MAPBLOCK_SIZE][MAPBLOCK_SIZE];

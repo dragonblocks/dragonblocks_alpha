@@ -29,6 +29,7 @@ add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 
 set(SOURCES_COMMON
 	array.c
+	biome.c
 	bintree.c
 	list.c
 	map.c

@@ -14,6 +14,8 @@ static v3s8 fdir[6] = {
 
 static void make_vertices(Object *object, MapBlock *block)
 {
+	v3s32 node_bp = {block->pos.x * MAPBLOCK_SIZE, block->pos.y * MAPBLOCK_SIZE, block->pos.z * MAPBLOCK_SIZE};
+
 	ITERATE_MAPBLOCK {
 		MapNode *node = &block->data[x][y][z];
 
@@ -35,7 +37,7 @@ static void make_vertices(Object *object, MapBlock *block)
 				if (npos.x >= 0 && npos.x < MAPBLOCK_SIZE && npos.y >= 0 && npos.y < MAPBLOCK_SIZE && npos.z >= 0 && npos.z < MAPBLOCK_SIZE)
 					neighbor = block->data[npos.x][npos.y][npos.z].type;
 				else {
-					MapNode nn = map_get_node(client_map.map, (v3s32) {npos.x + block->pos.x * MAPBLOCK_SIZE, npos.y + block->pos.y * MAPBLOCK_SIZE, npos.z + block->pos.z * MAPBLOCK_SIZE});
+					MapNode nn = map_get_node(client_map.map, (v3s32) {npos.x + node_bp.x, npos.y + node_bp.y, npos.z + node_bp.z});
 					neighbor = nn.type;
 				}
 
@@ -47,7 +49,7 @@ static void make_vertices(Object *object, MapBlock *block)
 						vertex.position.z += offset.z;
 
 						if (client_def->render)
-							client_def->render(node, &vertex);
+							client_def->render((v3s32) {x + node_bp.x, y + node_bp.y, z + node_bp.z}, node, &vertex);
 
 						object_add_vertex(object, &vertex);
 					}

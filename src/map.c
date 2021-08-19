@@ -229,7 +229,6 @@ MapNode map_node_create(Node type)
 {
 	MapNode node;
 	node.type = type;
-	memset(&node.state, 0, sizeof(NodeState));
 
 	if (node.type != NODE_UNLOADED && node_definitions[node.type].create)
 		node_definitions[node.type].create(&node);

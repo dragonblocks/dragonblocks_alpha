@@ -9,7 +9,7 @@ typedef struct
 {
 	char *texture_path;
 	Texture *texture;
-	void (*render)(MapNode *node, Vertex3D *vertex);
+	void (*render)(v3s32 pos, MapNode *node, Vertex3D *vertex);
 } ClientNodeDefintion;
 
 extern ClientNodeDefintion client_node_definitions[];
