@@ -22,7 +22,6 @@ typedef MapNode MapBlockData[MAPBLOCK_SIZE][MAPBLOCK_SIZE][MAPBLOCK_SIZE];
 typedef struct
 {
 	MapBlockData data;
-	List metadata[MAPBLOCK_SIZE][MAPBLOCK_SIZE][MAPBLOCK_SIZE];
 	v3s32 pos;
 	pthread_mutex_t mtx;
 	void *extra;
@@ -60,7 +59,6 @@ MapSector *map_get_sector(Map *map, v2s32 pos, bool create);
 MapBlock *map_get_block(Map *map, v3s32 pos, bool create);
 
 MapBlock *map_allocate_block(v3s32 pos);
-void map_clear_meta(MapBlock *block);
 void map_free_block(MapBlock *block);
 
 bool map_deserialize_node(int fd, MapNode *buf);

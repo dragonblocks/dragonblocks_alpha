@@ -121,7 +121,6 @@ static void on_create_block(MapBlock *block)
 
 		ITERATE_MAPBLOCK {
 			block->data[x][y][z] = map_node_create(NODE_AIR);
-			block->metadata[x][y][z] = list_create(&list_compare_string);
 			extra->mgs_buffer[x][y][z] = MGS_VOID;
 		}
 	}

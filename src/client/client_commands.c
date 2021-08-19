@@ -57,8 +57,6 @@ static bool block_handler(Client *client, bool good)
 	else
 		block = map_allocate_block(pos);
 
-	map_clear_meta(block);
-
 	bool ret = map_deserialize_block(block, data, size);
 
 	if (good)

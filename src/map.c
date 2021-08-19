@@ -133,16 +133,8 @@ MapBlock *map_allocate_block(v3s32 pos)
 	return block;
 }
 
-void map_clear_meta(MapBlock *block)
-{
-	pthread_mutex_lock(&block->mtx);
-	ITERATE_MAPBLOCK list_clear(&block->metadata[x][y][z]);
-	pthread_mutex_unlock(&block->mtx);
-}
-
 void map_free_block(MapBlock *block)
 {
-	map_clear_meta(block);
 	pthread_mutex_destroy(&block->mtx);
 	free(block);
 }
@@ -196,7 +188,6 @@ bool map_deserialize_block(MapBlock *block, const char *data, size_t size)
 			node_definitions[node.type].deserialize(&node);
 
 		block->data[x][y][z] = node;
-		block->metadata[x][y][z] = list_create(&list_compare_string);
 	}
 
 	return true;
@@ -228,7 +219,6 @@ void map_set_node(Map *map, v3s32 pos, MapNode node, bool create, void *arg)
 		if (! map->callbacks.set_node || map->callbacks.set_node(block, offset, &node, arg)) {
 			if (map->callbacks.after_set_node)
 				map->callbacks.after_set_node(block, offset, arg);
-			list_clear(&block->metadata[offset.x][offset.y][offset.z]);
 			block->data[offset.x][offset.y][offset.z] = node;
 		}
 		pthread_mutex_unlock(&block->mtx);
