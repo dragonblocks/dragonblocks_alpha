@@ -2,6 +2,7 @@
 #include "client/client.h"
 #include "client/client_node.h"
 #include "node.h"
+#include "perlin.h"
 
 static void render_state_biome(v3s32 pos, __attribute__((unused)) MapNode *node, Vertex3D *vertex)
 {
@@ -12,6 +13,12 @@ static void render_state_biome(v3s32 pos, __attribute__((unused)) MapNode *node,
 	vertex->color.h = get_wetness(pos) * (max - min) + min;
 	vertex->color.s = 1.0f;
 	vertex->color.v = 1.0f;
+}
+
+static void render_texture_offset(v3s32 pos, __attribute((unused)) MapNode *node, Vertex3D *vertex)
+{
+	vertex->textureCoordinates.s += smooth2d(((u32) 1 << 31) + pos.x, ((u32) 1 << 31) + pos.z, 0, seed + SO_TEXTURE_OFFSET_S);
+	vertex->textureCoordinates.t += smooth2d(((u32) 1 << 31) + pos.x, ((u32) 1 << 31) + pos.z, 0, seed + SO_TEXTURE_OFFSET_T);
 }
 
 ClientNodeDefintion client_node_definitions[NODE_UNLOADED] = {
@@ -43,7 +50,7 @@ ClientNodeDefintion client_node_definitions[NODE_UNLOADED] = {
 	{
 		.texture_path = RESSOURCEPATH "textures/stone.png",
 		.texture = NULL,
-		.render = NULL,
+		.render = &render_texture_offset,
 	},
 	// snow
 	{

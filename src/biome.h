@@ -11,6 +11,8 @@ typedef enum
 	SO_BOULDER_CENTER,
 	SO_BOULDER,
 	SO_WETNESS,
+	SO_TEXTURE_OFFSET_S,
+	SO_TEXTURE_OFFSET_T,
 } SeedOffset;
 
 f64 get_wetness(v3s32 pos);
