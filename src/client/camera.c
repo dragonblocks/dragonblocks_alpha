@@ -8,9 +8,13 @@ static struct
 	vec3 eye, front, right, up;
 } camera;
 
-static vec3 world_up = {0.0f, 1.0f, 0.0f};
+static const vec3 world_up = {0.0f, 1.0f, 0.0f};
 
-struct camera_movement_dirs camera_movement_dirs;
+struct camera_movement_dirs camera_movement_dirs = {
+	.front = {0.0f},
+	.right = {0.0f},
+	.up = {world_up[0], world_up[1], world_up[2]},
+};
 
 static void camera_update()
 {

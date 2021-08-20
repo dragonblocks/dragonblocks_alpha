@@ -5,7 +5,6 @@
 #include <pthread.h>
 #include "map.h"
 #include "server/server.h"
-#include "server/mapdb.h"
 
 typedef enum
 {
@@ -19,6 +18,7 @@ typedef enum
 	MGS_VOID,		// initial air, can be overridden by anything
 	MGS_TERRAIN,	// basic terrain, can be overridden by anything except the void
 	MGS_BOULDERS,	// boulders, replace terrain
+	MGS_TREES,		// trees replace boulders
 	MGS_PLAYER,		// player-placed nodes or things placed after map generation
 } MapgenStage;
 

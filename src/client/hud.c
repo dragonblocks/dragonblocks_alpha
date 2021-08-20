@@ -9,6 +9,7 @@
 #include "client/mesh.h"
 #include "client/shader.h"
 #include "client/vertex.h"
+#include "util.h"
 
 static struct
 {
@@ -103,7 +104,7 @@ bool hud_init()
 	return true;
 }
 
-static void free_element(void *key, __attribute__((unused)) void *value, __attribute__((unused)) void *arg)
+static void free_element(void *key, unused void *value, unused void *arg)
 {
 	HUDElement *element = key;
 

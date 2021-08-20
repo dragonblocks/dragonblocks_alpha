@@ -15,6 +15,7 @@ extern struct camera_movement_dirs
 {
 	vec3 front;
 	vec3 right;
+	vec3 up;
 } camera_movement_dirs;
 
 #endif

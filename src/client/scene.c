@@ -7,6 +7,7 @@
 #include "client/scene.h"
 #include "client/shader.h"
 #include "list.h"
+#include "util.h"
 
 static struct
 {
@@ -41,7 +42,7 @@ bool scene_init()
 	return true;
 }
 
-static void list_delete_object(void *key, __attribute__((unused)) void *value, __attribute__((unused)) void *arg)
+static void list_delete_object(void *key, unused void *value, unused void *arg)
 {
 	object_delete(key);
 }

@@ -34,7 +34,7 @@ static void meshgen_step()
 }
 
 // pthread start routine for meshgen thread
-static void *meshgen_thread(__attribute__((unused)) void *arg)
+static void *meshgen_thread(unused void *arg)
 {
 	while (! client_map.cancel)
 		meshgen_step();
@@ -130,7 +130,7 @@ static void sync_step()
 }
 
 // pthread start routine for sync thread
-static void *sync_thread(__attribute__((unused)) void *arg)
+static void *sync_thread(unused void *arg)
 {
 	while (! client_map.cancel)
 		sync_step();
@@ -184,7 +184,7 @@ void client_map_init(Client *cli)
 	client_map.queue = queue_create();
 	client_map.cancel = false;
 	client_map.meshgen_thread = client_map.sync_thread = 0;
-	client_map_set_simulation_distance(16);
+	client_map_set_simulation_distance(10);
 }
 
 // ClientMap singleton destructor

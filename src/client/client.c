@@ -38,7 +38,7 @@ void client_send_position(v3f64 pos)
 
 #include "network.c"
 
-static void *reciever_thread(__attribute__((unused)) void *arg)
+static void *reciever_thread(unused void *arg)
 {
 	handle_packets(&client);
 

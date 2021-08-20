@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <math.h>
-#include "biome.h"
+#include "environment.h"
 #include "perlin.h"
+#include "server/biomes.h"
 #include "server/mapgen.h"
 #include "server/server_map.h"
+#include "util.h"
 
-static void set_node(v3s32 pos, MapNode node, MapgenStage mgs, List *changed_blocks)
+void mapgen_set_node(v3s32 pos, MapNode node, MapgenStage mgs, List *changed_blocks)
 {
 	MapgenSetNodeArg arg = {
 		.mgs = mgs,
@@ -21,48 +23,34 @@ void mapgen_generate_block(MapBlock *block, List *changed_blocks)
 
 	MapBlockExtraData *extra = block->extra;
 
+	v3s32 block_node_pos = {block->pos.x * MAPBLOCK_SIZE, block->pos.y * MAPBLOCK_SIZE, block->pos.z * MAPBLOCK_SIZE};
+	v3s32 pos;
+
 	for (u8 x = 0; x < MAPBLOCK_SIZE; x++) {
-		u32 ux = x + block->pos.x * MAPBLOCK_SIZE + ((u32) 1 << 31);
+		pos.x = block_node_pos.x + x;
+
 		for (u8 z = 0; z < MAPBLOCK_SIZE; z++) {
-			u32 uz = z + block->pos.z * MAPBLOCK_SIZE + ((u32) 1 << 31);
-			s32 height = pnoise2d(ux / 32.0, uz / 32.0, 0.45, 5, seed + SO_HEIGHT) * 16.0 + 128.0;
-			bool is_mountain = false;
+			pos.z = block_node_pos.z + z;
 
-			double mountain_factor = (smooth2d(ux / 1000.0, uz / 1000.0, 0, seed + SO_MOUNTAIN_FACTOR) - 0.3) * 5.0;
+			s32 height = pnoise2d(U32(pos.x) / 32.0, U32(pos.z) / 32.0, 0.45, 5, seed + SO_HEIGHT) * 16.0 + 32;
 
-			if (mountain_factor > 0.0) {
-				height = pow(height * pow(((smooth2d(ux / 50.0, uz / 50.0, 0, seed + SO_MOUNTAIN_HEIGHT) + 1.0) * 256.0 + 128.0), mountain_factor), 1.0 / (mountain_factor + 1.0));
-				is_mountain = true;
-			}
+			f64 biome_factor;
+			BiomeDef *biome_def = get_biome(pos, &biome_factor);
 
-			height -= 96.0;
+			height = biome_def->height(pos, biome_factor, height);
 
 			for (u8 y = 0; y < MAPBLOCK_SIZE; y++) {
-				s32 ay = block->pos.y * MAPBLOCK_SIZE + y;
-				s32 diff = ay - height;
+				pos.y = block_node_pos.y + y;
 
-				Node node = NODE_AIR;
+				f64 wetness = get_wetness(pos);
+				f64 temperature = get_temperature(pos);
 
-				if (diff < -5)
-					node = NODE_STONE;
-				else if (diff < -1)
-					node = is_mountain ? NODE_STONE : NODE_DIRT;
-				else if (diff < 0)
-					node = is_mountain ? NODE_STONE : NODE_GRASS;
-				else if (diff < 1 && get_temperature((v3s32) {block->pos.x * MAPBLOCK_SIZE + x, block->pos.y * MAPBLOCK_SIZE + y, block->pos.z * MAPBLOCK_SIZE + z}) < 0.0)
+				s32 diff = pos.y - height;
+
+				Node node = biome_def->generate(pos, diff, wetness, temperature, biome_factor, block, changed_blocks);
+
+				if (diff <= 1 && temperature < 0.0 && node == NODE_AIR)
 					node = NODE_SNOW;
-
-				if (! is_mountain && diff == 0 && (smooth2d(x + block->pos.x * 16, z + block->pos.z * 16, 0, seed + SO_BOULDER_CENTER) * 0.5 + 0.5) < 0.0001) {
-					for (s8 bx = -1; bx <= 1; bx++) {
-						for (s8 by = -1; by <= 1; by++) {
-							for (s8 bz = -1; bz <= 1; bz++) {
-								v3s32 pos = {block->pos.x * MAPBLOCK_SIZE + x + bx, block->pos.y * MAPBLOCK_SIZE + y + by, block->pos.z * MAPBLOCK_SIZE + z + bz};
-								if (smooth3d(pos.x, pos.y, pos.z, 0, seed + SO_BOULDER) > 0.0)
-									set_node(pos, map_node_create(NODE_STONE), MGS_BOULDERS, changed_blocks);
-							}
-						}
-					}
-				}
 
 				pthread_mutex_lock(&block->mtx);
 				if (extra->mgs_buffer[x][y][z] <= MGS_TERRAIN) {

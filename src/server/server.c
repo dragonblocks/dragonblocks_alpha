@@ -59,7 +59,7 @@ static void accept_client()
 }
 
 // list_clear_func callback used on server shutdown to disconnect all clients properly
-static void list_disconnect_client(void *key, __attribute__((unused)) void *value, __attribute__((unused)) void *arg)
+static void list_disconnect_client(void *key, unused void *value, unused void *arg)
 {
 	server_disconnect_client(key, DISCO_NO_REMOVE | DISCO_NO_MESSAGE, "");
 }
@@ -67,7 +67,7 @@ static void list_disconnect_client(void *key, __attribute__((unused)) void *valu
 // start up the server after socket was created, then accept connections until interrupted, then shutdown server
 static void server_run(int fd)
 {
-	server.config.simulation_distance = 16;
+	server.config.simulation_distance = 10;
 
 	server.sockfd = fd;
 	pthread_rwlock_init(&server.clients_rwlck, NULL);
@@ -75,6 +75,7 @@ static void server_run(int fd)
 	pthread_rwlock_init(&server.players_rwlck, NULL);
 	server.players = list_create(&list_compare_string);
 
+	server.db = database_open("server.sqlite");
 	server_map_init(&server);
 
 	while (! interrupted)
@@ -97,6 +98,8 @@ static void server_run(int fd)
 	close(server.sockfd);
 
 	server_map_deinit();
+
+	sqlite3_close(server.db);
 
 	exit(EXIT_SUCCESS);
 }

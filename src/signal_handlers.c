@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "signal_handlers.h"
+#include "util.h"
 
 bool interrupted = false;
 
@@ -11,7 +12,7 @@ static void interrupt_handler(int sig)
 	fprintf(stderr, "%s\n", strsignal(sig));
 }
 
-static void silent_handler(__attribute__((unused)) int sig)
+static void silent_handler(unused int sig)
 {
 }
 

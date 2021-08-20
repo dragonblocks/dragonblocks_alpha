@@ -13,6 +13,8 @@ typedef enum
 	NODE_STONE,
 	NODE_SNOW,
 	NODE_WOOD,
+	NODE_SAND,
+	NODE_WATER,
 	NODE_UNLOADED,		// Used for nodes in unloaded blocks
 } Node;
 
@@ -20,7 +22,6 @@ struct MapNode;
 
 typedef struct
 {
-	bool visible;
 	bool solid;
 	void (*create)(struct MapNode *node);
 	void (*serialize)(struct MapNode *node);

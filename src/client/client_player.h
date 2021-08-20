@@ -15,6 +15,8 @@ extern struct ClientPlayer
 	f32 yaw, pitch;				// look direction
 	f64 eye_height;				// eye height above feet
 	pthread_rwlock_t rwlock;	// used to protect the above properties
+	bool fly;					// can the player fly?
+	bool collision;				// should the player collide with the floor?
 	Object *obj;				// 3D mesh object (currently always invisible), not thread safe
 	HUDElement *info_hud;		// display position, temperature and wetness on HUD, not thread safe
 } client_player;
@@ -25,5 +27,6 @@ void client_player_add_to_scene();		// create mesh object and hud display
 void client_player_jump();				// jump if possible
 v3f64 client_player_get_position();		// get position (thread-safe)
 void client_player_tick(f64 dtime);		// to be called every frame
+void client_player_update_info();		// update HUD info text
 
 #endif

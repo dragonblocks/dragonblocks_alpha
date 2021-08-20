@@ -29,8 +29,8 @@ add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 
 set(SOURCES_COMMON
 	array.c
-	biome.c
 	bintree.c
+	environment.c
 	list.c
 	map.c
 	signal_handlers.c
@@ -78,7 +78,8 @@ target_include_directories(Dragonblocks PUBLIC
 
 add_executable(DragonblocksServer
 	${SOURCES_COMMON}
-	server/mapdb.c
+	server/biomes.c
+	server/database.c
 	server/mapgen.c
 	server/server.c
 	server/server_commands.c

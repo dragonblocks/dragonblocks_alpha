@@ -19,6 +19,8 @@ static struct
 	bool paused;
 	KeyListener pause_listener;
 	KeyListener fullscreen_listener;
+	KeyListener fly_listener;
+	KeyListener collision_listener;
 } input;
 
 void input_on_cursor_pos(double current_x, double current_y)
@@ -44,7 +46,7 @@ void input_on_cursor_pos(double current_x, double current_y)
 static bool move(int forward, int backward, vec3 dir)
 {
 	f64 sign;
-	f64 speed = 4.317f;
+	f64 speed = client_player.fly ? 25.0f : 4.317f;
 
 	if (glfwGetKey(window.handle, forward) == GLFW_PRESS)
 		sign = +1.0f;
@@ -54,6 +56,7 @@ static bool move(int forward, int backward, vec3 dir)
 		return false;
 
 	client_player.velocity.x += dir[0] * speed * sign;
+	client_player.velocity.y += dir[1] * speed * sign;
 	client_player.velocity.z += dir[2] * speed * sign;
 
 	return true;
@@ -85,6 +88,8 @@ void input_tick()
 {
 	do_key_listener(&input.pause_listener);
 	do_key_listener(&input.fullscreen_listener);
+	do_key_listener(&input.fly_listener);
+	do_key_listener(&input.collision_listener);
 
 	if (input.pause_listener.fired) {
 		input.paused = ! input.paused;
@@ -104,14 +109,29 @@ void input_tick()
 			window_enter_fullscreen();
 	}
 
+	if (input.fly_listener.fired) {
+		client_player.fly = ! client_player.fly;
+		client_player_update_info();
+	}
+
+	if (input.collision_listener.fired) {
+		client_player.collision = ! client_player.collision;
+		client_player_update_info();
+	}
+
 	client_player.velocity.x = 0.0f;
 	client_player.velocity.z = 0.0f;
+
+	if (client_player.fly)
+		client_player.velocity.y = 0.0f;
 
 	if (! input.paused) {
 		move(GLFW_KEY_W, GLFW_KEY_S, camera_movement_dirs.front);
 		move(GLFW_KEY_D, GLFW_KEY_A, camera_movement_dirs.right);
 
-		if (glfwGetKey(window.handle, GLFW_KEY_SPACE) == GLFW_PRESS)
+		if (client_player.fly)
+			move(GLFW_KEY_SPACE, GLFW_KEY_LEFT_SHIFT, camera_movement_dirs.up);
+		else if (glfwGetKey(window.handle, GLFW_KEY_SPACE) == GLFW_PRESS)
 			client_player_jump();
 	}
 }
@@ -122,6 +142,8 @@ void input_init()
 
 	input.pause_listener = create_key_listener(GLFW_KEY_ESCAPE);
 	input.fullscreen_listener = create_key_listener(GLFW_KEY_F11);
+	input.fly_listener = create_key_listener(GLFW_KEY_F);
+	input.collision_listener = create_key_listener(GLFW_KEY_C);
 
 	input.pause_menu_hud = hud_add((HUDElementDefinition) {
 		.type = HUD_IMAGE,

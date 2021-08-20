@@ -5,10 +5,11 @@
 #include "client/input.h"
 #include "client/scene.h"
 #include "client/window.h"
+#include "util.h"
 
 struct Window window;
 
-static void framebuffer_size_callback(__attribute__((unused)) GLFWwindow *handle, int width, int height)
+static void framebuffer_size_callback(unused GLFWwindow *handle, int width, int height)
 {
 	glViewport(0, 0, width, height);
 
@@ -21,12 +22,12 @@ static void framebuffer_size_callback(__attribute__((unused)) GLFWwindow *handle
 	hud_on_resize(width, height);
 }
 
-static void cursor_pos_callback(__attribute__((unused)) GLFWwindow *handle, double current_x, double current_y)
+static void cursor_pos_callback(unused GLFWwindow *handle, double current_x, double current_y)
 {
 	input_on_cursor_pos(current_x, current_y);
 }
 
-static void window_pos_callback(__attribute__((unused)) GLFWwindow *handle, int x, int y)
+static void window_pos_callback(unused GLFWwindow *handle, int x, int y)
 {
 	if (! window.fullscreen) {
 		window.small_bounds.x = x;

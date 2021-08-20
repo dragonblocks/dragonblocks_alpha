@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "biome.h"
+#include "environment.h"
 #include "client/camera.h"
 #include "client/client.h"
 #include "client/client_map.h"
@@ -19,12 +19,7 @@ static void update_pos()
 	client_player.obj->pos = (v3f32) {client_player.pos.x, client_player.pos.y, client_player.pos.z};
 	object_transform(client_player.obj);
 
-	v3s32 node_pos = {client_player.pos.x, client_player.pos.y, client_player.pos.z};
-
-	char info_text[BUFSIZ];
-	sprintf(info_text, "(%.1f %.1f %.1f) wetness: %.2f temperature: %.2f", client_player.pos.x, client_player.pos.y, client_player.pos.z, get_wetness(node_pos), get_temperature(node_pos));
-
-	hud_change_text(client_player.info_hud, info_text);
+	client_player_update_info();
 }
 
 // get absolute player bounding box
@@ -57,6 +52,9 @@ static bool is_solid(s32 x, s32 y, s32 z)
 // rwlock has to be read- or write locked
 static bool can_jump()
 {
+	if (client_player.velocity.y != 0.0)
+		return false;
+
 	aabb3f64 fbox = get_box();
 	fbox.min.y -= 0.5;
 
@@ -76,11 +74,13 @@ static bool can_jump()
 // ClientPlayer singleton constructor
 void client_player_init()
 {
-	client_player.pos = (v3f64) {0.0, 200.0, 0.0};
+	client_player.pos = (v3f64) {0.0, 48.0, 0.0};
 	client_player.velocity = (v3f64) {0.0, 0.0, 0.0};
 	client_player.box = (aabb3f64) {{-0.3, 0.0, -0.3}, {0.3, 1.75, 0.3}};
 	client_player.yaw = client_player.pitch = 0.0f;
 	client_player.eye_height = 1.5;
+	client_player.fly = false;
+	client_player.collision = true;
 	pthread_rwlock_init(&client_player.rwlock, NULL);
 }
 
@@ -153,7 +153,8 @@ void client_player_tick(f64 dtime)
 	v3f64 old_pos = client_player.pos;
 	v3f64 old_velocity = client_player.velocity;
 
-	client_player.velocity.y -= 32.0 * dtime;
+	if (! client_player.fly)
+		client_player.velocity.y -= 32.0 * dtime;
 
 #define GETS(vec, comp) *(s32 *) ((char *) &vec + offsetof(v3s32, comp))
 #define GETF(vec, comp) *(f64 *) ((char *) &vec + offsetof(v3f64, comp))
@@ -164,6 +165,8 @@ void client_player_tick(f64 dtime)
 		aabb3s32 box = round_box(get_box()); \
 		v3f64 old_pos = client_player.pos; \
 		GETF(client_player.pos, a) += v * dtime; \
+		if (! client_player.collision) \
+			goto a ## _physics_done; \
 		s32 dir; \
 		f64 offset; \
 		if (v > 0.0) { \
@@ -204,4 +207,15 @@ void client_player_tick(f64 dtime)
 		update_pos();
 
 	pthread_rwlock_unlock(&client_player.rwlock);
+}
+
+// update HUD info text
+void client_player_update_info()
+{
+	v3s32 node_pos = {client_player.pos.x, client_player.pos.y, client_player.pos.z};
+
+	char info_text[BUFSIZ];
+	sprintf(info_text, "(%.1f %.1f %.1f) wetness: %.2f temperature: %.2f flight: %s collision: %s", client_player.pos.x, client_player.pos.y, client_player.pos.z, get_wetness(node_pos), get_temperature(node_pos), client_player.fly ? "enabled" : "disabled", client_player.collision ? "enabled" : "disabled");
+
+	hud_change_text(client_player.info_hud, info_text);
 }

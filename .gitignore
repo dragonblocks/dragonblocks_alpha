@@ -11,6 +11,6 @@ CTestTestfile.cmake
 _deps
 DragonblocksServer
 Dragonblocks
-map.sqlite
+server.sqlite
 DragonblocksAlpha-*.zip
 

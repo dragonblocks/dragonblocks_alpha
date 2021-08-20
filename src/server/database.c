@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "server/mapdb.h"
+#include "server/database.h"
 #include "server/server_map.h"
 #include "util.h"
 
@@ -39,14 +39,14 @@ static sqlite3_stmt *prepare_statement(sqlite3 *db, MapBlock *block, const char 
 // public functions
 
 // open and initialize SQLite3 database at path
-sqlite3 *mapdb_open(const char *path)
+sqlite3 *database_open(const char *path)
 {
 	sqlite3 *db;
 	char *err;
 
 	if (sqlite3_open_v2(path, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, NULL) != SQLITE_OK) {
 		printf("Failed to open database: %s\n", sqlite3_errmsg(db));
-	} else if (sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS blocks (pos BLOB PRIMARY KEY, generated INT, size INT, data BLOB, mgsb_size INT, mgsb_data BLOB);", NULL, NULL, &err) != SQLITE_OK) {
+	} else if (sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS map (pos BLOB PRIMARY KEY, generated INT, size INT, data BLOB, mgsb_size INT, mgsb_data BLOB);", NULL, NULL, &err) != SQLITE_OK) {
 		printf("Failed to initialize database: %s\n", err);
 		sqlite3_free(err);
 	}
@@ -55,11 +55,11 @@ sqlite3 *mapdb_open(const char *path)
 }
 
 // load a block from map database (initializes state, mgs buffer and data), returns false on failure
-bool mapdb_load_block(sqlite3 *db, MapBlock *block)
+bool database_load_block(sqlite3 *db, MapBlock *block)
 {
 	sqlite3_stmt *stmt;
 
-	if (! (stmt = prepare_statement(db, block, "loading", "SELECT generated, size, data, mgsb_size, mgsb_data FROM blocks WHERE pos=?")))
+	if (! (stmt = prepare_statement(db, block, "loading", "SELECT generated, size, data, mgsb_size, mgsb_data FROM map WHERE pos=?")))
 		return false;
 
 	int rc = sqlite3_step(stmt);
@@ -89,11 +89,11 @@ bool mapdb_load_block(sqlite3 *db, MapBlock *block)
 }
 
 // save a block to database
-void mapdb_save_block(sqlite3 *db, MapBlock *block)
+void database_save_block(sqlite3 *db, MapBlock *block)
 {
 	sqlite3_stmt *stmt;
 
-	if (! (stmt = prepare_statement(db, block, "saving", "REPLACE INTO blocks (pos, generated, size, data, mgsb_size, mgsb_data) VALUES(?1, ?2, ?3, ?4, ?5, ?6)")))
+	if (! (stmt = prepare_statement(db, block, "saving", "REPLACE INTO map (pos, generated, size, data, mgsb_size, mgsb_data) VALUES(?1, ?2, ?3, ?4, ?5, ?6)")))
 		return;
 
 	MapBlockExtraData *extra = block->extra;

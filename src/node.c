@@ -5,7 +5,6 @@
 NodeDefintion node_definitions[NODE_UNLOADED] = {
 	// invalid
 	{
-		.visible = true,
 		.solid = true,
 		.create = NULL,
 		.serialize = NULL,
@@ -13,7 +12,6 @@ NodeDefintion node_definitions[NODE_UNLOADED] = {
 	},
 	// air
 	{
-		.visible = false,
 		.solid = false,
 		.create = NULL,
 		.serialize = NULL,
@@ -21,7 +19,6 @@ NodeDefintion node_definitions[NODE_UNLOADED] = {
 	},
 	// grass
 	{
-		.visible = true,
 		.solid = true,
 		.create = NULL,
 		.serialize = NULL,
@@ -29,7 +26,6 @@ NodeDefintion node_definitions[NODE_UNLOADED] = {
 	},
 	// dirt
 	{
-		.visible = true,
 		.solid = true,
 		.create = NULL,
 		.serialize = NULL,
@@ -37,7 +33,6 @@ NodeDefintion node_definitions[NODE_UNLOADED] = {
 	},
 	// stone
 	{
-		.visible = true,
 		.solid = true,
 		.create = NULL,
 		.serialize = NULL,
@@ -45,7 +40,6 @@ NodeDefintion node_definitions[NODE_UNLOADED] = {
 	},
 	// snow
 	{
-		.visible = true,
 		.solid = true,
 		.create = NULL,
 		.serialize = NULL,
@@ -53,8 +47,21 @@ NodeDefintion node_definitions[NODE_UNLOADED] = {
 	},
 	// wood
 	{
-		.visible = true,
 		.solid = true,
+		.create = NULL,
+		.serialize = NULL,
+		.deserialize = NULL,
+	},
+	// sand
+	{
+		.solid = true,
+		.create = NULL,
+		.serialize = NULL,
+		.deserialize = NULL,
+	},
+	// water
+	{
+		.solid = false,
 		.create = NULL,
 		.serialize = NULL,
 		.deserialize = NULL,

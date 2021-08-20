@@ -1,8 +1,9 @@
-#include "biome.h"
 #include "client/client.h"
 #include "client/client_node.h"
+#include "environment.h"
 #include "node.h"
 #include "perlin.h"
+#include "util.h"
 #define TILES_SIMPLE(path) {.paths = {path, NULL, NULL, NULL, NULL, NULL}, .indices = {0, 0, 0, 0, 0, 0}, .textures = {NULL}}
 #define TILES_NONE {.paths = {NULL}, .indices = {0}, .textures = {NULL}}
 
@@ -11,7 +12,7 @@ static f64 clamp(f64 v, f64 min, f64 max)
 	return v < min ? min : v > max ? max : v;
 }
 
-static void render_grass(v3s32 pos, __attribute__((unused)) MapNode *node, Vertex3D *vertex, __attribute__((unused)) int f, __attribute__((unused)) int v)
+static void render_grass(v3s32 pos, unused MapNode *node, Vertex3D *vertex, unused int f, unused int v)
 {
 	f32 wet_min, wet_max, temp_max;
 	wet_min = 0.13f;
@@ -25,13 +26,13 @@ static void render_grass(v3s32 pos, __attribute__((unused)) MapNode *node, Verte
 	vertex->color.v = 1.0f;
 }
 
-static void render_stone(v3s32 pos, __attribute__((unused)) MapNode *node, Vertex3D *vertex, __attribute__((unused)) int f, __attribute__((unused)) int v)
+static void render_stone(v3s32 pos, unused MapNode *node, Vertex3D *vertex, unused int f, unused int v)
 {
-	vertex->textureCoordinates.s += smooth2d(((u32) 1 << 31) + pos.x, ((u32) 1 << 31) + pos.z, 0, seed + SO_TEXTURE_OFFSET_S);
-	vertex->textureCoordinates.t += smooth2d(((u32) 1 << 31) + pos.x, ((u32) 1 << 31) + pos.z, 0, seed + SO_TEXTURE_OFFSET_T);
+	vertex->textureCoordinates.s += smooth2d(U32(pos.x), U32(pos.z), 0, seed + SO_TEXTURE_OFFSET_S);
+	vertex->textureCoordinates.t += smooth2d(U32(pos.x), U32(pos.z), 0, seed + SO_TEXTURE_OFFSET_T);
 }
 
-static void render_wood(__attribute__((unused)) v3s32 pos, __attribute__((unused)) MapNode *node, Vertex3D *vertex, int f, __attribute__((unused)) int v)
+static void render_wood(unused v3s32 pos, unused MapNode *node, Vertex3D *vertex, int f, unused int v)
 {
 	vertex->color.h = f < 4 ? 0.1f : 0.11f;
 	vertex->color.s = 1.0f;
@@ -42,31 +43,37 @@ ClientNodeDefintion client_node_definitions[NODE_UNLOADED] = {
 	// invalid
 	{
 		.tiles = TILES_SIMPLE(RESSOURCEPATH "textures/invalid.png"),
+		.visibility = NV_SOLID,
 		.render = NULL,
 	},
 	// air
 	{
 		.tiles = TILES_NONE,
+		.visibility = NV_NONE,
 		.render = NULL,
 	},
 	// grass
 	{
 		.tiles = TILES_SIMPLE(RESSOURCEPATH "textures/grass.png"),
+		.visibility = NV_SOLID,
 		.render = &render_grass,
 	},
 	// dirt
 	{
 		.tiles = TILES_SIMPLE(RESSOURCEPATH "textures/dirt.png"),
+		.visibility = NV_SOLID,
 		.render = NULL,
 	},
 	// stone
 	{
 		.tiles = TILES_SIMPLE(RESSOURCEPATH "textures/stone.png"),
+		.visibility = NV_SOLID,
 		.render = &render_stone,
 	},
 	// snow
 	{
 		.tiles = TILES_SIMPLE(RESSOURCEPATH "textures/snow.png"),
+		.visibility = NV_SOLID,
 		.render = NULL,
 	},
 	// wood
@@ -76,7 +83,20 @@ ClientNodeDefintion client_node_definitions[NODE_UNLOADED] = {
 			.indices = {0, 0, 0, 0, 1, 1},
 			.textures = {NULL},
 		},
+		.visibility = NV_SOLID,
 		.render = &render_wood,
+	},
+	// sand
+	{
+		.tiles = TILES_SIMPLE(RESSOURCEPATH "textures/sand.png"),
+		.visibility = NV_SOLID,
+		.render = NULL,
+	},
+	// water
+	{
+		.tiles = TILES_SIMPLE(RESSOURCEPATH "textures/water.png"),
+		.visibility = NV_TRANSPARENT,
+		.render = NULL,
 	},
 };
 
@@ -85,7 +105,7 @@ void client_node_init()
 	for (Node node = NODE_INVALID; node < NODE_UNLOADED; node++) {
 		ClientNodeDefintion *def = &client_node_definitions[node];
 
-		if (node_definitions[node].visible) {
+		if (client_node_definitions[node].visibility != NV_NONE) {
 			Texture *textures[6];
 
 			for (int i = 0; i < 6; i++) {

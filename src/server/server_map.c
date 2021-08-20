@@ -2,7 +2,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
-#include "server/mapdb.h"
+#include "server/database.h"
 #include "server/mapgen.h"
 #include "server/server_map.h"
 #include "map.h"
@@ -34,7 +34,7 @@ static void send_block_to_near(MapBlock *block)
 		return;
 
 	map_serialize_block(block, &extra->data, &extra->size);
-	mapdb_save_block(server_map.db, block);
+	database_save_block(server->db, block);
 
 	if (extra->state == MBS_CREATED)
 		return;
@@ -50,7 +50,7 @@ static void send_block_to_near(MapBlock *block)
 }
 
 // list_clear_func callback for sending changed blocks to near clients
-static void list_send_block(void *key, __attribute__((unused)) void *value, __attribute__((unused)) void *arg)
+static void list_send_block(void *key, unused void *value, unused void *arg)
 {
 	MapBlock *block = key;
 
@@ -101,7 +101,7 @@ static void launch_mapgen_thread(MapBlock *block)
 }
 
 // list_clear_func callback used to join running generator threads on shutdown
-static void list_join_thread(void *key, __attribute__((unused)) void *value, __attribute__((unused)) void *arg)
+static void list_join_thread(void *key, unused void *value, unused void *arg)
 {
 	pthread_join(*(pthread_t *) key, NULL);
 }
@@ -115,7 +115,7 @@ static void on_create_block(MapBlock *block)
 {
 	MapBlockExtraData *extra = block->extra = malloc(sizeof(MapBlockExtraData));
 
-	if (! mapdb_load_block(server_map.db, block)) {
+	if (! database_load_block(server->db, block)) {
 		extra->state = MBS_CREATED;
 		extra->data = NULL;
 
@@ -152,7 +152,7 @@ static bool on_get_block(MapBlock *block, bool create)
 
 // callback for deciding whether a set_node call succeeds or not
 // reject set_node calls that try to override nodes placed by later mapgen stages, else update mgs buffer - also make sure block is inserted into changed blocks list
-static bool on_set_node(MapBlock *block, v3u8 offset, __attribute__((unused)) MapNode *node, void *arg)
+static bool on_set_node(MapBlock *block, v3u8 offset, unused MapNode *node, void *arg)
 {
 	MapgenSetNodeArg *msn_arg = arg;
 
@@ -179,7 +179,7 @@ static bool on_set_node(MapBlock *block, v3u8 offset, __attribute__((unused)) Ma
 
 // callback for when a block changes
 // send block to near clients if not part of map generation
-static void on_after_set_node(MapBlock *block, __attribute__((unused)) v3u8 offset, void *arg)
+static void on_after_set_node(MapBlock *block, unused v3u8 offset, void *arg)
 {
 	if (! arg)
 		send_block_to_near(block);
@@ -200,7 +200,6 @@ void server_map_init(Server *srv)
 		.after_set_node = &on_after_set_node,
 	});
 	server_map.shutting_down = false;
-	server_map.db = mapdb_open("map.sqlite");
 	server_map.mapgen_threads = list_create(NULL);
 	pthread_mutex_init(&server_map.mapgen_threads_mtx, NULL);
 }
@@ -212,10 +211,8 @@ void server_map_deinit()
 
 	pthread_mutex_lock(&server_map.mapgen_threads_mtx);
 	list_clear_func(&server_map.mapgen_threads, &list_join_thread, NULL);
-	// pthread_mutex_unlock(&server_map.mapgen_threads_mtx);
 	pthread_mutex_destroy(&server_map.mapgen_threads_mtx);
 
-	sqlite3_close(server_map.db);
 	map_delete(server_map.map);
 }
 
