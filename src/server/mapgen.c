@@ -59,12 +59,12 @@ void mapgen_generate_block(MapBlock *block, List *changed_blocks)
 			for (u8 y = 0; y < MAPBLOCK_SIZE; y++) {
 				v3s32 pos = {pos_horizontal.x, block_node_pos.y + y, pos_horizontal.y};
 
-				f64 wetness = get_wetness(pos);
+				f64 humidity = get_humidity(pos);
 				f64 temperature = get_temperature(pos);
 
 				s32 diff = pos.y - height;
 
-				Node node = biome_def->generate(pos, diff, wetness, temperature, factor, block, changed_blocks, row_data, block_data[biome]);
+				Node node = biome_def->generate(pos, diff, humidity, temperature, factor, block, changed_blocks, row_data, block_data[biome]);
 
 				if (biome_def->snow && diff <= 1 && temperature < 0.0 && node == NODE_AIR)
 					node = NODE_SNOW;

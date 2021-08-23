@@ -18,7 +18,7 @@ extern struct ClientPlayer
 	bool fly;					// can the player fly?
 	bool collision;				// should the player collide with the floor?
 	Object *obj;				// 3D mesh object (currently always invisible), not thread safe
-	HUDElement *info_hud;		// display position, temperature and wetness on HUD, not thread safe
+	HUDElement *info_hud;		// display position, temperature and humidity on HUD, not thread safe
 } client_player;
 
 void client_player_init();				// ClientPlayer singleton constructor

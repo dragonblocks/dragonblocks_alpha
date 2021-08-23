@@ -27,7 +27,7 @@ static s32 height_mountain(v2s32 pos, f64 factor, s32 height, unused void *row_d
 	return pow((height + 96) * pow(((smooth2d(U32(pos.x) / 48.0, U32(pos.y) / 48.0, 0, seed + SO_MOUNTAIN_HEIGHT) + 1.0) * 256.0 + 128.0), factor), 1.0 / (factor + 1.0)) - 96;
 }
 
-static Node generate_mountain(unused v3s32 pos, s32 diff, unused f64 wetness, unused f64 temperature, unused f64 factor, unused MapBlock *block, unused List *changed_blocks, unused void *row_data, unused void *block_data)
+static Node generate_mountain(unused v3s32 pos, s32 diff, unused f64 humidity, unused f64 temperature, unused f64 factor, unused MapBlock *block, unused List *changed_blocks, unused void *row_data, unused void *block_data)
 {
 	return diff <= 0 ? NODE_STONE : NODE_AIR;
 }
@@ -210,7 +210,7 @@ static s32 height_ocean(unused v2s32 pos, f64 factor, s32 height, void *row_data
 	return rdata->vulcano ? max(ocean_floor, rdata->vulcano_height) : ocean_floor;
 }
 
-static Node generate_ocean(v3s32 pos, s32 diff, unused f64 wetness, unused f64 temperature, unused f64 factor, unused MapBlock *block, unused List *changed_blocks, void *row_data, unused void *block_data)
+static Node generate_ocean(v3s32 pos, s32 diff, unused f64 humidity, unused f64 temperature, unused f64 factor, unused MapBlock *block, unused List *changed_blocks, void *row_data, unused void *block_data)
 {
 	OceanRowData *rdata = row_data;
 
@@ -240,7 +240,7 @@ static s32 height_hills(unused v2s32 pos, unused f64 factor, s32 height, unused 
 	return height;
 }
 
-static Node generate_hills(v3s32 pos, s32 diff, unused f64 wetness, unused f64 temperature, unused f64 factor, unused MapBlock *block, List *changed_blocks, unused void *row_data, unused void *block_data)
+static Node generate_hills(v3s32 pos, s32 diff, unused f64 humidity, unused f64 temperature, unused f64 factor, unused MapBlock *block, List *changed_blocks, unused void *row_data, unused void *block_data)
 {
 	if (diff == 2 && smooth2d(U32(pos.x), U32(pos.z), 0, seed + SO_BOULDER_CENTER) > 0.999) {
 		for (s8 bx = -1; bx <= 1; bx++) {

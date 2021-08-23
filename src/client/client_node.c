@@ -14,14 +14,14 @@ static f64 clamp(f64 v, f64 min, f64 max)
 
 static void render_grass(v3s32 pos, unused MapNode *node, Vertex3D *vertex, unused int f, unused int v)
 {
-	f32 wet_min, wet_max, temp_max;
-	wet_min = 0.13f;
-	wet_max = 0.33f;
+	f32 hum_min, hum_max, temp_max;
+	hum_min = 0.13f;
+	hum_max = 0.33f;
 	temp_max = 0.45f;
 
 	f32 temp_f = clamp(0.3f - get_temperature(pos), 0.0f, 0.3f) / 0.3f;
 
-	vertex->color.h = (get_wetness(pos) * (wet_max - wet_min) + wet_min) * (1.0f - temp_f) + temp_max * temp_f;
+	vertex->color.h = (get_humidity(pos) * (hum_max - hum_min) + hum_min) * (1.0f - temp_f) + temp_max * temp_f;
 	vertex->color.s = 1.0f;
 	vertex->color.v = 1.0f;
 }

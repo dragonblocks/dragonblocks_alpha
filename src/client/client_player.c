@@ -215,7 +215,7 @@ void client_player_update_info()
 	v3s32 node_pos = {client_player.pos.x, client_player.pos.y, client_player.pos.z};
 
 	char info_text[BUFSIZ];
-	sprintf(info_text, "(%.1f %.1f %.1f) wetness: %.2f temperature: %.2f flight: %s collision: %s", client_player.pos.x, client_player.pos.y, client_player.pos.z, get_wetness(node_pos), get_temperature(node_pos), client_player.fly ? "enabled" : "disabled", client_player.collision ? "enabled" : "disabled");
+	sprintf(info_text, "(%.1f %.1f %.1f) humidity: %.2f temperature: %.2f flight: %s collision: %s", client_player.pos.x, client_player.pos.y, client_player.pos.z, get_humidity(node_pos), get_temperature(node_pos), client_player.fly ? "enabled" : "disabled", client_player.collision ? "enabled" : "disabled");
 
 	hud_change_text(client_player.info_hud, info_text);
 }
