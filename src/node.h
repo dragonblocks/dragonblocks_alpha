@@ -15,6 +15,8 @@ typedef enum
 	NODE_WOOD,
 	NODE_SAND,
 	NODE_WATER,
+	NODE_LAVA,
+	NODE_VULCANO_STONE,
 	NODE_UNLOADED,		// Used for nodes in unloaded blocks
 } Node;
 

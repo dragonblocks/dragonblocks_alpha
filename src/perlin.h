@@ -20,6 +20,10 @@ typedef enum
 	SO_PINE,
 	SO_PINE_HEIGHT,
 	SO_PINE_BRANCH,
+	SO_VULCANO,
+	SO_VULCANO_HEIGHT,
+	SO_VULCANO_STONE,
+	SO_VULCANO_CRATER_TOP,
 } SeedOffset;
 
 extern int seed;

@@ -66,4 +66,18 @@ NodeDefintion node_definitions[NODE_UNLOADED] = {
 		.serialize = NULL,
 		.deserialize = NULL,
 	},
+	// lava
+	{
+		.solid = false,
+		.create = NULL,
+		.serialize = NULL,
+		.deserialize = NULL,
+	},
+	// vulcanostone
+	{
+		.solid = true,
+		.create = NULL,
+		.serialize = NULL,
+		.deserialize = NULL,
+	},
 };

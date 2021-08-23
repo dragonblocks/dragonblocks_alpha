@@ -98,6 +98,18 @@ ClientNodeDefintion client_node_definitions[NODE_UNLOADED] = {
 		.visibility = NV_TRANSPARENT,
 		.render = NULL,
 	},
+	// lava
+	{
+		.tiles = TILES_SIMPLE(RESSOURCEPATH "textures/lava.png"),
+		.visibility = NV_TRANSPARENT,
+		.render = NULL,
+	},
+	// vulcano_stone
+	{
+		.tiles = TILES_SIMPLE(RESSOURCEPATH "textures/vulcano_stone.png"),
+		.visibility = NV_SOLID,
+		.render = NULL,
+	},
 };
 
 void client_node_init()

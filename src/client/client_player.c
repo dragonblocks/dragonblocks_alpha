@@ -74,7 +74,7 @@ static bool can_jump()
 // ClientPlayer singleton constructor
 void client_player_init()
 {
-	client_player.pos = (v3f64) {0.0, 48.0, 0.0};
+	client_player.pos = (v3f64) {-2500.0, 48.0, -2000.0};
 	client_player.velocity = (v3f64) {0.0, 0.0, 0.0};
 	client_player.box = (aabb3f64) {{-0.3, 0.0, -0.3}, {0.3, 1.75, 0.3}};
 	client_player.yaw = client_player.pitch = 0.0f;
