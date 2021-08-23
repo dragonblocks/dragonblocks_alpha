@@ -144,10 +144,13 @@ Font *font_create(char *text)
         };
 
 		Mesh *mesh = fnt->meshes[i] = mesh_create();
-		mesh->texture = ch->texture->id;
-		mesh->layout = &vertex_layout;
+		mesh->textures = &ch->texture->id;
+		mesh->textures_count = 1;
+		mesh->free_textures = false;
 		mesh->vertices = vertices;
 		mesh->vertices_count = 6;
+		mesh->free_vertices = false;
+		mesh->layout = &vertex_layout;
 		mesh_configure(mesh);
 
 		offset += ch->advance >> 6;

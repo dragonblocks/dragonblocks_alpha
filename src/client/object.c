@@ -1,13 +1,20 @@
 #include <stdlib.h>
 #include "client/object.h"
 #include "client/scene.h"
+#define OBJECT_VERTEX_ATTRIBUTES 4
 
-static VertexAttribute vertex_attributes[3] = {
+static VertexAttribute vertex_attributes[OBJECT_VERTEX_ATTRIBUTES] = {
 	// position
 	{
 		.type = GL_FLOAT,
 		.length = 3,
 		.size = sizeof(Vertex3DPosition),
+	},
+	// textureIndex
+	{
+		.type = GL_FLOAT,
+		.length = 1,
+		.size = sizeof(Vertex3DTextureIndex),
 	},
 	// textureCoordinates
 	{
@@ -26,7 +33,7 @@ static VertexAttribute vertex_attributes[3] = {
 
 static VertexLayout vertex_layout = {
 	.attributes = vertex_attributes,
-	.count = 3,
+	.count = OBJECT_VERTEX_ATTRIBUTES,
 	.size = sizeof(Vertex3D),
 };
 
@@ -80,21 +87,29 @@ static int qsort_compare_faces(const void *f1, const void *f2)
 	return ((ObjectFace *) f1)->texture - ((ObjectFace *) f2)->texture;
 }
 
-static void add_mesh(Array *meshes, Array *vertices, GLuint texture)
+static void add_mesh(Array *meshes, Array *vertices, Array *textures)
 {
 	if (vertices->siz > 0) {
 		Mesh *mesh = mesh_create();
 		mesh->vertices = vertices->ptr;
 		mesh->vertices_count = vertices->siz;
 		mesh->free_vertices = true;
-		mesh->texture = texture;
+		mesh->free_textures = true;
 		mesh->layout = &vertex_layout;
+		size_t textures_count;
+		array_copy(textures, (void *) &mesh->textures, &textures_count);
+		mesh->textures_count = textures_count;
+
+		free(textures->ptr);
 
 		array_append(meshes, &mesh);
 	}
 
 	*vertices = array_create(sizeof(Vertex3D));
+	*textures = array_create(sizeof(GLuint));
 }
+
+#include <assert.h>
 
 bool object_add_to_scene(Object *obj)
 {
@@ -105,23 +120,38 @@ bool object_add_to_scene(Object *obj)
 
 	qsort(obj->faces.ptr, obj->faces.siz, sizeof(ObjectFace), &qsort_compare_faces);
 
+	GLuint max_texture_units = scene_get_max_texture_units();
+
 	Array meshes = array_create(sizeof(Mesh *));
+
 	Array vertices = array_create(sizeof(Vertex3D));
-	GLuint texture = 0;
+	Array textures = array_create(sizeof(GLuint));
+
+	GLuint texture_id = 0;
+	GLuint texture_index = max_texture_units;
 
 	for (size_t f = 0; f < obj->faces.siz; f++) {
 		ObjectFace *face = &((ObjectFace *) obj->faces.ptr)[f];
 
-		if (face->texture != texture) {
-			add_mesh(&meshes, &vertices, texture);
-			texture = face->texture;
+		if (face->texture != texture_id) {
+			if (++texture_index >= max_texture_units) {
+				add_mesh(&meshes, &vertices, &textures);
+				texture_index = 0;
+			}
+
+			texture_id = face->texture;
+			array_append(&textures, &texture_id);
 		}
 
-		for (size_t v = 0; v < face->vertices.siz; v++)
-			array_append(&vertices, &((Vertex3D *) face->vertices.ptr)[v]);
+		for (size_t v = 0; v < face->vertices.siz; v++) {
+			Vertex3D *vertex = &((Vertex3D *) face->vertices.ptr)[v];
+			vertex->textureIndex = texture_index;
+			array_append(&vertices, vertex);
+		}
+
 		free(face->vertices.ptr);
 	}
-	add_mesh(&meshes, &vertices, texture);
+	add_mesh(&meshes, &vertices, &textures);
 	free(obj->faces.ptr);
 
 	array_copy(&meshes, (void *) &obj->meshes, &obj->meshes_count);

@@ -97,8 +97,12 @@ bool hud_init()
 	hud.elements = list_create(NULL);
 
 	hud.image_mesh = mesh_create();
+	hud.image_mesh->textures = NULL;
+	hud.image_mesh->textures_count = 1;
+	hud.image_mesh->free_textures = false;
 	hud.image_mesh->vertices = image_vertices;
 	hud.image_mesh->vertices_count = 6;
+	hud.image_mesh->free_vertices = false;
 	hud.image_mesh->layout = &image_vertex_layout;
 
 	return true;
@@ -186,7 +190,7 @@ void hud_render()
 				case HUD_IMAGE:
 					glUseProgram(hud.image_prog);
 					glUniformMatrix4fv(hud.image_loc_model, 1, GL_FALSE, element->transform[0]);
-					hud.image_mesh->texture = element->def.type_def.image.texture->id;
+					hud.image_mesh->textures = &element->def.type_def.image.texture->id;
 					mesh_render(hud.image_mesh);
 
 					break;

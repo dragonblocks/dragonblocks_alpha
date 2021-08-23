@@ -9,7 +9,9 @@
 typedef struct
 {
 	GLuint VAO, VBO;
-	GLuint texture;
+	GLuint *textures;
+	GLuint textures_count;
+	bool free_textures;
 	GLvoid *vertices;
 	GLuint vertices_count;
 	bool free_vertices;

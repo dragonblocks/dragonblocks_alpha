@@ -1,11 +1,12 @@
-#version 330 core
+#version 460 core
 
+in float fragmentTextureIndex;
 in vec2 fragmentTextureCoords;
 in vec3 fragmentColor;
 
 out vec4 outColor;
 
-uniform sampler2D texture0;
+uniform sampler2D textures[8];	// ToDo: Replace 8 by max_texture_units
 
 vec3 hsv2rgb(vec3 c)
 {
@@ -16,7 +17,5 @@ vec3 hsv2rgb(vec3 c)
 
 void main()
 {
-	outColor = texture(texture0, fragmentTextureCoords) * vec4(hsv2rgb(vec3(fragmentColor)), 1.0);
-	if (outColor.a == 0.0)
-        discard;
+	outColor = texture(textures[int(fragmentTextureIndex)], fragmentTextureCoords) * vec4(hsv2rgb(vec3(fragmentColor)), 1.0);
 }

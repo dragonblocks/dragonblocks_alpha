@@ -6,6 +6,7 @@ Mesh *mesh_create()
 {
 	Mesh *mesh = malloc(sizeof(Mesh));
 	mesh->VAO = mesh->VBO = 0;
+	mesh->free_textures = false;
 	mesh->free_vertices = false;
 
 	return mesh;
@@ -13,6 +14,9 @@ Mesh *mesh_create()
 
 void mesh_delete(Mesh *mesh)
 {
+	if (mesh->textures && mesh->free_textures)
+		free(mesh->textures);
+
 	if (mesh->vertices && mesh->free_vertices)
 		free(mesh->vertices);
 
@@ -51,7 +55,9 @@ void mesh_render(Mesh *mesh)
 	if (mesh->vertices)
 		mesh_configure(mesh);
 
-	glBindTexture(GL_TEXTURE_2D, mesh->texture);
+	for (GLuint i = 0; i < mesh->textures_count; i++)
+		glBindTextureUnit(i, mesh->textures[i]);
+
 	glBindVertexArray(mesh->VAO);
 	glDrawArrays(GL_TRIANGLES, 0, mesh->vertices_count);
 

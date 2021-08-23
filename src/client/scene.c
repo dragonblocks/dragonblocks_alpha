@@ -17,6 +17,7 @@ static struct
 	GLint loc_model;
 	GLint loc_view;
 	GLint loc_projection;
+	GLint max_texture_units;
 	mat4x4 projection;
 	f32 fov;
 	f32 render_distance;
@@ -35,6 +36,14 @@ bool scene_init()
 	scene.loc_model = glGetUniformLocation(scene.prog, "model");
 	scene.loc_view = glGetUniformLocation(scene.prog, "view");
 	scene.loc_projection = glGetUniformLocation(scene.prog, "projection");
+
+	glGetIntegerv(GL_MAX_TEXTURE_UNITS, &scene.max_texture_units);
+
+	GLint texture_indices[scene.max_texture_units];
+	for (GLint i = 0; i < scene.max_texture_units; i++)
+		texture_indices[i] = i;
+
+	glProgramUniform1iv(scene.prog, glGetUniformLocation(scene.prog, "textures"), scene.max_texture_units, texture_indices);
 
 	scene.fov = 86.1f;
 	scene.render_distance = 1000.0f;
@@ -67,8 +76,6 @@ void scene_render()
 	camera_enable(scene.loc_view);
 	glUniformMatrix4fv(scene.loc_projection, 1, GL_FALSE, scene.projection[0]);
 
-	glActiveTexture(GL_TEXTURE0);
-
 	for (ListPair **pairptr = &scene.objects.first; *pairptr != NULL; ) {
 		ListPair *pair = *pairptr;
 		Object *obj = pair->key;
@@ -88,4 +95,9 @@ void scene_render()
 void scene_on_resize(int width, int height)
 {
 	mat4x4_perspective(scene.projection, scene.fov / 180.0f * M_PI, (float) width / (float) height, 0.01f, scene.render_distance);
+}
+
+GLuint scene_get_max_texture_units()
+{
+	return scene.max_texture_units;
 }
