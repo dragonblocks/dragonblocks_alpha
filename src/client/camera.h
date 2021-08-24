@@ -6,16 +6,19 @@
 #include <linmath.h/linmath.h>
 #include "types.h"
 
+extern struct Camera
+{
+	mat4x4 view;
+	vec3 eye, front, right, up;
+	struct {
+		vec3 front;
+		vec3 right;
+		vec3 up;
+	} movement_dirs;
+} camera;
+
 void camera_set_position(v3f32 pos);
 void camera_set_angle(f32 yaw, f32 pitch);
 void camera_on_resize(int width, int height);
-void camera_enable(GLint loc_view);
-
-extern struct camera_movement_dirs
-{
-	vec3 front;
-	vec3 right;
-	vec3 up;
-} camera_movement_dirs;
 
 #endif

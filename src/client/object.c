@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include "client/object.h"
 #include "client/scene.h"
@@ -49,6 +50,8 @@ Object *object_create()
 	obj->meshes_count = 0;
 	obj->visible = true;
 	obj->wireframe = false;
+	obj->box = (aabb3f32) {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
+	obj->frustum_culling = false;
 	obj->current_face = NULL;
 	obj->faces = array_create(sizeof(ObjectFace));
 
@@ -108,8 +111,6 @@ static void add_mesh(Array *meshes, Array *vertices, Array *textures)
 	*vertices = array_create(sizeof(Vertex3D));
 	*textures = array_create(sizeof(GLuint));
 }
-
-#include <assert.h>
 
 bool object_add_to_scene(Object *obj)
 {
@@ -171,13 +172,47 @@ void object_transform(Object *obj)
 	mat4x4_scale_aniso(obj->transform, obj->transform, obj->scale.x, obj->scale.y, obj->scale.z);
 #pragma GCC diagnostic pop
 }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+static bool inside_frustum(aabb3f32 box, mat4x4 MVP)
+{
+	for (int x = 0; x <= 1; x++) {
+		for (int y = 0; y <= 1; y++) {
+			for (int z = 0; z <= 1; z++) {
+				vec4 point = {x ? box.min.x : box.max.x, y ? box.min.y : box.max.y, z ? box.min.z : box.max.z, 1.0};
+				vec4 point_NDC;
+				mat4x4_mul_vec4(point_NDC, MVP, point);
 
-void object_render(Object *obj, GLint loc_model)
+				for (int j = 0; j < 3; j++) {
+					float f = point_NDC[j];
+
+					if (f > -1.0f && f > 1.0f)
+						return true;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+#pragma GCC diagnostic pop
+
+
+void object_render(Object *obj, mat4x4 view_proj, GLint loc_MVP)
 {
 	if (! obj->visible)
 		return;
 
-	glUniformMatrix4fv(loc_model, 1, GL_FALSE, obj->transform[0]);
+	mat4x4 MVP;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+	mat4x4_mul(MVP, view_proj, obj->transform);
+#pragma GCC diagnostic pop
+
+	if (obj->frustum_culling && ! inside_frustum(obj->box, MVP))
+		return;
+
+	glUniformMatrix4fv(loc_MVP, 1, GL_FALSE, MVP[0]);
 
 	if (obj->wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);

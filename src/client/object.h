@@ -50,6 +50,8 @@ typedef struct
 	mat4x4 transform;
 	bool visible;
 	bool wireframe;
+	bool frustum_culling;
+	aabb3f32 box;
 	ObjectFace *current_face;
 	Array faces;
 } Object;
@@ -60,6 +62,6 @@ void object_set_texture(Object *obj, Texture *texture);
 void object_add_vertex(Object *obj, Vertex3D *vertex);
 bool object_add_to_scene(Object *obj);
 void object_transform(Object *obj);
-void object_render(Object *obj, GLint loc_model);
+void object_render(Object *obj, mat4x4 view_proj, GLint loc_MVP);
 
 #endif

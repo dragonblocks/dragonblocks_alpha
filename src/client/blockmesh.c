@@ -12,6 +12,8 @@ static v3s8 fdir[6] = {
 	{+0, +1, +0},
 };
 
+static s32 half_block_size = MAPBLOCK_SIZE / 2;
+
 static void make_vertices(Object *object, MapBlock *block)
 {
 	v3s32 node_bp = {block->pos.x * MAPBLOCK_SIZE, block->pos.y * MAPBLOCK_SIZE, block->pos.z * MAPBLOCK_SIZE};
@@ -62,7 +64,10 @@ static void make_vertices(Object *object, MapBlock *block)
 void blockmesh_make(MapBlock *block)
 {
 	Object *obj = object_create();
-	obj->pos = (v3f32) {block->pos.x * (f32) MAPBLOCK_SIZE - (f32) MAPBLOCK_SIZE / 2.0f, block->pos.y * (f32) MAPBLOCK_SIZE - (f32) MAPBLOCK_SIZE / 2.0f, block->pos.z * (f32) MAPBLOCK_SIZE - (f32) MAPBLOCK_SIZE / 2.0};
+
+	obj->pos = (v3f32) {block->pos.x * MAPBLOCK_SIZE - half_block_size, block->pos.y * MAPBLOCK_SIZE - half_block_size, block->pos.z * MAPBLOCK_SIZE - half_block_size};
+	obj->frustum_culling = true;
+	obj->box = (aabb3f32) {{-half_block_size, -half_block_size, -half_block_size}, {half_block_size, half_block_size, half_block_size}};
 
 	make_vertices(obj, block);
 

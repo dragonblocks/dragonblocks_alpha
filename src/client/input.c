@@ -126,11 +126,11 @@ void input_tick()
 		client_player.velocity.y = 0.0f;
 
 	if (! input.paused) {
-		move(GLFW_KEY_W, GLFW_KEY_S, camera_movement_dirs.front);
-		move(GLFW_KEY_D, GLFW_KEY_A, camera_movement_dirs.right);
+		move(GLFW_KEY_W, GLFW_KEY_S, camera.movement_dirs.front);
+		move(GLFW_KEY_D, GLFW_KEY_A, camera.movement_dirs.right);
 
 		if (client_player.fly)
-			move(GLFW_KEY_SPACE, GLFW_KEY_LEFT_SHIFT, camera_movement_dirs.up);
+			move(GLFW_KEY_SPACE, GLFW_KEY_LEFT_SHIFT, camera.movement_dirs.up);
 		else if (glfwGetKey(window.handle, GLFW_KEY_SPACE) == GLFW_PRESS)
 			client_player_jump();
 	}

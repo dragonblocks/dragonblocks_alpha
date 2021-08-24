@@ -14,9 +14,7 @@ static struct
 	List objects;
 	pthread_mutex_t mtx;
 	GLuint prog;
-	GLint loc_model;
-	GLint loc_view;
-	GLint loc_projection;
+	GLint loc_MVP;
 	GLint max_texture_units;
 	mat4x4 projection;
 	f32 fov;
@@ -33,9 +31,7 @@ bool scene_init()
 		return false;
 	}
 
-	scene.loc_model = glGetUniformLocation(scene.prog, "model");
-	scene.loc_view = glGetUniformLocation(scene.prog, "view");
-	scene.loc_projection = glGetUniformLocation(scene.prog, "projection");
+	scene.loc_MVP = glGetUniformLocation(scene.prog, "MVP");
 
 	glGetIntegerv(GL_MAX_TEXTURE_UNITS, &scene.max_texture_units);
 
@@ -73,8 +69,11 @@ void scene_add_object(Object *obj)
 void scene_render()
 {
 	glUseProgram(scene.prog);
-	camera_enable(scene.loc_view);
-	glUniformMatrix4fv(scene.loc_projection, 1, GL_FALSE, scene.projection[0]);
+	mat4x4 view_proj;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+	mat4x4_mul(view_proj, scene.projection, camera.view);
+#pragma GCC diagnostic pop
 
 	for (ListPair **pairptr = &scene.objects.first; *pairptr != NULL; ) {
 		ListPair *pair = *pairptr;
@@ -86,7 +85,7 @@ void scene_render()
 			free(pair);
 			object_delete(obj);
 		} else {
-			object_render(obj, scene.loc_model);
+			object_render(obj, view_proj, scene.loc_MVP);
 			pairptr = &pair->next;
 		}
 	}
