@@ -19,6 +19,20 @@ or alternatively:
 
 ## Controls
 
+| Key | Action |
+|-|-|
+| W | Move Forward |
+| A | Move Left |
+| S | Move Backward |
+| D | Move Right |
+| Space | Jump / When flying: Move Up |
+| Left Shift | When flying: Move Down |
+| F | Toggle flight |
+| C | Toggle collision |
+| F11 | Toggle fullscreen |
+| ESC | Pause / unpause game |
+
+
 Use W, A, S and D to move forward / left / backward / right and Space to jump.
 
 ## Dependencies
