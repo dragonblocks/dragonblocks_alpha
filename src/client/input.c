@@ -2,6 +2,7 @@
 #include "client/camera.h"
 #include "client/client.h"
 #include "client/client_player.h"
+#include "client/debug_menu.h"
 #include "client/hud.h"
 #include "client/input.h"
 #include "client/window.h"
@@ -21,6 +22,7 @@ static struct
 	KeyListener fullscreen_listener;
 	KeyListener fly_listener;
 	KeyListener collision_listener;
+	KeyListener debug_menu_listener;
 } input;
 
 void input_on_cursor_pos(double current_x, double current_y)
@@ -38,9 +40,13 @@ void input_on_cursor_pos(double current_x, double current_y)
 	client_player.yaw += (f32) delta_x * M_PI / 180.0f / 8.0f;
 	client_player.pitch -= (f32) delta_y * M_PI / 180.0f / 8.0f;
 
+	client_player.yaw = fmod(client_player.yaw + M_PI * 2.0f, M_PI * 2.0f);
 	client_player.pitch = fmax(fmin(client_player.pitch, M_PI / 2.0f - 0.01f), -M_PI / 2.0f + 0.01f);
 
 	camera_set_angle(client_player.yaw, client_player.pitch);
+
+	debug_menu_update_yaw();
+	debug_menu_update_pitch();
 }
 
 static bool move(int forward, int backward, vec3 dir)
@@ -88,8 +94,6 @@ void input_tick()
 {
 	do_key_listener(&input.pause_listener);
 	do_key_listener(&input.fullscreen_listener);
-	do_key_listener(&input.fly_listener);
-	do_key_listener(&input.collision_listener);
 
 	if (input.pause_listener.fired) {
 		input.paused = ! input.paused;
@@ -109,14 +113,23 @@ void input_tick()
 			window_enter_fullscreen();
 	}
 
-	if (input.fly_listener.fired) {
-		client_player.fly = ! client_player.fly;
-		client_player_update_info();
-	}
+	if (! input.paused) {
+		do_key_listener(&input.fly_listener);
+		do_key_listener(&input.collision_listener);
+		do_key_listener(&input.debug_menu_listener);
 
-	if (input.collision_listener.fired) {
-		client_player.collision = ! client_player.collision;
-		client_player_update_info();
+		if (input.fly_listener.fired) {
+			client_player.fly = ! client_player.fly;
+			debug_menu_update_flight();
+		}
+
+		if (input.collision_listener.fired) {
+			client_player.collision = ! client_player.collision;
+			debug_menu_update_collision();
+		}
+
+		if (input.debug_menu_listener.fired)
+			debug_menu_toggle();
 	}
 
 	client_player.velocity.x = 0.0f;
@@ -144,6 +157,7 @@ void input_init()
 	input.fullscreen_listener = create_key_listener(GLFW_KEY_F11);
 	input.fly_listener = create_key_listener(GLFW_KEY_F);
 	input.collision_listener = create_key_listener(GLFW_KEY_C);
+	input.debug_menu_listener = create_key_listener(GLFW_KEY_F3);
 
 	input.pause_menu_hud = hud_add((HUDElementDefinition) {
 		.type = HUD_IMAGE,

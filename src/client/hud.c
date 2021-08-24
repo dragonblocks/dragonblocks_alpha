@@ -225,7 +225,7 @@ HUDElement *hud_add(HUDElementDefinition def)
 	return element;
 }
 
-void hud_change_text(HUDElement *element, char *text)
+void hud_change_text(HUDElement *element, const char *text)
 {
 	if (strcmp(element->def.type_def.text.text, text)) {
 		element->def.type_def.text.text = strdup(text);

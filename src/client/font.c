@@ -109,7 +109,7 @@ void font_deinit()
 	}
 }
 
-Font *font_create(char *text)
+Font *font_create(const char *text)
 {
 	Font *fnt = malloc(sizeof(fnt));
 

@@ -13,7 +13,7 @@ typedef struct
 
 bool font_init();
 void font_deinit();
-Font *font_create(char *text);
+Font *font_create(const char *text);
 void font_delete(Font *fnt);
 void font_render(Font *fnt);
 

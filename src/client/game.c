@@ -8,26 +8,31 @@
 #include "client/client_map.h"
 #include "client/client_node.h"
 #include "client/client_player.h"
+#include "client/debug_menu.h"
 #include "client/hud.h"
 #include "client/input.h"
 #include "client/font.h"
 #include "client/window.h"
 #include "signal_handlers.h"
 
-static void game_loop(Client *client)
+static void crosshair_init()
 {
-	HUDElement *fps_hud = hud_add((HUDElementDefinition) {
-		.type = HUD_TEXT,
-		.pos = {-1.0f, -1.0f, 0.0f},
-		.offset = {2, 2 + 16 + 2},
+	hud_add((HUDElementDefinition) {
+		.type = HUD_IMAGE,
+		.pos = {0.0f, 0.0f, 0.0f},
+		.offset = {0, 0},
 		.type_def = {
-			.text = {
-				.text = "",
-				.color = {1.0f, 1.0f, 1.0f},
+			.image = {
+				.texture = texture_get(RESSOURCEPATH "textures/crosshair.png"),
+				.scale = {1.0f, 1.0f},
+				.scale_type = HUD_SCALE_TEXTURE,
 			},
 		},
 	});
+}
 
+static void game_loop(Client *client)
+{
 	f64 fps_update_timer = 1.0f;
 	int frames = 0;
 
@@ -40,9 +45,7 @@ static void game_loop(Client *client)
 		ts_old = ts;
 
 		if ((fps_update_timer -= dtime) <= 0.0) {
-			char fps[((int) log10(frames) + 1) + 1 + 3 + 1];
-			sprintf(fps, "%d FPS", frames);
-			hud_change_text(fps_hud, fps);
+			debug_menu_update_fps(frames);
 			fps_update_timer += 1.0;
 			frames = 0;
 		}
@@ -97,30 +100,18 @@ bool game(Client *client)
 
 	hud_on_resize(width, height);
 
-	hud_add((HUDElementDefinition) {
-		.type = HUD_IMAGE,
-		.pos = {0.0f, 0.0f, 0.0f},
-		.offset = {0, 0},
-		.type_def = {
-			.image = {
-				.texture = texture_get(RESSOURCEPATH "textures/crosshair.png"),
-				.scale = {1.0f, 1.0f},
-				.scale_type = HUD_SCALE_TEXTURE,
-			},
-		},
-	});
+	debug_menu_init();
+	debug_menu_toggle();
+	debug_menu_update_fps(0);
+	debug_menu_update_version();
+	debug_menu_update_flight();
+	debug_menu_update_collision();
+	debug_menu_update_fullscreen();
+	debug_menu_update_opengl();
+	debug_menu_update_gpu();
+	debug_menu_update_glsl();
 
-	hud_add((HUDElementDefinition) {
-		.type = HUD_TEXT,
-		.pos = {-1.0f, -1.0f, 0.0f},
-		.offset = {2, 2},
-		.type_def = {
-			.text = {
-				.text = "Dragonblocks Alpha",	// ToDo: add version
-				.color = {1.0f, 1.0f, 1.0f},
-			},
-		},
-	});
+	crosshair_init();
 
 	input_init();
 

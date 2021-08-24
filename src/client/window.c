@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <GL/glew.h>
 #include <GL/gl.h>
+#include "client/debug_menu.h"
 #include "client/hud.h"
 #include "client/input.h"
 #include "client/scene.h"
@@ -41,12 +42,16 @@ void window_enter_fullscreen()
 	GLFWmonitor *monitor = glfwGetPrimaryMonitor();
 	const GLFWvidmode *vidmode = glfwGetVideoMode(monitor);
 	glfwSetWindowMonitor(window.handle, monitor, 0, 0, vidmode->width, vidmode->height, 0);
+
+	debug_menu_update_fullscreen();
 }
 
 void window_exit_fullscreen()
 {
 	window.fullscreen = false;
 	glfwSetWindowMonitor(window.handle, NULL, window.small_bounds.x, window.small_bounds.y, window.small_bounds.width, window.small_bounds.height, 0);
+
+	debug_menu_update_fullscreen();
 }
 
 bool window_init(int width, int height)

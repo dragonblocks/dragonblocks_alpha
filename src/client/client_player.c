@@ -5,6 +5,7 @@
 #include "client/client_map.h"
 #include "client/client_player.h"
 #include "client/cube.h"
+#include "client/debug_menu.h"
 #include "client/texture.h"
 
 struct ClientPlayer client_player;
@@ -19,7 +20,9 @@ static void update_pos()
 	client_player.obj->pos = (v3f32) {client_player.pos.x, client_player.pos.y, client_player.pos.z};
 	object_transform(client_player.obj);
 
-	client_player_update_info();
+	debug_menu_update_pos();
+	debug_menu_update_humidity();
+	debug_menu_update_temperature();
 }
 
 // get absolute player bounding box
@@ -107,21 +110,12 @@ void client_player_add_to_scene()
 		}
 	}
 
-	client_player.info_hud = hud_add((HUDElementDefinition) {
-		.type = HUD_TEXT,
-		.pos = {-1.0f, -1.0f, 0.0f},
-		.offset = {2, 2 + 16 + 2 + 16 + 2},
-		.type_def = {
-			.text = {
-				.text = "",
-				.color = {1.0f, 1.0f, 1.0f},
-			},
-		},
-	});
-
 	pthread_rwlock_rdlock(&client_player.rwlock);
 	update_pos();
 	pthread_rwlock_unlock(&client_player.rwlock);
+
+	debug_menu_update_yaw();
+	debug_menu_update_pitch();
 }
 
 // jump if possible
@@ -207,15 +201,4 @@ void client_player_tick(f64 dtime)
 		update_pos();
 
 	pthread_rwlock_unlock(&client_player.rwlock);
-}
-
-// update HUD info text
-void client_player_update_info()
-{
-	v3s32 node_pos = {client_player.pos.x, client_player.pos.y, client_player.pos.z};
-
-	char info_text[BUFSIZ];
-	sprintf(info_text, "(%.1f %.1f %.1f) humidity: %.2f temperature: %.2f flight: %s collision: %s", client_player.pos.x, client_player.pos.y, client_player.pos.z, get_humidity(node_pos), get_temperature(node_pos), client_player.fly ? "enabled" : "disabled", client_player.collision ? "enabled" : "disabled");
-
-	hud_change_text(client_player.info_hud, info_text);
 }

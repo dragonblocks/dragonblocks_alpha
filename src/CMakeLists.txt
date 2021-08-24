@@ -50,6 +50,7 @@ add_executable(Dragonblocks
 	client/client_node.c
 	client/client_player.c
 	client/cube.c
+	client/debug_menu.c
 	client/facecache.c
 	client/font.c
 	client/game.c
@@ -88,6 +89,20 @@ add_executable(DragonblocksServer
 target_link_libraries(DragonblocksServer
 	sqlite3
 )
+
+execute_process(COMMAND git tag --points-at HEAD
+	OUTPUT_VARIABLE GIT_VERSION
+	OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+if ("${GIT_VERSION}" STREQUAL "")
+	execute_process(COMMAND git rev-parse --short HEAD
+		OUTPUT_VARIABLE GIT_VERSION
+		OUTPUT_STRIP_TRAILING_WHITESPACE
+	)
+endif()
+
+add_compile_definitions(DRAGONBLOCKS_VERSION="${GIT_VERSION}")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
 	add_compile_definitions(RELEASE)
