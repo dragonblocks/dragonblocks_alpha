@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include "client/shader.h"
 
-static GLuint compile_and_attach_shader(GLenum type, const char *path, const char *name, GLuint program)
+static GLuint compile_and_attach_shader(GLenum type, const char *path, const char *name, GLuint program, const char *definitions)
 {
 	char full_path[strlen(path) + 1 + strlen(name) + 1 + 4 + 1];
 	sprintf(full_path, "%s/%s.glsl", path, name);
@@ -47,9 +47,21 @@ static GLuint compile_and_attach_shader(GLenum type, const char *path, const cha
 
 	GLuint id = glCreateShader(type);
 
-	char const *codeptr = code;
-	const int isize = (int) size;
-	glShaderSource(id, 1, &codeptr, &isize);
+	const char *version = "#version 460 core\n";
+
+	const char *code_list[3] = {
+		version,
+		definitions,
+		code,
+	};
+
+	int size_list[3] = {
+		18,
+		strlen(definitions),
+		size,
+	};
+
+	glShaderSource(id, 3, code_list, size_list);
 
 	glCompileShader(id);
 
@@ -58,7 +70,7 @@ static GLuint compile_and_attach_shader(GLenum type, const char *path, const cha
 	if (! success) {
 		char errbuf[BUFSIZ];
 		glGetShaderInfoLog(id, BUFSIZ, NULL, errbuf);
-		fprintf(stderr, "Failed to compile %s shader: %s\n", name, errbuf);
+		fprintf(stderr, "Failed to compile %s shader: %s", name, errbuf);
 		glDeleteShader(id);
 		return 0;
 	}
@@ -68,19 +80,21 @@ static GLuint compile_and_attach_shader(GLenum type, const char *path, const cha
 	return id;
 }
 
-
-bool shader_program_create(const char *path, GLuint *idptr)
+bool shader_program_create(const char *path, GLuint *idptr, const char *definitions)
 {
 	GLuint id = glCreateProgram();
 
+	if (! definitions)
+		definitions = "";
+
 	GLuint vert, frag;
 
-	if (! (vert = compile_and_attach_shader(GL_VERTEX_SHADER, path, "vertex", id))) {
+	if (! (vert = compile_and_attach_shader(GL_VERTEX_SHADER, path, "vertex", id, definitions))) {
 		glDeleteProgram(id);
 		return false;
 	}
 
-	if (! (frag = compile_and_attach_shader(GL_FRAGMENT_SHADER, path, "fragment", id))) {
+	if (! (frag = compile_and_attach_shader(GL_FRAGMENT_SHADER, path, "fragment", id, definitions))) {
 		glDeleteShader(vert);
 		glDeleteProgram(id);
 		return false;

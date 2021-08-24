@@ -69,20 +69,20 @@ static void game_loop(Client *client)
 	}
 }
 
-void game(Client *client)
+bool game(Client *client)
 {
 	int width, height;
 	width = 1250;
 	height = 750;
 
 	if (! window_init(width, height))
-		return;
+		return false;
 
 	if (! font_init())
-		return;
+		return false;
 
 	if (! scene_init())
-		return;
+		return false;
 
 	scene_on_resize(width, height);
 
@@ -92,7 +92,9 @@ void game(Client *client)
 	camera_set_position((v3f32) {0.0f, 0.0f, 0.0f});
 	camera_set_angle(0.0f, 0.0f);
 
-	hud_init();
+	if (! hud_init())
+		return false;
+
 	hud_on_resize(width, height);
 
 	hud_add((HUDElementDefinition) {
@@ -131,4 +133,6 @@ void game(Client *client)
 	font_deinit();
 	hud_deinit();
 	scene_deinit();
+
+	return true;
 }

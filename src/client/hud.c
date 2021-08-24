@@ -77,7 +77,7 @@ static VertexImage image_vertices[6] = {
 
 bool hud_init()
 {
-	if (! shader_program_create(RESSOURCEPATH "shaders/hud/image", &hud.image_prog)) {
+	if (! shader_program_create(RESSOURCEPATH "shaders/hud/image", &hud.image_prog, NULL)) {
 		fprintf(stderr, "Failed to create HUD image shader program\n");
 		return false;
 	}
@@ -85,7 +85,7 @@ bool hud_init()
 	hud.image_loc_model = glGetUniformLocation(hud.image_prog, "model");
 	hud.image_loc_projection = glGetUniformLocation(hud.image_prog, "projection");
 
-	if (! shader_program_create(RESSOURCEPATH "shaders/hud/font", &hud.font_prog)) {
+	if (! shader_program_create(RESSOURCEPATH "shaders/hud/font", &hud.font_prog, NULL)) {
 		fprintf(stderr, "Failed to create HUD font shader program\n");
 		return false;
 	}

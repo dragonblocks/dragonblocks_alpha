@@ -1,12 +1,10 @@
-#version 460 core
-
 in float fragmentTextureIndex;
 in vec2 fragmentTextureCoords;
 in vec3 fragmentColor;
 
 out vec4 outColor;
 
-uniform sampler2D textures[8];	// ToDo: Replace 8 by max_texture_units
+uniform sampler2D textures[MAX_TEXTURE_UNITS];
 
 vec3 hsv2rgb(vec3 c)
 {

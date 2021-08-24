@@ -26,14 +26,17 @@ bool scene_init()
 	scene.objects = list_create(NULL),
 	pthread_mutex_init(&scene.mtx, NULL);
 
-	if (! shader_program_create(RESSOURCEPATH "shaders/3d", &scene.prog)) {
+	glGetIntegerv(GL_MAX_TEXTURE_UNITS, &scene.max_texture_units);
+
+	char max_texture_units_def[BUFSIZ];
+	sprintf(max_texture_units_def, "#define MAX_TEXTURE_UNITS %d\n", scene.max_texture_units);
+
+	if (! shader_program_create(RESSOURCEPATH "shaders/3d", &scene.prog, max_texture_units_def)) {
 		fprintf(stderr, "Failed to create 3D shader program\n");
 		return false;
 	}
 
 	scene.loc_MVP = glGetUniformLocation(scene.prog, "MVP");
-
-	glGetIntegerv(GL_MAX_TEXTURE_UNITS, &scene.max_texture_units);
 
 	GLint texture_indices[scene.max_texture_units];
 	for (GLint i = 0; i < scene.max_texture_units; i++)

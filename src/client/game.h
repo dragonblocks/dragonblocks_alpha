@@ -3,6 +3,6 @@
 
 #include "client/client.h"
 
-void game(Client *client);
+bool game(Client *client);
 
 #endif

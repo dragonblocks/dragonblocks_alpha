@@ -89,7 +89,7 @@ static bool client_authenticate()
 	return false;
 }
 
-static void client_start(int fd)
+static bool client_start(int fd)
 {
 	client.fd = fd;
 	pthread_mutex_init(&client.mtx, NULL);
@@ -102,8 +102,7 @@ static void client_start(int fd)
 	pthread_t recv_thread;
 	pthread_create(&recv_thread, NULL, &reciever_thread, NULL);
 
-	if (client_authenticate())
-		game(&client);
+	bool return_value = client_authenticate() && game(&client);
 
 	if (client.state != CS_DISCONNECTED)
 		client_disconnect(true, NULL);
@@ -117,6 +116,8 @@ static void client_start(int fd)
 	client_map_deinit();
 
 	pthread_mutex_destroy(&client.mtx);
+
+	return return_value;
 }
 
 int main(int argc, char **argv)
@@ -155,7 +156,6 @@ int main(int argc, char **argv)
 	freeaddrinfo(info);
 
 	signal_handlers_init();
-	client_start(fd);
 
-	return EXIT_SUCCESS;
+	return client_start(fd) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
