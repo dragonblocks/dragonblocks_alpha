@@ -2,11 +2,11 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <linmath.h/linmath.h>
+#include <dragontype/list.h>
 #include "client/camera.h"
 #include "client/client.h"
 #include "client/scene.h"
 #include "client/shader.h"
-#include "list.h"
 #include "util.h"
 
 static struct

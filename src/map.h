@@ -3,10 +3,10 @@
 
 #include <stdbool.h>
 #include <pthread.h>
-#include "bintree.h"
-#include "list.h"
+#include <dragontype/bintree.h>
+#include <dragontype/number.h>
+#include <dragontype/list.h>
 #include "node.h"
-#include "types.h"
 
 #define MAPBLOCK_SIZE 16
 #define ITERATE_MAPBLOCK for (u8 x = 0; x < MAPBLOCK_SIZE; x++) for (u8 y = 0; y < MAPBLOCK_SIZE; y++) for (u8 z = 0; z < MAPBLOCK_SIZE; z++)

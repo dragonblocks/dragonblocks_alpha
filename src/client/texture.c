@@ -1,8 +1,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 #include <stdbool.h>
+#include <dragontype/list.h>
 #include "client/texture.h"
-#include "list.h"
 #include "util.h"
 
 static List textures;

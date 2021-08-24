@@ -2,10 +2,10 @@
 #define _CLIENT_PLAYER_H_
 
 #include <pthread.h>
+#include <dragontype/number.h>
 #include "client/client.h"
 #include "client/hud.h"
 #include "client/object.h"
-#include "types.h"
 
 extern struct ClientPlayer
 {

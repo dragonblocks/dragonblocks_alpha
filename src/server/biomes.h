@@ -1,7 +1,7 @@
 #ifndef _BIOMES_H_
 #define _BIOMES_H_
 
-#include "types.h"
+#include <dragontype/number.h>
 #include "map.h"
 #include "perlin.h"
 

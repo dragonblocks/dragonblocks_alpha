@@ -4,7 +4,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <linmath.h/linmath.h>
-#include "types.h"
+#include <dragontype/number.h>
 
 extern struct Camera
 {

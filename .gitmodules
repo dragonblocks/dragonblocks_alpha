@@ -7,3 +7,6 @@
 [submodule "deps/stb"]
 	path = deps/stb
 	url = https://github.com/nothings/stb
+[submodule "deps/dragontype"]
+	path = deps/dragontype
+	url = https://github.com/dragonblocks/dragontype

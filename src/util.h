@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include <arpa/inet.h>
-#include "types.h"
+#include <dragontype/number.h>
 
 #define ever (;;)														// infinite for loop with style
 #define INBRACES(str) str ? "(" : "", str ? str : "", str ? ")" : ""	// wrapper for printf to optionally add a message in braces if message is not NULL

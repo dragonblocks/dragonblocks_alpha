@@ -17,8 +17,10 @@ link_libraries(
 	z
 )
 
+set(DEPS_DIR "${CMAKE_SOURCE_DIR}/../deps/")
+
 include_directories(SYSTEM
-	"${CMAKE_SOURCE_DIR}/../deps/"
+	${DEPS_DIR}
 )
 
 include_directories(BEFORE
@@ -28,17 +30,14 @@ include_directories(BEFORE
 add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 
 set(SOURCES_COMMON
-	array.c
-	bintree.c
 	environment.c
-	list.c
 	map.c
-	signal_handlers.c
-	util.c
-	types.c
 	node.c
 	perlin.c
-	queue.c
+	signal_handlers.c
+	util.c
+	"${DEPS_DIR}/dragontype/implementation.c"
+	"${DEPS_DIR}/perlin/perlin.c"
 )
 
 add_executable(Dragonblocks

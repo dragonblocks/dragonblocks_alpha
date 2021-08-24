@@ -2,7 +2,7 @@
 #define _NODE_H_
 
 #include <stdbool.h>
-#include "types.h"
+#include <dragontype/number.h>
 
 typedef enum
 {

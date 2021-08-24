@@ -3,8 +3,8 @@
 
 #include <stdbool.h>
 #include <pthread.h>
+#include <dragontype/queue.h>
 #include "map.h"
-#include "queue.h"
 #include "client/object.h"
 
 typedef enum

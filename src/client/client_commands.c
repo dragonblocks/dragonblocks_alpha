@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <dragontype/number.h>
 #include "client/client.h"
 #include "client/client_map.h"
-#include "types.h"
 #include "util.h"
 
 static bool disconnect_handler(unused Client *client, bool good)

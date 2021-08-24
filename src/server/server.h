@@ -3,12 +3,12 @@
 
 #include <pthread.h>
 #include <netinet/in.h>
+#include <dragontype/number.h>
+#include <dragontype/list.h>
 #include "client/client_commands.h"
 #include "server/database.h"
 #include "server/server_commands.h"
-#include "list.h"
 #include "network.h"
-#include "types.h"
 
 typedef struct
 {

@@ -1,6 +1,6 @@
 #include <stdlib.h>
+#include <dragontype/array.h>
 #include "client/facecache.h"
-#include "array.h"
 
 static struct
 {

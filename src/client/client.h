@@ -3,11 +3,11 @@
 
 #include <stdbool.h>
 #include <pthread.h>
+#include <dragontype/number.h>
 #include "client/client_commands.h"
 #include "client/scene.h"
 #include "server/server_commands.h"
 #include "network.h"
-#include "types.h"
 
 #ifdef RELEASE
 	#define RESSOURCEPATH ""
