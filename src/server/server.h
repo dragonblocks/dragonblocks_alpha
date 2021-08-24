@@ -6,7 +6,6 @@
 #include <dragontype/number.h>
 #include <dragontype/list.h>
 #include "client/client_commands.h"
-#include "server/database.h"
 #include "server/server_commands.h"
 #include "network.h"
 
@@ -17,7 +16,6 @@ typedef struct
 	List clients;					// Client * -> NULL map with all connected clients
 	pthread_rwlock_t players_rwlck;	// lock to protect player list
 	List players;					// char * -> Client * map with clients that have finished auth
-	sqlite3 *db;
 	struct {
 		u32 simulation_distance;	// perimeter of the cube that players can see blocks in is simulation_distance * 2 + 1
 	} config;						// configuration, ToDo: read from config file

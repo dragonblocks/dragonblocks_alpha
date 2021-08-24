@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <netdb.h>
+#include "server/database.h"
 #include "server/server.h"
 #include "server/server_map.h"
 #include "signal_handlers.h"
@@ -75,7 +76,7 @@ static void server_run(int fd)
 	pthread_rwlock_init(&server.players_rwlck, NULL);
 	server.players = list_create(&list_compare_string);
 
-	server.db = database_open("world.sqlite");
+	database_init();
 	server_map_init(&server);
 
 	while (! interrupted)
@@ -98,8 +99,7 @@ static void server_run(int fd)
 	close(server.sockfd);
 
 	server_map_deinit();
-
-	sqlite3_close(server.db);
+	database_deinit();
 
 	exit(EXIT_SUCCESS);
 }

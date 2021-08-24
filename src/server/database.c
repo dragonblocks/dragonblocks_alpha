@@ -2,26 +2,28 @@
 #include <endian.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
+#include <sqlite3.h>
 #include "server/database.h"
 #include "server/server_map.h"
 #include "util.h"
 
+static sqlite3 *database;
+
 // utility functions
 
 // print SQLite3 error message for failed block SQL statement
-static void print_error(sqlite3 *db, MapBlock *block, const char *action)
+static void print_block_error(MapBlock *block, const char *action)
 {
-	printf("Database error with %s block at (%d, %d, %d): %s\n", action, block->pos.x, block->pos.y, block->pos.z, sqlite3_errmsg(db));
+	printf("Database error with %s block at (%d, %d, %d): %s\n", action, block->pos.x, block->pos.y, block->pos.z, sqlite3_errmsg(database));
 }
 
 // prepare a SQLite3 block statement and bind the position
-static sqlite3_stmt *prepare_statement(sqlite3 *db, MapBlock *block, const char *action, const char *sql)
+static sqlite3_stmt *prepare_block_statement(MapBlock *block, const char *action, const char *sql)
 {
 	sqlite3_stmt *stmt;
 
-	if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
-		print_error(db, block, action);
+	if (sqlite3_prepare_v2(database, sql, -1, &stmt, NULL) != SQLITE_OK) {
+		print_block_error(block, action);
 		return NULL;
 	}
 
@@ -38,28 +40,31 @@ static sqlite3_stmt *prepare_statement(sqlite3 *db, MapBlock *block, const char 
 
 // public functions
 
-// open and initialize SQLite3 database at path
-sqlite3 *database_open(const char *path)
+// open and initialize world SQLite3 database
+void database_init()
 {
-	sqlite3 *db;
 	char *err;
 
-	if (sqlite3_open_v2(path, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, NULL) != SQLITE_OK) {
-		printf("Failed to open database: %s\n", sqlite3_errmsg(db));
-	} else if (sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS map (pos BLOB PRIMARY KEY, generated INT, size INT, data BLOB, mgsb_size INT, mgsb_data BLOB);", NULL, NULL, &err) != SQLITE_OK) {
+	if (sqlite3_open_v2("world.sqlite", &database, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, NULL) != SQLITE_OK) {
+		printf("Failed to open database: %s\n", sqlite3_errmsg(database));
+	} else if (sqlite3_exec(database, "CREATE TABLE IF NOT EXISTS map (pos BLOB PRIMARY KEY, generated INT, size INT, data BLOB, mgsb_size INT, mgsb_data BLOB);", NULL, NULL, &err) != SQLITE_OK) {
 		printf("Failed to initialize database: %s\n", err);
 		sqlite3_free(err);
 	}
+}
 
-	return db;
+// close database
+void database_deinit()
+{
+	sqlite3_close(database);
 }
 
 // load a block from map database (initializes state, mgs buffer and data), returns false on failure
-bool database_load_block(sqlite3 *db, MapBlock *block)
+bool database_load_block(MapBlock *block)
 {
 	sqlite3_stmt *stmt;
 
-	if (! (stmt = prepare_statement(db, block, "loading", "SELECT generated, size, data, mgsb_size, mgsb_data FROM map WHERE pos=?")))
+	if (! (stmt = prepare_block_statement(block, "loading", "SELECT generated, size, data, mgsb_size, mgsb_data FROM map WHERE pos=?")))
 		return false;
 
 	int rc = sqlite3_step(stmt);
@@ -81,7 +86,7 @@ bool database_load_block(sqlite3 *db, MapBlock *block)
 		if (! map_deserialize_block(block, extra->data, extra->size))
 			printf("Error with deserializing block at (%d, %d, %d)\n", block->pos.x, block->pos.y, block->pos.z);
 	} else if (rc != SQLITE_DONE) {
-		print_error(db, block, "loading");
+		print_block_error(block, "loading");
 	}
 
 	sqlite3_finalize(stmt);
@@ -89,11 +94,11 @@ bool database_load_block(sqlite3 *db, MapBlock *block)
 }
 
 // save a block to database
-void database_save_block(sqlite3 *db, MapBlock *block)
+void database_save_block(MapBlock *block)
 {
 	sqlite3_stmt *stmt;
 
-	if (! (stmt = prepare_statement(db, block, "saving", "REPLACE INTO map (pos, generated, size, data, mgsb_size, mgsb_data) VALUES(?1, ?2, ?3, ?4, ?5, ?6)")))
+	if (! (stmt = prepare_block_statement(block, "saving", "REPLACE INTO map (pos, generated, size, data, mgsb_size, mgsb_data) VALUES(?1, ?2, ?3, ?4, ?5, ?6)")))
 		return;
 
 	MapBlockExtraData *extra = block->extra;
@@ -113,7 +118,7 @@ void database_save_block(sqlite3 *db, MapBlock *block)
 	sqlite3_bind_blob(stmt, 6, mgsb_data, mgsb_size, &free);
 
 	if (sqlite3_step(stmt) != SQLITE_DONE)
-		print_error(db, block, "saving");
+		print_block_error(block, "saving");
 
 	sqlite3_finalize(stmt);
 }

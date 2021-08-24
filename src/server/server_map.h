@@ -40,7 +40,6 @@ typedef struct
 
 extern struct ServerMap {
 	Map *map;								// map object, data is stored here
-	sqlite3 *db;							// SQLite3 database to save data to database
 	bool shutting_down;						// is a shutdown in progress?
 	List mapgen_threads;					// a list of mapgen threads (need to be joined before shutdown)
 	pthread_mutex_t mapgen_threads_mtx;		// mutex to protect mapgen thread list

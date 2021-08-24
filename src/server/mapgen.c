@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
 #include "environment.h"
@@ -20,8 +19,6 @@ void mapgen_set_node(v3s32 pos, MapNode node, MapgenStage mgs, List *changed_blo
 // generate a block (does not manage block state or threading)
 void mapgen_generate_block(MapBlock *block, List *changed_blocks)
 {
-	printf("Generating block at (%d, %d, %d)\n", block->pos.x, block->pos.y, block->pos.z);
-
 	MapBlockExtraData *extra = block->extra;
 
 	v3s32 block_node_pos = {block->pos.x * MAPBLOCK_SIZE, block->pos.y * MAPBLOCK_SIZE, block->pos.z * MAPBLOCK_SIZE};

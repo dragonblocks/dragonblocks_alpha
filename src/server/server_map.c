@@ -34,7 +34,7 @@ static void send_block_to_near(MapBlock *block)
 		return;
 
 	map_serialize_block(block, &extra->data, &extra->size);
-	database_save_block(server->db, block);
+	database_save_block(block);
 
 	if (extra->state == MBS_CREATED)
 		return;
@@ -115,7 +115,7 @@ static void on_create_block(MapBlock *block)
 {
 	MapBlockExtraData *extra = block->extra = malloc(sizeof(MapBlockExtraData));
 
-	if (! database_load_block(server->db, block)) {
+	if (! database_load_block(block)) {
 		extra->state = MBS_CREATED;
 		extra->data = NULL;
 
