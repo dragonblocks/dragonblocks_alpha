@@ -75,7 +75,7 @@ static void server_run(int fd)
 	pthread_rwlock_init(&server.players_rwlck, NULL);
 	server.players = list_create(&list_compare_string);
 
-	server.db = database_open("server.sqlite");
+	server.db = database_open("world.sqlite");
 	server_map_init(&server);
 
 	while (! interrupted)

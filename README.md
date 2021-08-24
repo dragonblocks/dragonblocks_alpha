@@ -32,9 +32,6 @@ or alternatively:
 | F11 | Toggle fullscreen |
 | ESC | Pause / unpause game |
 
-
-Use W, A, S and D to move forward / left / backward / right and Space to jump.
-
 ## Dependencies
 
 The client depends on GLFW3, OpenGL, GLEW and Freetype.
@@ -69,7 +66,7 @@ sudo apt install zlib1g
 ## Usage
 
 ### Server
-The server currently stores all the world files (currently only map.sqlite) in the current working directory, and it will stay like that.
+The server currently stores the world database (world.sqlite) in the current working directory, and it will stay like that.
 If you want to have multiple worlds, just run the DragonblocksServer process from different directories.
 It's up to you how you organize the world folders, which is an advantage since the program really just "does one thing well"
 without having to search your system for share directories or maintaining a world list (like Minetest does).
