@@ -6,6 +6,7 @@
 #include "client/debug_menu.h"
 #include "client/hud.h"
 #include "client/window.h"
+#include "version.h"
 
 typedef enum
 {
@@ -59,7 +60,9 @@ void debug_menu_toggle()
 
 void debug_menu_update_version()
 {
-	hud_change_text(huds[DME_VERSION], "Dragonblocks Alpha " DRAGONBLOCKS_VERSION);
+	char text[BUFSIZ];
+	sprintf(text, "Dragonblocks Alpha %s", VERSION);
+	hud_change_text(huds[DME_VERSION], text);
 }
 
 void debug_menu_update_fps(int fps)

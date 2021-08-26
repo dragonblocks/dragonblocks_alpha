@@ -90,19 +90,12 @@ target_link_libraries(DragonblocksServer
 	sqlite3
 )
 
-execute_process(COMMAND git tag --points-at HEAD
-	OUTPUT_VARIABLE GIT_VERSION
-	OUTPUT_STRIP_TRAILING_WHITESPACE
+add_custom_target(version
+	COMMAND ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/version.cmake
 )
 
-if ("${GIT_VERSION}" STREQUAL "")
-	execute_process(COMMAND git rev-parse --short HEAD
-		OUTPUT_VARIABLE GIT_VERSION
-		OUTPUT_STRIP_TRAILING_WHITESPACE
-	)
-endif()
-
-add_compile_definitions(DRAGONBLOCKS_VERSION="${GIT_VERSION}")
+add_dependencies(Dragonblocks version)
+add_dependencies(DragonblocksServer version)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
 	add_compile_definitions(RELEASE)

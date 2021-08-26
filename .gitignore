@@ -13,3 +13,4 @@ DragonblocksServer
 Dragonblocks
 world.sqlite
 DragonblocksAlpha-*.zip
+src/version.h
