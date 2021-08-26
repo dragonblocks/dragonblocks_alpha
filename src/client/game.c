@@ -109,7 +109,6 @@ bool game(Client *client)
 	debug_menu_update_fullscreen();
 	debug_menu_update_opengl();
 	debug_menu_update_gpu();
-	debug_menu_update_glsl();
 
 	crosshair_init();
 

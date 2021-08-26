@@ -18,6 +18,5 @@ void debug_menu_update_collision();
 void debug_menu_update_fullscreen();
 void debug_menu_update_opengl();
 void debug_menu_update_gpu();
-void debug_menu_update_glsl();
 
 #endif

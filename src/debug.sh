@@ -12,7 +12,7 @@ COMMON="set confirm off
 handle SIGTERM nostop print pass
 handle SIGPIPE nostop noprint pass
 set height 0
-set \$_exitcode 1
+set \$_exitcode=1
 define hook-stop
     if \$_exitcode == 0
         quit

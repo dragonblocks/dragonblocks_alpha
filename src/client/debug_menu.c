@@ -22,7 +22,6 @@ typedef enum
 	DME_FULLSCREEN,
 	DME_OPENGL,
 	DME_GPU,
-	DME_GLSL,
 	DME_COUNT,
 } DebugMenuEntry;
 
@@ -141,11 +140,3 @@ void debug_menu_update_gpu()
 	sprintf(text, "%s", glGetString(GL_RENDERER));
 	hud_change_text(huds[DME_GPU], text);
 }
-
-void debug_menu_update_glsl()
-{
-	char text[BUFSIZ];
-	sprintf(text, "GLSL %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
-	hud_change_text(huds[DME_GLSL], text);
-}
-
