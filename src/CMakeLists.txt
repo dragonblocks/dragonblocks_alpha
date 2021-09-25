@@ -91,7 +91,7 @@ target_link_libraries(DragonblocksServer
 )
 
 add_custom_target(version
-	COMMAND ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/version.cmake
+	COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${CMAKE_SOURCE_DIR} -P ${CMAKE_SOURCE_DIR}/version.cmake
 )
 
 add_dependencies(Dragonblocks version)
