@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "server/database.h"
 #include "server/server.h"
 #include "server/server_map.h"
 #include "perlin.h"
@@ -34,6 +35,15 @@ static bool auth_handler(Client *client, bool good)
 	if (success) {
 		client->name = name;
 		client->state = CS_ACTIVE;
+
+		if (! database_load_player(client->name, &client->pos)) {
+			client->pos = (v3f64) {0.0, 150.0, 0.0};
+
+			database_create_player(client->name, client->pos);
+		}
+
+		printf("%f %f %f\n", client->pos.x, client->pos.y, client->pos.z);
+
 	} else {
 		free(name);
 	}
@@ -41,7 +51,9 @@ static bool auth_handler(Client *client, bool good)
 	pthread_mutex_lock(&client->mtx);
 	bool ret = write_u32(client->fd, CC_AUTH) && write_u8(client->fd, success);
 	if (ret && success)
-		ret = ret && write_u32(client->fd, CC_INFO) && write_u32(client->fd, client->server->config.simulation_distance) && write_s32(client->fd, seed);
+		ret = ret
+			&& write_u32(client->fd, CC_INFO) && write_u32(client->fd, client->server->config.simulation_distance) && write_s32(client->fd, seed)
+			&& write_u32(client->fd, CC_SETPOS) && write_v3f64(client->fd, client->pos);
 	pthread_mutex_unlock(&client->mtx);
 
 	pthread_rwlock_unlock(&client->server->players_rwlck);
@@ -78,8 +90,10 @@ static bool pos_handler(Client *client, bool good)
 	if (! read_v3f64(client->fd, &pos))
 		return false;
 
-	if (good)
+	if (good) {
 		client->pos = pos;
+		database_update_player_pos(client->name, client->pos);
+	}
 
 	return true;
 }

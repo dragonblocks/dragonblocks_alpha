@@ -77,7 +77,7 @@ static bool can_jump()
 // ClientPlayer singleton constructor
 void client_player_init()
 {
-	client_player.pos = (v3f64) {0.0, 150.0, 0.0};
+	client_player.pos = (v3f64) {0.0, 0.0, 0.0};
 	client_player.velocity = (v3f64) {0.0, 0.0, 0.0};
 	client_player.box = (aabb3f64) {{-0.3, 0.0, -0.3}, {0.3, 1.75, 0.3}};
 	client_player.yaw = client_player.pitch = 0.0f;
@@ -137,6 +137,14 @@ v3f64 client_player_get_position()
 	pthread_rwlock_unlock(&client_player.rwlock);
 
 	return pos;
+}
+
+// set position (thread-safe)
+void client_player_set_position(v3f64 pos)
+{
+	pthread_rwlock_rdlock(&client_player.rwlock);
+	client_player.pos = pos;
+	pthread_rwlock_unlock(&client_player.rwlock);
 }
 
 // to be called every frame

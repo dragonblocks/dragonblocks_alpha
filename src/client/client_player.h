@@ -19,11 +19,12 @@ extern struct ClientPlayer
 	Object *obj;				// 3D mesh object (currently always invisible), not thread safe
 } client_player;
 
-void client_player_init();				// ClientPlayer singleton constructor
-void client_player_deinit();			// ClientPlayer singleton destructor
-void client_player_add_to_scene();		// create mesh object
-void client_player_jump();				// jump if possible
-v3f64 client_player_get_position();		// get position (thread-safe)
-void client_player_tick(f64 dtime);		// to be called every frame
+void client_player_init();						// ClientPlayer singleton constructor
+void client_player_deinit();					// ClientPlayer singleton destructor
+void client_player_add_to_scene();				// create mesh object
+void client_player_jump();						// jump if possible
+v3f64 client_player_get_position();				// get position (thread-safe)
+void client_player_set_position(v3f64 pos);		// set position (thread-safe)
+void client_player_tick(f64 dtime);				// to be called every frame
 
 #endif

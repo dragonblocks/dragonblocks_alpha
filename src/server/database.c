@@ -36,8 +36,8 @@ static sqlite3_stmt *prepare_block_statement(MapBlock *block, const char *action
 		return NULL;
 	}
 
-	size_t psize = sizeof(s32) * 3;
-	s32 *pos = malloc(psize);
+	size_t psize = sizeof(u32) * 3;
+	u32 *pos = malloc(psize);
 	pos[0] = htobe32(block->pos.x);
 	pos[1] = htobe32(block->pos.y);
 	pos[2] = htobe32(block->pos.z);
@@ -47,25 +47,13 @@ static sqlite3_stmt *prepare_block_statement(MapBlock *block, const char *action
 	return stmt;
 }
 
-// print meta load error
-static inline void print_load_error(const char *key)
-{
-	fprintf(stderr, "Database error with loading %s: %s\n", key, sqlite3_errmsg(database));
-}
-
-// print meta save error
-static inline void print_save_error(const char *key)
-{
-	fprintf(stderr, "Database error with saving %s: %s\n", key, sqlite3_errmsg(database));
-}
-
 // load something from meta
 static bool load_meta(const char *key, int *value_ptr)
 {
 	sqlite3_stmt *stmt;
 
 	if (! (stmt = prepare_statement("SELECT value FROM meta WHERE key=?"))) {
-		print_load_error(key);
+		fprintf(stderr, "Database error with loading %s: %s\n", key, sqlite3_errmsg(database));
 		return false;
 	}
 
@@ -77,7 +65,7 @@ static bool load_meta(const char *key, int *value_ptr)
 	if (found)
 		*value_ptr = sqlite3_column_int(stmt, 0);
 	else if (rc != SQLITE_DONE)
-		print_load_error(key);
+		fprintf(stderr, "Database error with loading %s: %s\n", key, sqlite3_errmsg(database));
 
 	sqlite3_finalize(stmt);
 	return found;
@@ -89,7 +77,7 @@ static void save_meta(const char *key, int value)
 	sqlite3_stmt *stmt;
 
 	if (! (stmt = prepare_statement("REPLACE INTO meta (key, value) VALUES(?1, ?2)"))) {
-		print_save_error(key);
+		fprintf(stderr, "Database error with saving %s: %s\n", key, sqlite3_errmsg(database));
 		return;
 	}
 
@@ -97,7 +85,20 @@ static void save_meta(const char *key, int value)
 	sqlite3_bind_int(stmt, 2, value);
 
 	if (sqlite3_step(stmt) != SQLITE_DONE)
-		print_save_error(key);
+		fprintf(stderr, "Database error with saving %s: %s\n", key, sqlite3_errmsg(database));
+
+	sqlite3_finalize(stmt);
+}
+
+// bind v3f64 to sqlite3 statement
+static inline void bind_v3f64(sqlite3_stmt *stmt, int idx, v3f64 pos)
+{
+	size_t psize = sizeof(f64) * 3;
+	f64 *blob = malloc(psize);
+	blob[0] = pos.x;
+	blob[1] = pos.y;
+	blob[2] = pos.z;
+	sqlite3_bind_blob(stmt, idx, blob, psize, &free);
 }
 
 // public functions
@@ -112,12 +113,13 @@ void database_init()
 		return;
 	}
 
-	const char *init_stmts[2]= {
-		"CREATE TABLE IF NOT EXISTS map (pos BLOB PRIMARY KEY, generated INT, size INT, data BLOB, mgsb_size INT, mgsb_data BLOB);",
-		"CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value INT);",
+	const char *init_stmts[3]= {
+		"CREATE TABLE IF NOT EXISTS map (pos BLOB PRIMARY KEY, generated INTEGER, size INTEGER, data BLOB, mgsb_size INTEGER, mgsb_data BLOB);",
+		"CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value INTEGER);",
+		"CREATE TABLE IF NOT EXISTS players (name TEXT PRIMARY KEY, pos BLOB);"
 	};
 
-	for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < 3; i++) {
 		if (sqlite3_exec(database, init_stmts[i], NULL, NULL, &err) != SQLITE_OK) {
 			fprintf(stderr, "Failed to initialize database: %s\n", err);
 			sqlite3_free(err);
@@ -198,6 +200,70 @@ void database_save_block(MapBlock *block)
 
 	if (sqlite3_step(stmt) != SQLITE_DONE)
 		print_block_error(block, "saving");
+
+	sqlite3_finalize(stmt);
+}
+
+// load player data from database
+bool database_load_player(char *name, v3f64 *pos_ptr)
+{
+	sqlite3_stmt *stmt;
+
+	if (! (stmt = prepare_statement("SELECT pos FROM players WHERE name=?"))) {
+		fprintf(stderr, "Database error with loading player %s: %s\n", name, sqlite3_errmsg(database));
+		return false;
+	}
+
+	sqlite3_bind_text(stmt, 1, name, strlen(name), SQLITE_TRANSIENT);
+
+	int rc = sqlite3_step(stmt);
+	bool found = rc == SQLITE_ROW;
+
+	if (found) {
+		const f64 *pos = sqlite3_column_blob(stmt, 0);
+		*pos_ptr = (v3f64) {pos[0], pos[1], pos[2]};
+	} else if (rc != SQLITE_DONE) {
+		fprintf(stderr, "Database error with loading player %s: %s\n", name, sqlite3_errmsg(database));
+	}
+
+	sqlite3_finalize(stmt);
+	return found;
+}
+
+// insert new player into database
+void database_create_player(char *name, v3f64 pos)
+{
+	sqlite3_stmt *stmt;
+
+	if (! (stmt = prepare_statement("INSERT INTO players (name, pos) VALUES(?1, ?2)"))) {
+		fprintf(stderr, "Database error with creating player %s: %s\n", name, sqlite3_errmsg(database));
+		return;
+	}
+
+	sqlite3_bind_text(stmt, 1, name, strlen(name), SQLITE_TRANSIENT);
+	bind_v3f64(stmt, 2, pos);
+
+	if (sqlite3_step(stmt) != SQLITE_DONE)
+		fprintf(stderr, "Database error with creating player %s: %s\n", name, sqlite3_errmsg(database));
+
+	sqlite3_finalize(stmt);
+}
+
+// update player position
+void database_update_player_pos(char *name, v3f64 pos)
+{
+	sqlite3_stmt *stmt;
+
+	if (! (stmt = prepare_statement("UPDATE players SET pos=?1 WHERE name=?2"))) {
+		fprintf(stderr, "Database error with updating player %s position: %s\n", name, sqlite3_errmsg(database));
+		return;
+	}
+
+	bind_v3f64(stmt, 1, pos);
+	sqlite3_bind_text(stmt, 2, name, strlen(name), SQLITE_TRANSIENT);
+
+	if (sqlite3_step(stmt) != SQLITE_DONE)
+		fprintf(stderr, "Database error with updating player %s position: %s\n", name, sqlite3_errmsg(database));
 
 	sqlite3_finalize(stmt);
 }

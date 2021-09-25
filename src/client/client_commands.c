@@ -3,6 +3,7 @@
 #include <dragontype/number.h>
 #include "client/client.h"
 #include "client/client_map.h"
+#include "client/client_player.h"
 #include "perlin.h"
 #include "util.h"
 
@@ -85,10 +86,24 @@ static bool info_handler(Client *client, bool good)
 	return true;
 }
 
+static bool setpos_handler(Client *client, bool good)
+{
+	v3f64 pos;
+
+	if (! read_v3f64(client->fd, &pos))
+		return false;
+
+	if (good)
+		client_player_set_position(pos);
+
+	return true;
+}
+
 CommandHandler command_handlers[CLIENT_COMMAND_COUNT] = {
 	{0},
 	{&disconnect_handler, "DISCONNECT", CS_CREATED | CS_AUTH | CS_ACTIVE},
 	{&auth_handler, "AUTH", CS_AUTH},
 	{&block_handler, "BLOCK", CS_ACTIVE},
 	{&info_handler, "INFO", CS_ACTIVE},
+	{&setpos_handler, "SETPOS", CS_ACTIVE},
 };

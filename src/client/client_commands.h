@@ -8,6 +8,7 @@ typedef enum
 	CC_AUTH,
 	CC_BLOCK,
 	CC_INFO,
+	CC_SETPOS,
 	CLIENT_COMMAND_COUNT
 } ClientCommand;
 
