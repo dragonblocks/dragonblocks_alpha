@@ -2,7 +2,7 @@
 
 CMake is used for compiling. Make sure to clone the repository recursively:
 
-``bash
+```bash
 git clone --recurse-submodules https://github.com/dragonblocks/dragonblocks_alpha.git
 ```
 
