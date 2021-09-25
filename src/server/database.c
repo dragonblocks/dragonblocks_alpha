@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <endian.h>
+#include <endian.h/endian.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sqlite3.h>

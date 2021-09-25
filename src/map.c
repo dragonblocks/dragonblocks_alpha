@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <math.h>
-#include <endian.h>
+#include <endian.h/endian.h>
 #include <string.h>
 #include "map.h"
 #include "util.h"
