@@ -3,7 +3,7 @@
 #include "util.h"
 
 NodeDefintion node_definitions[NODE_UNLOADED] = {
-	// invalid
+	// unknown
 	{
 		.solid = true,
 		.create = NULL,

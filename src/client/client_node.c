@@ -40,9 +40,9 @@ static void render_wood(unused v3s32 pos, unused MapNode *node, Vertex3D *vertex
 }
 
 ClientNodeDefintion client_node_definitions[NODE_UNLOADED] = {
-	// invalid
+	// unknown
 	{
-		.tiles = TILES_SIMPLE(RESSOURCEPATH "textures/invalid.png"),
+		.tiles = TILES_SIMPLE(RESSOURCEPATH "textures/unknown.png"),
 		.visibility = NV_SOLID,
 		.render = NULL,
 	},
@@ -114,7 +114,7 @@ ClientNodeDefintion client_node_definitions[NODE_UNLOADED] = {
 
 void client_node_init()
 {
-	for (Node node = NODE_INVALID; node < NODE_UNLOADED; node++) {
+	for (Node node = NODE_UNKNOWN; node < NODE_UNLOADED; node++) {
 		ClientNodeDefintion *def = &client_node_definitions[node];
 
 		if (client_node_definitions[node].visibility != NV_NONE) {

@@ -6,7 +6,7 @@
 
 typedef enum
 {
-	NODE_INVALID,		// Used for unknown nodes received from server (caused by outdated clients)
+	NODE_UNKNOWN,		// Used for unknown nodes received from server (caused by outdated clients)
 	NODE_AIR,
 	NODE_GRASS,
 	NODE_DIRT,

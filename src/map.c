@@ -147,7 +147,7 @@ bool map_deserialize_node(int fd, MapNode *node)
 		return false;
 
 	if (type >= NODE_UNLOADED)
-		type = NODE_INVALID;
+		type = NODE_UNKNOWN;
 
 	*node = map_node_create(type);
 
@@ -182,7 +182,7 @@ bool map_deserialize_block(MapBlock *block, const char *data, size_t size)
 		node.type = be32toh(node.type);
 
 		if (node.type >= NODE_UNLOADED)
-			node.type = NODE_INVALID;
+			node.type = NODE_UNKNOWN;
 
 		if (node_definitions[node.type].deserialize)
 			node_definitions[node.type].deserialize(&node);
