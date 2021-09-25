@@ -15,5 +15,5 @@ vec3 hsv2rgb(vec3 c)
 
 void main()
 {
-	outColor = texture(textures[int(fragmentTextureIndex)], fragmentTextureCoords) * vec4(hsv2rgb(vec3(fragmentColor)), 1.0);
+	outColor = texture(textures[int(fragmentTextureIndex + 0.5)], fragmentTextureCoords) * vec4(hsv2rgb(vec3(fragmentColor)), 1.0);
 }
