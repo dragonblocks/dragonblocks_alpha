@@ -6,6 +6,7 @@
 #include "client/debug_menu.h"
 #include "client/gui.h"
 #include "client/window.h"
+#include "perlin.h"
 #include "version.h"
 
 typedef enum
@@ -17,6 +18,7 @@ typedef enum
 	DME_PITCH,
 	DME_HUMIDITY,
 	DME_TEMPERATURE,
+	DME_SEED,
 	DME_FLIGHT,
 	DME_COLLISION,
 	DME_FULLSCREEN,
@@ -109,6 +111,13 @@ void debug_menu_update_temperature()
 	char text[BUFSIZ];
 	sprintf(text, "temperature = %.2f", get_temperature((v3s32) {client_player.pos.x, client_player.pos.y, client_player.pos.z}));
 	gui_set_text(gui_elements[DME_TEMPERATURE], text);
+}
+
+void debug_menu_update_seed()
+{
+	char text[BUFSIZ];
+	sprintf(text, "seed = %d", seed);
+	gui_set_text(gui_elements[DME_SEED], text);
 }
 
 void debug_menu_update_flight()

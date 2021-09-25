@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "server/server.h"
 #include "server/server_map.h"
+#include "perlin.h"
 #include "util.h"
 
 // command callbacks
@@ -40,7 +41,7 @@ static bool auth_handler(Client *client, bool good)
 	pthread_mutex_lock(&client->mtx);
 	bool ret = write_u32(client->fd, CC_AUTH) && write_u8(client->fd, success);
 	if (ret && success)
-		ret = ret && write_u32(client->fd, CC_SIMULATION_DISTANCE) && write_u32(client->fd, client->server->config.simulation_distance);
+		ret = ret && write_u32(client->fd, CC_INFO) && write_u32(client->fd, client->server->config.simulation_distance) && write_s32(client->fd, seed);
 	pthread_mutex_unlock(&client->mtx);
 
 	pthread_rwlock_unlock(&client->server->players_rwlck);

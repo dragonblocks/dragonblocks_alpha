@@ -108,6 +108,7 @@ bool game(Client *client)
 	debug_menu_toggle();
 	debug_menu_update_fps(0);
 	debug_menu_update_version();
+	debug_menu_update_seed();
 	debug_menu_update_flight();
 	debug_menu_update_collision();
 	debug_menu_update_fullscreen();

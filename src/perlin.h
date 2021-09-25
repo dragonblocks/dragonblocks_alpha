@@ -2,6 +2,7 @@
 #define _PERLIN_H_
 
 #include <perlin/perlin.h>
+#include <dragontype/number.h>
 
 typedef enum
 {
@@ -26,6 +27,6 @@ typedef enum
 	SO_VULCANO_CRATER_TOP,
 } SeedOffset;
 
-extern int seed;
+extern s32 seed;
 
 #endif

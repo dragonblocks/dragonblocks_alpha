@@ -13,6 +13,7 @@ void debug_menu_update_yaw();
 void debug_menu_update_pitch();
 void debug_menu_update_humidity();
 void debug_menu_update_temperature();
+void debug_menu_update_seed();
 void debug_menu_update_flight();
 void debug_menu_update_collision();
 void debug_menu_update_fullscreen();

@@ -3,6 +3,7 @@
 #include <dragontype/number.h>
 #include "client/client.h"
 #include "client/client_map.h"
+#include "perlin.h"
 #include "util.h"
 
 static bool disconnect_handler(unused Client *client, bool good)
@@ -68,15 +69,18 @@ static bool block_handler(Client *client, bool good)
 	return ret;
 }
 
-static bool simulation_distance_handler(Client *client, bool good)
+static bool info_handler(Client *client, bool good)
 {
 	u32 simulation_distance;
+	s32 server_seed;
 
-	if (! read_u32(client->fd, &simulation_distance))
+	if (! (read_u32(client->fd, &simulation_distance) && read_s32(client->fd, &server_seed)))
 		return false;
 
-	if (good)
+	if (good) {
 		client_map_set_simulation_distance(simulation_distance);
+		seed = server_seed;
+	}
 
 	return true;
 }
@@ -86,5 +90,5 @@ CommandHandler command_handlers[CLIENT_COMMAND_COUNT] = {
 	{&disconnect_handler, "DISCONNECT", CS_CREATED | CS_AUTH | CS_ACTIVE},
 	{&auth_handler, "AUTH", CS_AUTH},
 	{&block_handler, "BLOCK", CS_ACTIVE},
-	{&simulation_distance_handler, "SIMULATION_DISTANCE", CS_ACTIVE},
+	{&info_handler, "INFO", CS_ACTIVE},
 };

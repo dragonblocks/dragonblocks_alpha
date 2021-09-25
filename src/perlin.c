@@ -1,3 +1,3 @@
 #include "perlin.h"
 
-int seed = 0;
+s32 seed = 0;
