@@ -12,25 +12,25 @@ Map *map_create(MapCallbacks callbacks)
 	Map *map = malloc(sizeof(Map));
 	pthread_rwlock_init(&map->rwlck, NULL);
 	pthread_rwlock_init(&map->cached_rwlck, NULL);
-	map->sectors = bintree_create(sizeof(v2s32));
+	map->sectors = bintree_create(sizeof(v2s32), NULL);
 	map->cached = NULL;
 	map->callbacks = callbacks;
 	return map;
 }
 
-static void free_block(void *value, void *arg)
+static void free_block(BintreeNode *node, void *arg)
 {
 	Map *map = arg;
 
 	if (map->callbacks.delete_block)
-		map->callbacks.delete_block(value);
+		map->callbacks.delete_block(node->value);
 
-	map_free_block(value);
+	map_free_block(node->value);
 }
 
-static void free_sector(void *value, void *arg)
+static void free_sector(BintreeNode *node, void *arg)
 {
-	MapSector *sector = value;
+	MapSector *sector = node->value;
 
 	bintree_clear(&sector->blocks, &free_block, arg);
 	pthread_rwlock_destroy(&sector->rwlck);
@@ -62,7 +62,7 @@ MapSector *map_get_sector(Map *map, v2s32 pos, bool create)
 		sector = malloc(sizeof(MapSector));
 		pthread_rwlock_init(&sector->rwlck, NULL);
 		sector->pos = pos;
-		sector->blocks = bintree_create(sizeof(s32));
+		sector->blocks = bintree_create(sizeof(s32), NULL);
 
 		bintree_add_node(&map->sectors, nodeptr, &pos, sector);
 	}

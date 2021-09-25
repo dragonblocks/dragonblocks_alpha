@@ -54,7 +54,7 @@ add_executable(Dragonblocks
 	client/facecache.c
 	client/font.c
 	client/game.c
-	client/hud.c
+	client/gui.c
 	client/input.c
 	client/mesh.c
 	client/object.c

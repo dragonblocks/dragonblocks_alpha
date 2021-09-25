@@ -4,7 +4,6 @@
 #include <pthread.h>
 #include <dragontype/number.h>
 #include "client/client.h"
-#include "client/hud.h"
 #include "client/object.h"
 
 extern struct ClientPlayer
@@ -18,15 +17,13 @@ extern struct ClientPlayer
 	bool fly;					// can the player fly?
 	bool collision;				// should the player collide with the floor?
 	Object *obj;				// 3D mesh object (currently always invisible), not thread safe
-	HUDElement *info_hud;		// display position, temperature and humidity on HUD, not thread safe
 } client_player;
 
 void client_player_init();				// ClientPlayer singleton constructor
 void client_player_deinit();			// ClientPlayer singleton destructor
-void client_player_add_to_scene();		// create mesh object and hud display
+void client_player_add_to_scene();		// create mesh object
 void client_player_jump();				// jump if possible
 v3f64 client_player_get_position();		// get position (thread-safe)
 void client_player_tick(f64 dtime);		// to be called every frame
-void client_player_update_info();		// update HUD info text
 
 #endif

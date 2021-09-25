@@ -9,7 +9,7 @@
 #include "client/client_node.h"
 #include "client/client_player.h"
 #include "client/debug_menu.h"
-#include "client/hud.h"
+#include "client/gui.h"
 #include "client/input.h"
 #include "client/font.h"
 #include "client/window.h"
@@ -17,17 +17,19 @@
 
 static void crosshair_init()
 {
-	hud_add((HUDElementDefinition) {
-		.type = HUD_IMAGE,
-		.pos = {0.0f, 0.0f, 0.0f},
+	gui_add(&gui_root, (GUIElementDefinition) {
+		.pos = {0.5f, 0.5f},
+		.z_index = 0.0f,
 		.offset = {0, 0},
-		.type_def = {
-			.image = {
-				.texture = texture_get(RESSOURCEPATH "textures/crosshair.png"),
-				.scale = {1.0f, 1.0f},
-				.scale_type = HUD_SCALE_TEXTURE,
-			},
-		},
+		.margin = {0, 0},
+		.align = {0.5f, 0.5f},
+		.scale = {1.0f, 1.0f},
+		.scale_type = GST_IMAGE,
+		.affect_parent_scale = false,
+		.text = NULL,
+		.image = texture_get(RESSOURCEPATH "textures/crosshair.png"),
+		.text_color = (v4f32) {0.0f, 0.0f, 0.0f, 0.0f},
+		.bg_color = (v4f32) {0.0f, 0.0f, 0.0f, 0.0f},
 	});
 }
 
@@ -65,7 +67,9 @@ static void game_loop(Client *client)
 		client_player_tick(dtime);
 
 		scene_render();
-		hud_render();
+
+		glDisable(GL_DEPTH_TEST);
+		gui_render();
 
 		glfwSwapBuffers(window.handle);
 		glfwPollEvents();
@@ -95,10 +99,10 @@ bool game(Client *client)
 	camera_set_position((v3f32) {0.0f, 0.0f, 0.0f});
 	camera_set_angle(0.0f, 0.0f);
 
-	if (! hud_init())
+	if (! gui_init())
 		return false;
 
-	hud_on_resize(width, height);
+	gui_on_resize(width, height);
 
 	debug_menu_init();
 	debug_menu_toggle();
@@ -121,7 +125,7 @@ bool game(Client *client)
 	client_map_stop();
 
 	font_deinit();
-	hud_deinit();
+	gui_deinit();
 	scene_deinit();
 
 	return true;

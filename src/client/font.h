@@ -7,6 +7,7 @@
 
 typedef struct
 {
+	v2f32 size;
 	Mesh **meshes;
 	size_t meshes_count;
 } Font;

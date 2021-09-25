@@ -60,5 +60,4 @@ void mesh_render(Mesh *mesh)
 
 	glBindVertexArray(mesh->VAO);
 	glDrawArrays(GL_TRIANGLES, 0, mesh->vertices_count);
-
 }

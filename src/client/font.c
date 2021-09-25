@@ -3,7 +3,6 @@
 #include FT_FREETYPE_H
 #include "client/client.h"
 #include "client/font.h"
-#include "client/hud.h"
 
 #define NUM_CHARS 128
 
@@ -155,6 +154,8 @@ Font *font_create(const char *text)
 
 		offset += ch->advance >> 6;
 	}
+
+	fnt->size = (v2f32) {offset, font.height};
 
 	return fnt;
 }

@@ -3,8 +3,8 @@ layout(location = 1) in vec2 vertexTextureCoords;
 
 out vec2 fragmentTextureCoords;
 
-uniform mat4 projection;
 uniform mat4 model;
+uniform mat4 projection;
 
 void main()
 {

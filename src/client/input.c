@@ -3,7 +3,7 @@
 #include "client/client.h"
 #include "client/client_player.h"
 #include "client/debug_menu.h"
-#include "client/hud.h"
+#include "client/gui.h"
 #include "client/input.h"
 #include "client/window.h"
 
@@ -16,7 +16,7 @@ typedef struct
 
 static struct
 {
-	HUDElement *pause_menu_hud;
+	GUIElement *pause_menu;
 	bool paused;
 	KeyListener pause_listener;
 	KeyListener fullscreen_listener;
@@ -71,7 +71,7 @@ static bool move(int forward, int backward, vec3 dir)
 static void enter_game()
 {
 	glfwSetInputMode(window.handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	input.pause_menu_hud->visible = false;
+	input.pause_menu->visible = false;
 }
 
 static void do_key_listener(KeyListener *listener)
@@ -100,7 +100,7 @@ void input_tick()
 
 		if (input.paused) {
 			glfwSetInputMode(window.handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-			input.pause_menu_hud->visible = true;
+			input.pause_menu->visible = true;
 		} else {
 			enter_game();
 		}
@@ -159,17 +159,19 @@ void input_init()
 	input.collision_listener = create_key_listener(GLFW_KEY_C);
 	input.debug_menu_listener = create_key_listener(GLFW_KEY_F3);
 
-	input.pause_menu_hud = hud_add((HUDElementDefinition) {
-		.type = HUD_IMAGE,
-		.pos = {-1.0f, -1.0f, 0.5f},
+	input.pause_menu = gui_add(&gui_root, (GUIElementDefinition) {
+		.pos = {0.0f, 0.0f},
+		.z_index = 0.5f,
 		.offset = {0, 0},
-		.type_def = {
-			.image = {
-				.texture = texture_get(RESSOURCEPATH "textures/pause_layer.png"),
-				.scale = {1.0f, 1.0f},
-				.scale_type = HUD_SCALE_SCREEN
-			},
-		},
+		.margin = {0, 0},
+		.align = {0.0f, 0.0f},
+		.scale = {1.0f, 1.0f},
+		.scale_type = GST_PARENT,
+		.affect_parent_scale = false,
+		.text = NULL,
+		.image = NULL,
+		.text_color = {0.0f, 0.0f, 0.0f, 0.0f},
+		.bg_color = {0.0f, 0.0f, 0.0f, 0.4f},
 	});
 
 	glfwSetInputMode(window.handle, GLFW_STICKY_KEYS, GL_TRUE);
