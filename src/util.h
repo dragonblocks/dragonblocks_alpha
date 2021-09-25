@@ -2,7 +2,12 @@
 #define _UTIL_H_
 
 #include <stdbool.h>
+#ifdef WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
 #include <arpa/inet.h>
+#endif
 #include <dragontype/number.h>
 
 #define ever (;;)																// infinite for loop with style
