@@ -55,13 +55,13 @@ sudo apt install zlib1g
 
 ## Current Features
 - Multiplayer
-- Map generation with mountains and blended biomes that determine grass color
+- Map generation with mountains, snow, temperature and humidity, dynamic grass color, oceans and beaches, vulcanos
 - Physics
 - FPS Camera
 - Mipmapping, Antialiasing, Shaders
-- HUD
+- GUI
 - Saving the map to a SQLite3 database
-- Multithreading for map generation, mesh generation and network
+- Multithreaded map generation, mesh generation and network
 - Handlers for SIGINT und SIGTERM (just Ctrl+C to shut down the server)
 
 ## Usage
