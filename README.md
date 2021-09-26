@@ -2,7 +2,7 @@
 
 A multiplayer voxelgame for POSIX systems.
 
-Head to <https://www.elidragon.com/dragonblocks_alpha/> for snapshot and release builds.
+Head to <https://www.elidragon.com/dragonblocks_alpha/> for ubuntu snapshot and release builds.
 
 ## Invocation
 
@@ -94,10 +94,10 @@ The name "Dragonblocks _Alpha_" does not have anything to do with the game being
 - Exciting and feature-rich gameplay with the focus on exploring and adventuring, while still being multi-optional and not too bloated
 - A simple structure and invocation syntax
 - Using modern OpenGL to combine performance with graphics quality on high-end computers
-- Portability between PCs running POSIX systems (various Linux Distributions, BSD, MacOS, Plan 9)
+- Portability between PCs running POSIX systems (focus: Linux, BSD, MacOS, Plan 9 APE, Windows MinGW)
 
 ### What Dragonblocks Alpha does not aim to achieve
-- Portability to Windows or Phones / Consoles
+- Portability to Phones / Consoles
 - Good performance on low-end PCs
 - A fixed story or lore
 - Cloning Minecraft behavior
