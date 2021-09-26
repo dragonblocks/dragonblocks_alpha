@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sqlite3.h>
 #include <time.h>
+#include "day.h"
 #include "server/database.h"
 #include "server/server_map.h"
 #include "perlin.h"
@@ -48,7 +49,7 @@ static sqlite3_stmt *prepare_block_statement(MapBlock *block, const char *action
 }
 
 // load something from meta
-static bool load_meta(const char *key, int *value_ptr)
+static bool load_meta(const char *key, s64 *value_ptr)
 {
 	sqlite3_stmt *stmt;
 
@@ -63,7 +64,7 @@ static bool load_meta(const char *key, int *value_ptr)
 	bool found = rc == SQLITE_ROW;
 
 	if (found)
-		*value_ptr = sqlite3_column_int(stmt, 0);
+		*value_ptr = sqlite3_column_int64(stmt, 0);
 	else if (rc != SQLITE_DONE)
 		fprintf(stderr, "Database error with loading %s: %s\n", key, sqlite3_errmsg(database));
 
@@ -72,7 +73,7 @@ static bool load_meta(const char *key, int *value_ptr)
 }
 
 // save something to meta
-static void save_meta(const char *key, int value)
+static void save_meta(const char *key, s64 value)
 {
 	sqlite3_stmt *stmt;
 
@@ -82,7 +83,7 @@ static void save_meta(const char *key, int value)
 	}
 
 	sqlite3_bind_text(stmt, 1, key, strlen(key), SQLITE_TRANSIENT);
-	sqlite3_bind_int(stmt, 2, value);
+	sqlite3_bind_int64(stmt, 2, value);
 
 	if (sqlite3_step(stmt) != SQLITE_DONE)
 		fprintf(stderr, "Database error with saving %s: %s\n", key, sqlite3_errmsg(database));
@@ -127,16 +128,28 @@ void database_init()
 		}
 	}
 
-	if (! load_meta("seed", &seed)) {
-		srand(time(0));
+	s64 saved_seed;
+
+	if (load_meta("seed", &saved_seed)) {
+		seed = saved_seed;
+	} else {
+		srand(time(NULL));
 		seed = rand();
 		save_meta("seed", seed);
 	}
+
+	s64 time_of_day;
+
+	if (load_meta("time_of_day", &time_of_day))
+		set_time_of_day(time_of_day);
+	else
+		set_time_of_day(12 * MINUTES_PER_HOUR);
 }
 
 // close database
 void database_deinit()
 {
+	save_meta("time_of_day", (s64) get_time_of_day());
 	sqlite3_close(database);
 }
 

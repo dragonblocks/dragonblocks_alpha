@@ -9,6 +9,7 @@ typedef enum
 	CC_BLOCK,
 	CC_INFO,
 	CC_SETPOS,
+	CC_TIMEOFDAY,
 	CLIENT_COMMAND_COUNT
 } ClientCommand;
 

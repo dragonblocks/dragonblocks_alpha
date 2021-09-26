@@ -1,25 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <pthread.h>
-#include <linmath.h/linmath.h>
-#include <dragontype/list.h>
 #include "client/camera.h"
 #include "client/client.h"
 #include "client/scene.h"
 #include "client/shader.h"
 #include "util.h"
 
-static struct
-{
-	List objects;
-	pthread_mutex_t mtx;
-	GLuint prog;
-	GLint loc_MVP;
-	GLint max_texture_units;
-	mat4x4 projection;
-	f32 fov;
-	f32 render_distance;
-} scene;
+struct Scene scene;
 
 bool scene_init()
 {
@@ -72,7 +59,9 @@ void scene_add_object(Object *obj)
 void scene_render()
 {
 	glUseProgram(scene.prog);
+
 	mat4x4 view_proj;
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 	mat4x4_mul(view_proj, scene.projection, camera.view);

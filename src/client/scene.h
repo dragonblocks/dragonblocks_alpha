@@ -1,7 +1,24 @@
 #ifndef _SCENE_H_
 #define _SCENE_H_
 
+#include <stdbool.h>
+#include <pthread.h>
+#include <linmath.h/linmath.h>
+#include <dragontype/list.h>
+#include <dragontype/number.h>
 #include "client/object.h"
+
+extern struct Scene
+{
+	List objects;
+	pthread_mutex_t mtx;
+	GLuint prog;
+	GLint loc_MVP;
+	GLint max_texture_units;
+	mat4x4 projection;
+	f32 fov;
+	f32 render_distance;
+} scene;
 
 bool scene_init();
 void scene_deinit();
@@ -9,5 +26,6 @@ void scene_add_object(Object *obj);
 void scene_render();
 void scene_on_resize(int width, int height);
 GLuint scene_get_max_texture_units();
+void scene_get_view_proj(mat4x4 target);
 
 #endif

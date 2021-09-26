@@ -4,6 +4,7 @@
 #include "client/client.h"
 #include "client/client_map.h"
 #include "client/client_player.h"
+#include "day.h"
 #include "perlin.h"
 #include "util.h"
 
@@ -99,6 +100,19 @@ static bool setpos_handler(Client *client, bool good)
 	return true;
 }
 
+static bool timeofday_handler(Client *client, bool good)
+{
+	u64 time_of_day;
+
+	if (! read_u64(client->fd, &time_of_day))
+		return false;
+
+	if (good)
+		set_time_of_day(time_of_day);
+
+	return true;
+}
+
 CommandHandler command_handlers[CLIENT_COMMAND_COUNT] = {
 	{0},
 	{&disconnect_handler, "DISCONNECT", CS_CREATED | CS_AUTH | CS_ACTIVE},
@@ -106,4 +120,5 @@ CommandHandler command_handlers[CLIENT_COMMAND_COUNT] = {
 	{&block_handler, "BLOCK", CS_ACTIVE},
 	{&info_handler, "INFO", CS_ACTIVE},
 	{&setpos_handler, "SETPOS", CS_ACTIVE},
+	{&timeofday_handler, "TIMEOFDAY", CS_ACTIVE},
 };

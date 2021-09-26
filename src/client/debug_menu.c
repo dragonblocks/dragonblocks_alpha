@@ -1,11 +1,12 @@
 #include <stdio.h>
 #include <GL/glew.h>
 #include <GL/gl.h>
-#include "environment.h"
 #include "client/client_player.h"
 #include "client/debug_menu.h"
 #include "client/gui.h"
 #include "client/window.h"
+#include "day.h"
+#include "environment.h"
 #include "perlin.h"
 #include "version.h"
 
@@ -16,6 +17,9 @@ typedef enum
 	DME_POS,
 	DME_YAW,
 	DME_PITCH,
+	DME_TIME,
+	DME_DAYLIGHT,
+	DME_SUN_ANGLE,
 	DME_HUMIDITY,
 	DME_TEMPERATURE,
 	DME_SEED,
@@ -97,6 +101,30 @@ void debug_menu_update_pitch()
 	char text[BUFSIZ];
 	sprintf(text, "pitch = %.1f", client_player.pitch / M_PI * 180.0);
 	gui_set_text(gui_elements[DME_PITCH], text);
+}
+
+void debug_menu_update_time()
+{
+	int hours, minutes;
+	split_time_of_day(&hours, &minutes);
+
+	char text[BUFSIZ];
+	sprintf(text, "%02d:%02d", hours, minutes);
+	gui_set_text(gui_elements[DME_TIME], text);
+}
+
+void debug_menu_update_daylight()
+{
+	char text[BUFSIZ];
+	sprintf(text, "daylight = %.2f", get_daylight());
+	gui_set_text(gui_elements[DME_DAYLIGHT], text);
+}
+
+void debug_menu_update_sun_angle()
+{
+	char text[BUFSIZ];
+	sprintf(text, "sun angle = %.1f", get_sun_angle() / M_PI * 180.0);
+	gui_set_text(gui_elements[DME_SUN_ANGLE], text);
 }
 
 void debug_menu_update_humidity()

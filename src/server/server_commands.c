@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "day.h"
 #include "server/database.h"
 #include "server/server.h"
 #include "server/server_map.h"
@@ -41,9 +42,6 @@ static bool auth_handler(Client *client, bool good)
 
 			database_create_player(client->name, client->pos);
 		}
-
-		printf("%f %f %f\n", client->pos.x, client->pos.y, client->pos.z);
-
 	} else {
 		free(name);
 	}
@@ -53,7 +51,8 @@ static bool auth_handler(Client *client, bool good)
 	if (ret && success)
 		ret = ret
 			&& write_u32(client->fd, CC_INFO) && write_u32(client->fd, client->server->config.simulation_distance) && write_s32(client->fd, seed)
-			&& write_u32(client->fd, CC_SETPOS) && write_v3f64(client->fd, client->pos);
+			&& write_u32(client->fd, CC_SETPOS) && write_v3f64(client->fd, client->pos)
+			&& write_u32(client->fd, CC_TIMEOFDAY) && write_u64(client->fd, (u64) get_time_of_day());
 	pthread_mutex_unlock(&client->mtx);
 
 	pthread_rwlock_unlock(&client->server->players_rwlck);

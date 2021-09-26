@@ -9,10 +9,12 @@
 #include "client/client_node.h"
 #include "client/client_player.h"
 #include "client/debug_menu.h"
+#include "client/font.h"
 #include "client/gui.h"
 #include "client/input.h"
-#include "client/font.h"
+#include "client/sky.h"
 #include "client/window.h"
+#include "day.h"
 #include "signal_handlers.h"
 
 static void crosshair_init()
@@ -50,9 +52,15 @@ static void game_loop(Client *client)
 			debug_menu_update_fps(frames);
 			fps_update_timer += 1.0;
 			frames = 0;
+
+			debug_menu_update_time();
+			debug_menu_update_daylight();
+			debug_menu_update_sun_angle();
 		}
 
 		frames++;
+
+		sky_clear();
 
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_ALPHA_TEST);
@@ -61,14 +69,12 @@ static void game_loop(Client *client)
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glAlphaFunc(GL_GREATER, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glClearColor(0.52941176470588f, 0.8078431372549f, 0.92156862745098f, 1.0f);
 
 		input_tick();
 		client_player_tick(dtime);
 
+		sky_render();
 		scene_render();
-
-		glDisable(GL_DEPTH_TEST);
 		gui_render();
 
 		glfwSwapBuffers(window.handle);
@@ -92,6 +98,9 @@ bool game(Client *client)
 		return false;
 
 	scene_on_resize(width, height);
+
+	if (! sky_init())
+		return false;
 
 	client_node_init();
 	client_map_start();
@@ -128,6 +137,7 @@ bool game(Client *client)
 	font_deinit();
 	gui_deinit();
 	scene_deinit();
+	sky_deinit();
 
 	return true;
 }

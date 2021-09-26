@@ -32,6 +32,7 @@ include_directories(BEFORE
 add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 
 set(SOURCES_COMMON
+	day.c
 	environment.c
 	map.c
 	node.c
@@ -62,6 +63,7 @@ add_executable(Dragonblocks
 	client/object.c
 	client/scene.c
 	client/shader.c
+	client/sky.c
 	client/texture.c
 	client/vertex.c
 	client/window.c

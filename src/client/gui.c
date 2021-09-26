@@ -63,12 +63,12 @@ static VertexLayout background_vertex_layout = {
 };
 
 static VertexBackground background_vertices[6] = {
-	{{-0.0, -0.0}},
-	{{+1.0, -0.0}},
-	{{+1.0, +1.0}},
-	{{+1.0, +1.0}},
-	{{+0.0, +1.0}},
-	{{+0.0, +0.0}},
+	{{0.0, 0.0}},
+	{{1.0, 0.0}},
+	{{1.0, 1.0}},
+	{{1.0, 1.0}},
+	{{0.0, 1.0}},
+	{{0.0, 0.0}},
 };
 
 typedef struct
@@ -109,12 +109,12 @@ static VertexLayout image_vertex_layout = {
 };
 
 static VertexImage image_vertices[6] = {
-	{{-0.0, -0.0}, {+0.0, +0.0}},
-	{{+1.0, -0.0}, {+1.0, +0.0}},
-	{{+1.0, +1.0}, {+1.0, +1.0}},
-	{{+1.0, +1.0}, {+1.0, +1.0}},
-	{{+0.0, +1.0}, {+0.0, +1.0}},
-	{{+0.0, +0.0}, {+0.0, +0.0}},
+	{{0.0, 0.0}, {0.0, 0.0}},
+	{{1.0, 0.0}, {1.0, 0.0}},
+	{{1.0, 1.0}, {1.0, 1.0}},
+	{{1.0, 1.0}, {1.0, 1.0}},
+	{{0.0, 1.0}, {0.0, 1.0}},
+	{{0.0, 0.0}, {0.0, 0.0}},
 };
 
 static int bintree_compare_f32(void *v1, void *v2, unused Bintree *tree)
@@ -273,7 +273,9 @@ static void render_element(BintreeNode *node, unused void *arg)
 
 void gui_render()
 {
+	glDisable(GL_DEPTH_TEST);
 	bintree_traverse(&gui_root.children, BTT_INORDER, &render_element, NULL);
+	glEnable(GL_DEPTH_TEST);
 }
 
 GUIElement *gui_add(GUIElement *parent, GUIElementDefinition def)
