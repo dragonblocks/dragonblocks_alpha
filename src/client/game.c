@@ -60,8 +60,6 @@ static void game_loop(Client *client)
 
 		frames++;
 
-		sky_clear();
-
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_ALPHA_TEST);
 		glEnable(GL_BLEND);
@@ -73,8 +71,8 @@ static void game_loop(Client *client)
 		input_tick();
 		client_player_tick(dtime);
 
-		sky_render();
 		scene_render();
+		sky_render();
 		gui_render();
 
 		glfwSwapBuffers(window.handle);

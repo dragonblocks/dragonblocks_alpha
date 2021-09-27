@@ -27,5 +27,6 @@ v3f32 html_to_v3f32(const char *html);																						// convert #RRGGBB c
 void my_compress(const void *uncompressed, size_t uncompressed_size, char **compressed, size_t *compressed_size);			// compress data using ZLib and store result(buffer allocated by malloc) in compressed
 bool my_decompress(const char *compressed, size_t compressed_size, void *decompressed, size_t expected_decompressed_size);	// decompress data and put result into decompressed, return false if decompressed size does not match expected_decompressed_size
 bool within_simulation_distance(v3f64 player_pos, v3s32 block_pos, u32 simulation_distance);								// return true if a player is close enough to a block to access it
+f64 clamp(f64 v, f64 min, f64 max);
 
 #endif

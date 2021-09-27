@@ -7,11 +7,6 @@
 #define TILES_SIMPLE(path) {.paths = {path, NULL, NULL, NULL, NULL, NULL}, .indices = {0, 0, 0, 0, 0, 0}, .textures = {NULL}}
 #define TILES_NONE {.paths = {NULL}, .indices = {0}, .textures = {NULL}}
 
-static f64 clamp(f64 v, f64 min, f64 max)
-{
-	return v < min ? min : v > max ? max : v;
-}
-
 static void render_grass(v3s32 pos, unused MapNode *node, Vertex3D *vertex, unused int f, unused int v)
 {
 	f32 hum_min, hum_max, temp_max;

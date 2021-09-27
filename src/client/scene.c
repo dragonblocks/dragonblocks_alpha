@@ -32,7 +32,7 @@ bool scene_init()
 	glProgramUniform1iv(scene.prog, glGetUniformLocation(scene.prog, "textures"), scene.max_texture_units, texture_indices);
 
 	scene.fov = 86.1f;
-	scene.render_distance = 1000.0f;
+	scene.render_distance = 255.0f;
 
 	return true;
 }

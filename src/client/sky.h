@@ -5,7 +5,6 @@
 
 bool sky_init();
 void sky_deinit();
-void sky_clear();
 void sky_render();
 
 #endif

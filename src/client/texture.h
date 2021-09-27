@@ -11,6 +11,7 @@ typedef struct
 } Texture;
 
 Texture *texture_create(unsigned char *data, int width, int height, GLenum format);
+GLuint texture_create_cubemap(char *path);
 void texture_delete(Texture *texture);
 Texture *texture_get(char *path);
 

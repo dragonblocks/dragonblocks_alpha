@@ -123,7 +123,7 @@ void debug_menu_update_daylight()
 void debug_menu_update_sun_angle()
 {
 	char text[BUFSIZ];
-	sprintf(text, "sun angle = %.1f", get_sun_angle() / M_PI * 180.0);
+	sprintf(text, "sun angle = %.1f", fmod(get_sun_angle() / M_PI * 180.0, 360.0));
 	gui_set_text(gui_elements[DME_SUN_ANGLE], text);
 }
 
