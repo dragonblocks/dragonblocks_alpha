@@ -25,6 +25,7 @@ typedef enum
 	DME_SEED,
 	DME_FLIGHT,
 	DME_COLLISION,
+	DME_TIMELAPSE,
 	DME_FULLSCREEN,
 	DME_OPENGL,
 	DME_GPU,
@@ -160,6 +161,13 @@ void debug_menu_update_collision()
 	char text[BUFSIZ];
 	sprintf(text, "collision: %s", client_player.collision ? "enabled" : "disabled");
 	gui_set_text(gui_elements[DME_COLLISION], text);
+}
+
+void debug_menu_update_timelapse()
+{
+	char text[BUFSIZ];
+	sprintf(text, "timelapse: %s", timelapse ? "enabled" : "disabled");
+	gui_set_text(gui_elements[DME_TIMELAPSE], text);
 }
 
 void debug_menu_update_fullscreen()

@@ -15,7 +15,6 @@ static struct
 {
 	GLuint skybox_prog;
 	GLint skybox_loc_VP;
-	GLint skybox_loc_transparency;
 	GLint skybox_loc_daylight;
 	GLuint skybox_textures[2];
 	Mesh *skybox_mesh;
@@ -23,6 +22,10 @@ static struct
 	GLint sun_loc_MVP;
 	Texture *sun_texture;
 	Mesh *sun_mesh;
+	GLuint clouds_prog;
+	GLint clouds_loc_VP;
+	GLint clouds_loc_daylight;
+	Mesh *clouds_mesh;
 } sky;
 
 typedef struct
@@ -97,16 +100,18 @@ static VertexLayout skybox_vertex_layout = {
 };
 
 static VertexSkybox skybox_vertices[6][6];
+static VertexSkybox clouds_vertices[6][6];
 
 bool sky_init()
 {
+	// skybox
+
 	if (! shader_program_create(RESSOURCEPATH "shaders/sky/skybox", &sky.skybox_prog, NULL)) {
 		fprintf(stderr, "Failed to create skybox shader program\n");
 		return false;
 	}
 
 	sky.skybox_loc_VP = glGetUniformLocation(sky.skybox_prog, "VP");
-	sky.skybox_loc_transparency = glGetUniformLocation(sky.skybox_prog, "transparency");
 	sky.skybox_loc_daylight = glGetUniformLocation(sky.skybox_prog, "daylight");
 
 	sky.skybox_textures[0] = texture_create_cubemap(RESSOURCEPATH "textures/skybox/day");
@@ -135,6 +140,8 @@ bool sky_init()
 	sky.skybox_mesh->free_vertices = false;
 	sky.skybox_mesh->layout = &skybox_vertex_layout;
 
+	// sun
+
 	if (! shader_program_create(RESSOURCEPATH "shaders/sky/sun", &sky.sun_prog, NULL)) {
 		fprintf(stderr, "Failed to create sun shader program\n");
 		return false;
@@ -152,6 +159,33 @@ bool sky_init()
 	sky.sun_mesh->vertices_count = 6;
 	sky.sun_mesh->free_vertices = false;
 	sky.sun_mesh->layout = &sun_vertex_layout;
+
+	// clouds
+
+	if (! shader_program_create(RESSOURCEPATH "shaders/sky/clouds", &sky.clouds_prog, NULL)) {
+		fprintf(stderr, "Failed to create clouds shader program\n");
+		return false;
+	}
+
+	sky.clouds_loc_VP = glGetUniformLocation(sky.clouds_prog, "VP");
+	sky.clouds_loc_daylight = glGetUniformLocation(sky.clouds_prog, "daylight");
+
+	for (int f = 0; f < 6; f++) {
+		for (int v = 0; v < 6; v++) {
+			clouds_vertices[f][v].position.x = cube_vertices[f][v].position.x;
+			clouds_vertices[f][v].position.y = fmax(cube_vertices[f][v].position.y, 0.0);
+			clouds_vertices[f][v].position.z = cube_vertices[f][v].position.z;
+		}
+	}
+
+	sky.clouds_mesh = mesh_create();
+	sky.clouds_mesh->textures = sky.skybox_textures;
+	sky.clouds_mesh->textures_count = 1;
+	sky.clouds_mesh->free_textures = false;
+	sky.clouds_mesh->vertices = clouds_vertices;
+	sky.clouds_mesh->vertices_count = 36;
+	sky.clouds_mesh->free_vertices = false;
+	sky.clouds_mesh->layout = &skybox_vertex_layout;
 
 	return true;
 }
@@ -171,6 +205,7 @@ void sky_deinit()
 #pragma GCC diagnostic ignored "-Wpedantic"
 void sky_render()
 {
+	f64 daylight = get_daylight();
 	f64 sun_angle = get_sun_angle();
 
 	vec3 sun_pos = {0.0f, cos(sun_angle), sin(sun_angle)};
@@ -179,8 +214,7 @@ void sky_render()
 
 	mat4x4 model;
 	mat4x4_translate(model, sun_pos[0], sun_pos[1], sun_pos[2]);
-	mat4x4_rotate(model, model, 1.0f, 0.0f, 0.0f, sun_angle + 90);
-	mat4x4_rotate(model, model, 0.0f, 0.0f, 1.0f, M_PI / 4.0f);
+	mat4x4_rotate(model, model, 1.0f, 0.0f, 0.0f, sun_angle + M_PI / 2.0f);
 
 	mat4x4 view;
 	mat4x4_dup(view, camera.view);
@@ -198,16 +232,16 @@ void sky_render()
 
 	glUseProgram(sky.skybox_prog);
 	glUniformMatrix4fv(sky.skybox_loc_VP, 1, GL_FALSE, VP[0]);
-	glUniform1i(sky.skybox_loc_transparency, 0);
-	glUniform1f(sky.skybox_loc_daylight, get_daylight());
+	glUniform1f(sky.skybox_loc_daylight, daylight);
 	mesh_render(sky.skybox_mesh);
 
 	glUseProgram(sky.sun_prog);
 	glUniformMatrix4fv(sky.sun_loc_MVP, 1, GL_FALSE, MVP[0]);
 	mesh_render(sky.sun_mesh);
 
-	glUseProgram(sky.skybox_prog);
-	glUniform1i(sky.skybox_loc_transparency, 1);
-	mesh_render(sky.skybox_mesh);
+	glUseProgram(sky.clouds_prog);
+	glUniformMatrix4fv(sky.clouds_loc_VP, 1, GL_FALSE, VP[0]);
+	glUniform1f(sky.clouds_loc_daylight, daylight);
+	mesh_render(sky.clouds_mesh);
 }
 #pragma GCC diagnostic pop

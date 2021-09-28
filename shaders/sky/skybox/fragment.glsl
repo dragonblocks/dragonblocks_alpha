@@ -2,18 +2,16 @@ in vec3 fragmentTextureCoords;
 
 out vec4 outColor;
 
-uniform bool transparency;
 uniform float daylight;
 uniform samplerCube textures[2];
 
 void main()
 {
-	outColor = mix(texture(textures[1], fragmentTextureCoords), texture(textures[0], fragmentTextureCoords), daylight);
+	vec4 topColor = texture(textures[0], vec3(0.0, 1.0, 0.0));
+	vec4 bottomColor = texture(textures[0], vec3(1.0, 0.11, 0.5));
 
-	if (transparency) {
-		float f = 0.2;
-		float e = 2.0;
+	vec4 dayColor = mix(bottomColor, topColor, normalize(fragmentTextureCoords).y);
+	vec4 nightColor = texture(textures[1], fragmentTextureCoords);
 
-		outColor.a = pow((outColor.r + outColor.g) / 2.0 + f, e) / pow(1.0 + f, e);
-	}
+	outColor = mix(nightColor, dayColor, daylight);
 }

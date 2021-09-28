@@ -29,6 +29,7 @@ or alternatively:
 | Left Shift | When flying: Move Down |
 | F | Toggle flight |
 | C | Toggle collision |
+| T | Toggle timelapse |
 | F11 | Toggle fullscreen |
 | F3 | Toggle debug info |
 | ESC | Pause / unpause game |

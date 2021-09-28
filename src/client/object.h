@@ -16,6 +16,10 @@ typedef struct {
 	GLfloat x, y, z;
 } __attribute__((packed)) Vertex3DPosition;
 
+typedef struct {
+	GLfloat x, y, z;
+} __attribute__((packed)) Vertex3DNormal;
+
 typedef GLfloat Vertex3DTextureIndex;
 
 typedef struct {
@@ -29,6 +33,7 @@ typedef struct {
 typedef struct
 {
 	Vertex3DPosition position;
+	Vertex3DNormal normal;
 	Vertex3DTextureIndex textureIndex;
 	Vertex3DTextureCoordinates textureCoordinates;
 	Vertex3DColor color;

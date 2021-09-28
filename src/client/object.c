@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "client/object.h"
 #include "client/scene.h"
-#define OBJECT_VERTEX_ATTRIBUTES 4
+#define OBJECT_VERTEX_ATTRIBUTES 5
 
 static VertexAttribute vertex_attributes[OBJECT_VERTEX_ATTRIBUTES] = {
 	// position
@@ -10,6 +10,12 @@ static VertexAttribute vertex_attributes[OBJECT_VERTEX_ATTRIBUTES] = {
 		.type = GL_FLOAT,
 		.length = 3,
 		.size = sizeof(Vertex3DPosition),
+	},
+	// normal
+	{
+		.type = GL_FLOAT,
+		.length = 3,
+		.size = sizeof(Vertex3DNormal),
 	},
 	// textureIndex
 	{

@@ -4,6 +4,7 @@
 #include "client/client.h"
 #include "client/scene.h"
 #include "client/shader.h"
+#include "day.h"
 #include "util.h"
 
 struct Scene scene;
@@ -24,6 +25,8 @@ bool scene_init()
 	}
 
 	scene.loc_MVP = glGetUniformLocation(scene.prog, "MVP");
+	scene.loc_daylight = glGetUniformLocation(scene.prog, "daylight");
+	scene.loc_lightDir = glGetUniformLocation(scene.prog, "lightDir");
 
 	GLint texture_indices[scene.max_texture_units];
 	for (GLint i = 0; i < scene.max_texture_units; i++)
@@ -58,14 +61,22 @@ void scene_add_object(Object *obj)
 
 void scene_render()
 {
-	glUseProgram(scene.prog);
-
-	mat4x4 view_proj;
-
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
+	mat4x4 view_proj;
 	mat4x4_mul(view_proj, scene.projection, camera.view);
+
+	vec4 base_sunlight_dir = {0.0f, 0.0f, -1.0f, 1.0f};
+	vec4 sunlight_dir;
+	mat4x4 sunlight_mat;
+	mat4x4_identity(sunlight_mat);
+	mat4x4_rotate(sunlight_mat, sunlight_mat, 1.0f, 0.0f, 0.0f, get_sun_angle() + M_PI / 2.0f);
+	mat4x4_mul_vec4(sunlight_dir, sunlight_mat, base_sunlight_dir);
 #pragma GCC diagnostic pop
+
+	glUseProgram(scene.prog);
+	glProgramUniform3f(scene.prog, scene.loc_lightDir, sunlight_dir[0], sunlight_dir[1], sunlight_dir[2]);
+	glProgramUniform1f(scene.prog, scene.loc_daylight, get_daylight());
 
 	for (ListPair **pairptr = &scene.objects.first; *pairptr != NULL; ) {
 		ListPair *pair = *pairptr;

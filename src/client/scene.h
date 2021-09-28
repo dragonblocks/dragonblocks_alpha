@@ -14,6 +14,8 @@ extern struct Scene
 	pthread_mutex_t mtx;
 	GLuint prog;
 	GLint loc_MVP;
+	GLint loc_daylight;
+	GLint loc_lightDir;
 	GLint max_texture_units;
 	mat4x4 projection;
 	f32 fov;

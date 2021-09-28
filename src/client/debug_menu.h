@@ -19,6 +19,7 @@ void debug_menu_update_temperature();
 void debug_menu_update_seed();
 void debug_menu_update_flight();
 void debug_menu_update_collision();
+void debug_menu_update_timelapse();
 void debug_menu_update_fullscreen();
 void debug_menu_update_opengl();
 void debug_menu_update_gpu();

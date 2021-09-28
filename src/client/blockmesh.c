@@ -66,7 +66,7 @@ void blockmesh_make(MapBlock *block)
 	Object *obj = object_create();
 
 	obj->pos = (v3f32) {block->pos.x * MAPBLOCK_SIZE - half_block_size, block->pos.y * MAPBLOCK_SIZE - half_block_size, block->pos.z * MAPBLOCK_SIZE - half_block_size};
-	obj->frustum_culling = true;
+	obj->frustum_culling = false;
 	obj->box = (aabb3f32) {{-half_block_size, -half_block_size, -half_block_size}, {half_block_size, half_block_size, half_block_size}};
 
 	make_vertices(obj, block);

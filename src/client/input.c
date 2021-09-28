@@ -6,6 +6,7 @@
 #include "client/gui.h"
 #include "client/input.h"
 #include "client/window.h"
+#include "day.h"
 
 typedef struct
 {
@@ -22,6 +23,7 @@ static struct
 	KeyListener fullscreen_listener;
 	KeyListener fly_listener;
 	KeyListener collision_listener;
+	KeyListener timelapse_listener;
 	KeyListener debug_menu_listener;
 } input;
 
@@ -116,6 +118,7 @@ void input_tick()
 	if (! input.paused) {
 		do_key_listener(&input.fly_listener);
 		do_key_listener(&input.collision_listener);
+		do_key_listener(&input.timelapse_listener);
 		do_key_listener(&input.debug_menu_listener);
 
 		if (input.fly_listener.fired) {
@@ -126,6 +129,13 @@ void input_tick()
 		if (input.collision_listener.fired) {
 			client_player.collision = ! client_player.collision;
 			debug_menu_update_collision();
+		}
+
+		if (input.timelapse_listener.fired) {
+			f64 current_time = get_time_of_day();
+			timelapse = ! timelapse;
+			set_time_of_day(current_time);
+			debug_menu_update_timelapse();
 		}
 
 		if (input.debug_menu_listener.fired)
@@ -157,6 +167,7 @@ void input_init()
 	input.fullscreen_listener = create_key_listener(GLFW_KEY_F11);
 	input.fly_listener = create_key_listener(GLFW_KEY_F);
 	input.collision_listener = create_key_listener(GLFW_KEY_C);
+	input.timelapse_listener = create_key_listener(GLFW_KEY_T);
 	input.debug_menu_listener = create_key_listener(GLFW_KEY_F3);
 
 	input.pause_menu = gui_add(&gui_root, (GUIElementDefinition) {

@@ -52,13 +52,13 @@ static void game_loop(Client *client)
 			debug_menu_update_fps(frames);
 			fps_update_timer += 1.0;
 			frames = 0;
-
-			debug_menu_update_time();
-			debug_menu_update_daylight();
-			debug_menu_update_sun_angle();
 		}
 
 		frames++;
+
+		debug_menu_update_time();
+		debug_menu_update_daylight();
+		debug_menu_update_sun_angle();
 
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_ALPHA_TEST);
@@ -118,6 +118,7 @@ bool game(Client *client)
 	debug_menu_update_seed();
 	debug_menu_update_flight();
 	debug_menu_update_collision();
+	debug_menu_update_timelapse();
 	debug_menu_update_fullscreen();
 	debug_menu_update_opengl();
 	debug_menu_update_gpu();
