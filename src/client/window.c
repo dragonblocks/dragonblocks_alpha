@@ -2,6 +2,7 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include "client/debug_menu.h"
+#include "client/game.h"
 #include "client/gui.h"
 #include "client/input.h"
 #include "client/scene.h"
@@ -21,6 +22,7 @@ static void framebuffer_size_callback(unused GLFWwindow *handle, int width, int 
 
 	scene_on_resize(width, height);
 	gui_on_resize(width, height);
+	game_on_resize(width, height);
 }
 
 static void cursor_pos_callback(unused GLFWwindow *handle, double current_x, double current_y)

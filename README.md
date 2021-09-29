@@ -30,8 +30,9 @@ or alternatively:
 | F | Toggle flight |
 | C | Toggle collision |
 | T | Toggle timelapse |
-| F11 | Toggle fullscreen |
+| F2 | Take screenshot |
 | F3 | Toggle debug info |
+| F11 | Toggle fullscreen |
 | ESC | Pause / unpause game |
 
 ## Dependencies

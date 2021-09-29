@@ -3,6 +3,8 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb/stb_image_write.h>
 #include "client/camera.h"
 #include "client/client.h"
 #include "client/client_map.h"
@@ -16,6 +18,8 @@
 #include "client/window.h"
 #include "day.h"
 #include "signal_handlers.h"
+
+int window_width, window_height;
 
 static void crosshair_init()
 {
@@ -33,6 +37,29 @@ static void crosshair_init()
 		.text_color = (v4f32) {0.0f, 0.0f, 0.0f, 0.0f},
 		.bg_color = (v4f32) {0.0f, 0.0f, 0.0f, 0.0f},
 	});
+}
+
+static void render()
+{
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_ALPHA_TEST);
+	glEnable(GL_BLEND);
+	glEnable(GL_MULTISAMPLE);
+	glEnable(GL_CULL_FACE);
+
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glAlphaFunc(GL_GREATER, 0.0f);
+	glCullFace(GL_BACK);
+	glFrontFace(GL_CCW);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	scene_render();
+
+	glDisable(GL_CULL_FACE);
+	sky_render();
+
+	glDisable(GL_DEPTH_TEST);
+	gui_render();
 }
 
 static void game_loop(Client *client)
@@ -56,31 +83,14 @@ static void game_loop(Client *client)
 
 		frames++;
 
+		input_tick();
+		client_player_tick(dtime);
+
 		debug_menu_update_time();
 		debug_menu_update_daylight();
 		debug_menu_update_sun_angle();
 
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_ALPHA_TEST);
-		glEnable(GL_BLEND);
-		glEnable(GL_MULTISAMPLE);
-		glEnable(GL_CULL_FACE);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glAlphaFunc(GL_GREATER, 0.0f);
-		glCullFace(GL_BACK);
-		glFrontFace(GL_CCW);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		input_tick();
-		client_player_tick(dtime);
-
-		scene_render();
-
-		glDisable(GL_CULL_FACE);
-		sky_render();
-
-		glDisable(GL_DEPTH_TEST);
-		gui_render();
+		render();
 
 		glfwSwapBuffers(window.handle);
 		glfwPollEvents();
@@ -89,11 +99,10 @@ static void game_loop(Client *client)
 
 bool game(Client *client)
 {
-	int width, height;
-	width = 1250;
-	height = 750;
+	window_width = 1250;
+	window_height = 750;
 
-	if (! window_init(width, height))
+	if (! window_init(window_width, window_height))
 		return false;
 
 	if (! font_init())
@@ -102,7 +111,7 @@ bool game(Client *client)
 	if (! scene_init())
 		return false;
 
-	scene_on_resize(width, height);
+	scene_on_resize(window_width, window_height);
 
 	if (! sky_init())
 		return false;
@@ -116,7 +125,7 @@ bool game(Client *client)
 	if (! gui_init())
 		return false;
 
-	gui_on_resize(width, height);
+	gui_on_resize(window_width, window_height);
 
 	debug_menu_init();
 	debug_menu_toggle();
@@ -146,4 +155,72 @@ bool game(Client *client)
 	sky_deinit();
 
 	return true;
+}
+
+void take_screenshot()
+{
+	// renderbuffer for depth & stencil buffer
+	GLuint RBO;
+	glGenRenderbuffers(1, &RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, 8, GL_DEPTH24_STENCIL8, window_width, window_height);
+
+	// 2 textures, one with AA, one without
+
+	GLuint textures[2];
+	glGenTextures(2, textures);
+
+	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, textures[0]);
+	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 8, GL_RGB, window_width, window_height, GL_TRUE);
+
+	glBindTexture(GL_TEXTURE_2D, textures[1]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_width, window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+
+	// 2 framebuffers, one with AA, one without
+
+	GLuint FBOs[2];
+	glGenFramebuffers(2, FBOs);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, FBOs[0]);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, textures[0], 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, FBOs[1]);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textures[1], 0);
+
+	// render scene
+	glBindFramebuffer(GL_FRAMEBUFFER, FBOs[0]);
+	render();
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// blit AA-buffer into no-AA buffer
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, FBOs[0]);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FBOs[1]);
+	glBlitFramebuffer(0, 0, window_width, window_height, 0, 0, window_width, window_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+	// read data
+	GLubyte data[window_width * window_height * 3];
+	glBindFramebuffer(GL_FRAMEBUFFER, FBOs[1]);
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	glReadPixels(0, 0, window_width, window_height, GL_RGB, GL_UNSIGNED_BYTE, data);
+
+	// create filename
+	char filename[BUFSIZ];
+	time_t timep = time(0);
+	strftime(filename, BUFSIZ, "screenshot-%Y-%m-%d-%H:%M:%S.png", localtime(&timep));
+
+	// save screenshot
+	stbi_flip_vertically_on_write(true);
+	stbi_write_png(filename, window_width, window_height, 3, data, window_width * 3);
+
+	// delete buffers
+	glDeleteRenderbuffers(1, &RBO);
+	glDeleteTextures(2, textures);
+	glDeleteFramebuffers(2, FBOs);
+}
+
+void game_on_resize(int width, int height)
+{
+	window_width = width;
+	window_height = height;
 }

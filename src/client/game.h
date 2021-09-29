@@ -4,5 +4,7 @@
 #include "client/client.h"
 
 bool game(Client *client);
+void take_screenshot();
+void game_on_resize(int width, int height);
 
 #endif

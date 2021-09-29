@@ -11,7 +11,7 @@ if ! (cmake -B . -S ../src -DCMAKE_BUILD_TYPE=Release && make clean && make -j$(
 fi
 cp Dragonblocks DragonblocksServer ..
 cd ..
-rm -rf .git* deps src build BUILDING.md snapshot.sh upload.sh DragonblocksAlpha-*.zip
+rm -rf .git* deps src build BUILDING.md snapshot.sh upload.sh DragonblocksAlpha-*.zip screenshot-*.png
 cd ..
 mv .build DragonblocksAlpha
 VERSION=`git tag --points-at HEAD`

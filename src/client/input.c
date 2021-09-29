@@ -3,6 +3,7 @@
 #include "client/client.h"
 #include "client/client_player.h"
 #include "client/debug_menu.h"
+#include "client/game.h"
 #include "client/gui.h"
 #include "client/input.h"
 #include "client/window.h"
@@ -25,6 +26,7 @@ static struct
 	KeyListener collision_listener;
 	KeyListener timelapse_listener;
 	KeyListener debug_menu_listener;
+	KeyListener screenshot_listener;
 } input;
 
 void input_on_cursor_pos(double current_x, double current_y)
@@ -120,6 +122,7 @@ void input_tick()
 		do_key_listener(&input.collision_listener);
 		do_key_listener(&input.timelapse_listener);
 		do_key_listener(&input.debug_menu_listener);
+		do_key_listener(&input.screenshot_listener);
 
 		if (input.fly_listener.fired) {
 			client_player.fly = ! client_player.fly;
@@ -140,6 +143,9 @@ void input_tick()
 
 		if (input.debug_menu_listener.fired)
 			debug_menu_toggle();
+
+		if (input.screenshot_listener.fired)
+			take_screenshot();
 	}
 
 	client_player.velocity.x = 0.0f;
@@ -169,6 +175,7 @@ void input_init()
 	input.collision_listener = create_key_listener(GLFW_KEY_C);
 	input.timelapse_listener = create_key_listener(GLFW_KEY_T);
 	input.debug_menu_listener = create_key_listener(GLFW_KEY_F3);
+	input.screenshot_listener = create_key_listener(GLFW_KEY_F2);
 
 	input.pause_menu = gui_add(&gui_root, (GUIElementDefinition) {
 		.pos = {0.0f, 0.0f},
