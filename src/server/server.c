@@ -78,6 +78,7 @@ static void server_run(int fd)
 
 	database_init();
 	server_map_init(&server);
+	server_map_prepare_spawn();
 
 	while (! interrupted)
 		accept_client();

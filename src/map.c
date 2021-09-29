@@ -217,9 +217,9 @@ void map_set_node(Map *map, v3s32 pos, MapNode node, bool create, void *arg)
 	if (block) {
 		pthread_mutex_lock(&block->mtx);
 		if (! map->callbacks.set_node || map->callbacks.set_node(block, offset, &node, arg)) {
+			block->data[offset.x][offset.y][offset.z] = node;
 			if (map->callbacks.after_set_node)
 				map->callbacks.after_set_node(block, offset, arg);
-			block->data[offset.x][offset.y][offset.z] = node;
 		}
 		pthread_mutex_unlock(&block->mtx);
 	}

@@ -38,7 +38,7 @@ static bool auth_handler(Client *client, bool good)
 		client->state = CS_ACTIVE;
 
 		if (! database_load_player(client->name, &client->pos)) {
-			client->pos = (v3f64) {0.0, 150.0, 0.0};
+			client->pos = (v3f64) {0.0, server_map.spawn_height + 0.5, 0.0};
 
 			database_create_player(client->name, client->pos);
 		}

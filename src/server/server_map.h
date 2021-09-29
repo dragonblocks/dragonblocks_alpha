@@ -40,13 +40,16 @@ typedef struct
 
 extern struct ServerMap {
 	Map *map;								// map object, data is stored here
-	bool shutting_down;						// is a shutdown in progress?
+	bool joining_threads;					// prevent threads from removing themselves from the thread list if thread list is being cleared anyway
+	pthread_mutex_t joining_threads_mtx;	// mutex to protect joining threads
 	List mapgen_threads;					// a list of mapgen threads (need to be joined before shutdown)
 	pthread_mutex_t mapgen_threads_mtx;		// mutex to protect mapgen thread list
+	s32 spawn_height;						// height to spawn players at
 } server_map; // ServerMap singleton
 
 void server_map_init(Server *server);						// ServerMap singleton constructor
 void server_map_deinit();									// ServerMap singleton destructor
 void server_map_requested_block(Client *client, v3s32 pos);	// handle block request from client (thread safe)
+void server_map_prepare_spawn();							// prepare spawn region
 
 #endif

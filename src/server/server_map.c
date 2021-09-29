@@ -2,10 +2,11 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
+#include "map.h"
 #include "server/database.h"
 #include "server/mapgen.h"
 #include "server/server_map.h"
-#include "map.h"
+#include "signal_handlers.h"
 #include "util.h"
 
 struct ServerMap server_map;
@@ -32,6 +33,9 @@ static void send_block_to_near(MapBlock *block)
 
 	if (extra->state == MBS_GENERATING)
 		return;
+
+	if (extra->data)
+		free(extra->data);
 
 	map_serialize_block(block, &extra->data, &extra->size);
 	database_save_block(block);
@@ -80,11 +84,13 @@ static void *mapgen_thread(void *arg)
 
 	list_clear_func(&changed_blocks, &list_send_block, NULL);
 
-	if (! server_map.shutting_down) {
+	pthread_mutex_lock(&server_map.joining_threads_mtx);
+	if (! server_map.joining_threads) {
 		pthread_mutex_lock(&server_map.mapgen_threads_mtx);
 		list_delete(&server_map.mapgen_threads, &extra->mapgen_thread);
 		pthread_mutex_unlock(&server_map.mapgen_threads_mtx);
 	}
+	pthread_mutex_unlock(&server_map.joining_threads_mtx);
 
 	return NULL;
 }
@@ -185,6 +191,87 @@ static void on_after_set_node(MapBlock *block, unused v3u8 offset, void *arg)
 		send_block_to_near(block);
 }
 
+// join all map generation threads
+static void join_mapgen_threads()
+{
+	pthread_mutex_lock(&server_map.joining_threads_mtx);
+	server_map.joining_threads = true;
+	pthread_mutex_unlock(&server_map.joining_threads_mtx);
+
+	pthread_mutex_lock(&server_map.mapgen_threads_mtx);
+	list_clear_func(&server_map.mapgen_threads, &list_join_thread, NULL);
+	pthread_mutex_unlock(&server_map.mapgen_threads_mtx);
+
+	pthread_mutex_lock(&server_map.joining_threads_mtx);
+	server_map.joining_threads = false;
+	pthread_mutex_unlock(&server_map.joining_threads_mtx);
+}
+
+// generate a hut for new players to spawn in
+static void generate_spawn_hut()
+{
+	List changed_blocks = list_create(NULL);
+
+	for (s32 x = -4; x <= +4; x++) {
+		for (s32 y = 0; y <= 3; y++) {
+			for (s32 z = -3; z <= +2; z++) {
+				mapgen_set_node((v3s32) {x, server_map.spawn_height + y, z}, (MapNode) {NODE_AIR}, MGS_PLAYER, &changed_blocks);
+			}
+		}
+	}
+
+	for (s32 x = -5; x <= +5; x++) {
+		for (s32 z = -4; z <= +3; z++) {
+			mapgen_set_node((v3s32) {x, server_map.spawn_height - 1, z}, (MapNode) {NODE_WOOD}, MGS_PLAYER, &changed_blocks);
+			mapgen_set_node((v3s32) {x, server_map.spawn_height + 4, z}, (MapNode) {NODE_WOOD}, MGS_PLAYER, &changed_blocks);
+		}
+	}
+
+	for (s32 y = 0; y <= 3; y++) {
+		for (s32 x = -5; x <= +5; x++) {
+			mapgen_set_node((v3s32) {x, server_map.spawn_height + y, -4}, (MapNode) {((y == 1 || y == 2) && ((x >= -3 && x <= -1) || (x >= +1 && x <= +2))) ? NODE_AIR : NODE_WOOD}, MGS_PLAYER, &changed_blocks);
+			mapgen_set_node((v3s32) {x, server_map.spawn_height + y, +3}, (MapNode) {((y == 1 || y == 2) && ((x >= -3 && x <= -2) || (x >= +1 && x <= +3))) ? NODE_AIR : NODE_WOOD}, MGS_PLAYER, &changed_blocks);
+		}
+	}
+
+	for (s32 y = 0; y <= 3; y++) {
+		for (s32 z = -3; z <= +2; z++) {
+			mapgen_set_node((v3s32) {-5, server_map.spawn_height + y, z}, (MapNode) {NODE_WOOD}, MGS_PLAYER, &changed_blocks);
+			mapgen_set_node((v3s32) {+5, server_map.spawn_height + y, z}, (MapNode) {((y != 3) && (z == -1 || z == +0)) ? NODE_AIR : NODE_WOOD}, MGS_PLAYER, &changed_blocks);
+		}
+	}
+
+	v2s32 posts[6] = {
+		{-4, -3},
+		{-4, +2},
+		{+4, -3},
+		{+4, +2},
+		{+5, -1},
+		{+5, +0},
+	};
+
+	for (int i = 0; i < 6; i++) {
+		for (s32 y = server_map.spawn_height - 2;; y--) {
+			v3s32 pos = {posts[i].x, y, posts[i].y};
+			Node node = map_get_node(server_map.map, pos).type;
+
+			if (i >= 4) {
+				if (node != NODE_AIR)
+					break;
+
+				pos.y++;
+			}
+
+			if (node_definitions[node].solid)
+				break;
+
+			mapgen_set_node(pos, (MapNode) {node == NODE_LAVA ? NODE_VULCANO_STONE : NODE_WOOD}, MGS_PLAYER, &changed_blocks);
+		}
+	}
+
+	list_clear_func(&changed_blocks, &list_send_block, NULL);
+}
+
 // public functions
 
 // ServerMap singleton constructor
@@ -199,20 +286,18 @@ void server_map_init(Server *srv)
 		.set_node = &on_set_node,
 		.after_set_node = &on_after_set_node,
 	});
-	server_map.shutting_down = false;
+	server_map.joining_threads = false;
 	server_map.mapgen_threads = list_create(NULL);
+	pthread_mutex_init(&server_map.joining_threads_mtx, NULL);
 	pthread_mutex_init(&server_map.mapgen_threads_mtx, NULL);
 }
 
 // ServerMap singleton destructor
 void server_map_deinit()
 {
-	server_map.shutting_down = true;
-
-	pthread_mutex_lock(&server_map.mapgen_threads_mtx);
-	list_clear_func(&server_map.mapgen_threads, &list_join_thread, NULL);
+	join_mapgen_threads();
+	pthread_mutex_destroy(&server_map.joining_threads_mtx);
 	pthread_mutex_destroy(&server_map.mapgen_threads_mtx);
-
 	map_delete(server_map.map);
 }
 
@@ -237,5 +322,58 @@ void server_map_requested_block(Client *client, v3s32 pos)
 				send_block(client, block);
 		};
 		pthread_mutex_unlock(&block->mtx);
+	}
+}
+
+// prepare spawn region
+void server_map_prepare_spawn()
+{
+	s32 done = 0;
+	s32 dist = server->config.simulation_distance;
+	s32 total = (dist * 2 + 1);
+	total *= total * total;
+	s32 last_percentage = -1;
+
+	for (s32 x = -dist; x <= (s32) dist; x++) {
+		for (s32 y = -dist; y <= (s32) dist; y++) {
+			for (s32 z = -dist; z <= (s32) dist; z++) {
+				if (interrupted) {
+					join_mapgen_threads();
+					return;
+				}
+
+				MapBlock *block = map_get_block(server_map.map, (v3s32) {x, y, z}, true);
+
+				pthread_mutex_lock(&block->mtx);
+				if (((MapBlockExtraData *) block->extra)->state == MBS_CREATED)
+					launch_mapgen_thread(block);
+				pthread_mutex_unlock(&block->mtx);
+
+				done++;
+
+				s32 percentage = 100.0 * done / total;
+
+				if (percentage > last_percentage) {
+					last_percentage = percentage;
+					printf("Preparing spawn... %d%%\n", percentage);
+				}
+			}
+		}
+	}
+
+	join_mapgen_threads();
+
+	s64 saved_spawn_height;
+	if (database_load_meta("spawn_height", &saved_spawn_height)) {
+		server_map.spawn_height = saved_spawn_height;
+	} else {
+		s32 spawn_height = -1;
+
+		while (map_get_node(server_map.map, (v3s32) {0, ++spawn_height, 0}).type != NODE_AIR);
+			;
+
+		server_map.spawn_height = spawn_height + 5;
+		generate_spawn_hut();
+		database_save_meta("spawn_height", server_map.spawn_height);
 	}
 }

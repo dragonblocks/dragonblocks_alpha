@@ -48,49 +48,6 @@ static sqlite3_stmt *prepare_block_statement(MapBlock *block, const char *action
 	return stmt;
 }
 
-// load something from meta
-static bool load_meta(const char *key, s64 *value_ptr)
-{
-	sqlite3_stmt *stmt;
-
-	if (! (stmt = prepare_statement("SELECT value FROM meta WHERE key=?"))) {
-		fprintf(stderr, "Database error with loading %s: %s\n", key, sqlite3_errmsg(database));
-		return false;
-	}
-
-	sqlite3_bind_text(stmt, 1, key, strlen(key), SQLITE_TRANSIENT);
-
-	int rc = sqlite3_step(stmt);
-	bool found = rc == SQLITE_ROW;
-
-	if (found)
-		*value_ptr = sqlite3_column_int64(stmt, 0);
-	else if (rc != SQLITE_DONE)
-		fprintf(stderr, "Database error with loading %s: %s\n", key, sqlite3_errmsg(database));
-
-	sqlite3_finalize(stmt);
-	return found;
-}
-
-// save something to meta
-static void save_meta(const char *key, s64 value)
-{
-	sqlite3_stmt *stmt;
-
-	if (! (stmt = prepare_statement("REPLACE INTO meta (key, value) VALUES(?1, ?2)"))) {
-		fprintf(stderr, "Database error with saving %s: %s\n", key, sqlite3_errmsg(database));
-		return;
-	}
-
-	sqlite3_bind_text(stmt, 1, key, strlen(key), SQLITE_TRANSIENT);
-	sqlite3_bind_int64(stmt, 2, value);
-
-	if (sqlite3_step(stmt) != SQLITE_DONE)
-		fprintf(stderr, "Database error with saving %s: %s\n", key, sqlite3_errmsg(database));
-
-	sqlite3_finalize(stmt);
-}
-
 // bind v3f64 to sqlite3 statement
 static inline void bind_v3f64(sqlite3_stmt *stmt, int idx, v3f64 pos)
 {
@@ -130,17 +87,17 @@ void database_init()
 
 	s64 saved_seed;
 
-	if (load_meta("seed", &saved_seed)) {
+	if (database_load_meta("seed", &saved_seed)) {
 		seed = saved_seed;
 	} else {
 		srand(time(NULL));
 		seed = rand();
-		save_meta("seed", seed);
+		database_save_meta("seed", seed);
 	}
 
 	s64 time_of_day;
 
-	if (load_meta("time_of_day", &time_of_day))
+	if (database_load_meta("time_of_day", &time_of_day))
 		set_time_of_day(time_of_day);
 	else
 		set_time_of_day(12 * MINUTES_PER_HOUR);
@@ -149,7 +106,7 @@ void database_init()
 // close database
 void database_deinit()
 {
-	save_meta("time_of_day", (s64) get_time_of_day());
+	database_save_meta("time_of_day", (s64) get_time_of_day());
 	sqlite3_close(database);
 }
 
@@ -213,6 +170,49 @@ void database_save_block(MapBlock *block)
 
 	if (sqlite3_step(stmt) != SQLITE_DONE)
 		print_block_error(block, "saving");
+
+	sqlite3_finalize(stmt);
+}
+
+// load a meta entry
+bool database_load_meta(const char *key, s64 *value_ptr)
+{
+	sqlite3_stmt *stmt;
+
+	if (! (stmt = prepare_statement("SELECT value FROM meta WHERE key=?"))) {
+		fprintf(stderr, "Database error with loading %s: %s\n", key, sqlite3_errmsg(database));
+		return false;
+	}
+
+	sqlite3_bind_text(stmt, 1, key, strlen(key), SQLITE_TRANSIENT);
+
+	int rc = sqlite3_step(stmt);
+	bool found = rc == SQLITE_ROW;
+
+	if (found)
+		*value_ptr = sqlite3_column_int64(stmt, 0);
+	else if (rc != SQLITE_DONE)
+		fprintf(stderr, "Database error with loading %s: %s\n", key, sqlite3_errmsg(database));
+
+	sqlite3_finalize(stmt);
+	return found;
+}
+
+// save / update a meta entry
+void database_save_meta(const char *key, s64 value)
+{
+	sqlite3_stmt *stmt;
+
+	if (! (stmt = prepare_statement("REPLACE INTO meta (key, value) VALUES(?1, ?2)"))) {
+		fprintf(stderr, "Database error with saving %s: %s\n", key, sqlite3_errmsg(database));
+		return;
+	}
+
+	sqlite3_bind_text(stmt, 1, key, strlen(key), SQLITE_TRANSIENT);
+	sqlite3_bind_int64(stmt, 2, value);
+
+	if (sqlite3_step(stmt) != SQLITE_DONE)
+		fprintf(stderr, "Database error with saving %s: %s\n", key, sqlite3_errmsg(database));
 
 	sqlite3_finalize(stmt);
 }
