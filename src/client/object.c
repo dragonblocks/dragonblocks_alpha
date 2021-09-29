@@ -204,21 +204,24 @@ static bool inside_frustum(aabb3f32 box, mat4x4 MVP)
 #pragma GCC diagnostic pop
 
 
-void object_render(Object *obj, mat4x4 view_proj, GLint loc_MVP)
+void object_render(Object *obj)
 {
 	if (! obj->visible)
 		return;
 
-	mat4x4 MVP;
+	if (obj->frustum_culling) {
+		mat4x4 MVP;
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-	mat4x4_mul(MVP, view_proj, obj->transform);
+		mat4x4_mul(MVP, scene.VP, obj->transform);
 #pragma GCC diagnostic pop
 
-	if (obj->frustum_culling && ! inside_frustum(obj->box, MVP))
-		return;
+		 if (! inside_frustum(obj->box, MVP))
+			return;
+	}
 
-	glUniformMatrix4fv(loc_MVP, 1, GL_FALSE, MVP[0]);
+	glUniformMatrix4fv(scene.loc_model, 1, GL_FALSE, obj->transform[0]);
 
 	if (obj->wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);

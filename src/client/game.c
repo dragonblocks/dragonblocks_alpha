@@ -64,15 +64,22 @@ static void game_loop(Client *client)
 		glEnable(GL_ALPHA_TEST);
 		glEnable(GL_BLEND);
 		glEnable(GL_MULTISAMPLE);
+		glEnable(GL_CULL_FACE);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glAlphaFunc(GL_GREATER, 0.0f);
+		glCullFace(GL_BACK);
+		glFrontFace(GL_CCW);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		input_tick();
 		client_player_tick(dtime);
 
 		scene_render();
+
+		glDisable(GL_CULL_FACE);
 		sky_render();
+
+		glDisable(GL_DEPTH_TEST);
 		gui_render();
 
 		glfwSwapBuffers(window.handle);

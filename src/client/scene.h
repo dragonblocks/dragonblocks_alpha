@@ -13,10 +13,13 @@ extern struct Scene
 	List objects;
 	pthread_mutex_t mtx;
 	GLuint prog;
-	GLint loc_MVP;
+	GLint loc_model;
+	GLint loc_VP;
 	GLint loc_daylight;
 	GLint loc_lightDir;
+	GLint loc_cameraPos;
 	GLint max_texture_units;
+	mat4x4 VP;
 	mat4x4 projection;
 	f32 fov;
 	f32 render_distance;

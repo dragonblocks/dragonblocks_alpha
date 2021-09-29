@@ -243,5 +243,7 @@ void sky_render()
 	glUniformMatrix4fv(sky.clouds_loc_VP, 1, GL_FALSE, VP[0]);
 	glUniform1f(sky.clouds_loc_daylight, daylight);
 	mesh_render(sky.clouds_mesh);
+
+	glDepthFunc(GL_LESS);
 }
 #pragma GCC diagnostic pop

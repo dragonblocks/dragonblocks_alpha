@@ -24,9 +24,11 @@ bool scene_init()
 		return false;
 	}
 
-	scene.loc_MVP = glGetUniformLocation(scene.prog, "MVP");
+	scene.loc_model = glGetUniformLocation(scene.prog, "model");
+	scene.loc_VP = glGetUniformLocation(scene.prog, "VP");
 	scene.loc_daylight = glGetUniformLocation(scene.prog, "daylight");
 	scene.loc_lightDir = glGetUniformLocation(scene.prog, "lightDir");
+	scene.loc_cameraPos = glGetUniformLocation(scene.prog, "cameraPos");
 
 	GLint texture_indices[scene.max_texture_units];
 	for (GLint i = 0; i < scene.max_texture_units; i++)
@@ -35,7 +37,7 @@ bool scene_init()
 	glProgramUniform1iv(scene.prog, glGetUniformLocation(scene.prog, "textures"), scene.max_texture_units, texture_indices);
 
 	scene.fov = 86.1f;
-	scene.render_distance = 255.0f;
+	scene.render_distance = 255.0f + 32.0f;
 
 	return true;
 }
@@ -63,8 +65,7 @@ void scene_render()
 {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-	mat4x4 view_proj;
-	mat4x4_mul(view_proj, scene.projection, camera.view);
+	mat4x4_mul(scene.VP, scene.projection, camera.view);
 
 	vec4 base_sunlight_dir = {0.0f, 0.0f, -1.0f, 1.0f};
 	vec4 sunlight_dir;
@@ -75,8 +76,10 @@ void scene_render()
 #pragma GCC diagnostic pop
 
 	glUseProgram(scene.prog);
-	glProgramUniform3f(scene.prog, scene.loc_lightDir, sunlight_dir[0], sunlight_dir[1], sunlight_dir[2]);
-	glProgramUniform1f(scene.prog, scene.loc_daylight, get_daylight());
+	glUniformMatrix4fv(scene.loc_VP, 1, GL_FALSE, scene.VP[0]);
+	glUniform3f(scene.loc_lightDir, sunlight_dir[0], sunlight_dir[1], sunlight_dir[2]);
+	glUniform3f(scene.loc_cameraPos, camera.eye[0], camera.eye[1], camera.eye[2]);
+	glUniform1f(scene.loc_daylight, get_daylight());
 
 	for (ListPair **pairptr = &scene.objects.first; *pairptr != NULL; ) {
 		ListPair *pair = *pairptr;
@@ -88,7 +91,7 @@ void scene_render()
 			free(pair);
 			object_delete(obj);
 		} else {
-			object_render(obj, view_proj, scene.loc_MVP);
+			object_render(obj);
 			pairptr = &pair->next;
 		}
 	}

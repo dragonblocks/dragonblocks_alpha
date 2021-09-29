@@ -67,6 +67,6 @@ void object_set_texture(Object *obj, Texture *texture);
 void object_add_vertex(Object *obj, Vertex3D *vertex);
 bool object_add_to_scene(Object *obj);
 void object_transform(Object *obj);
-void object_render(Object *obj, mat4x4 view_proj, GLint loc_MVP);
+void object_render(Object *obj);
 
 #endif

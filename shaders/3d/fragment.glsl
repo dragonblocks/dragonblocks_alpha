@@ -1,3 +1,4 @@
+in vec3 fragmentPosition;
 in vec3 fragmentNormal;
 in float fragmentTextureIndex;
 in vec2 fragmentTextureCoords;
@@ -7,6 +8,7 @@ out vec4 outColor;
 
 uniform float daylight;
 uniform vec3 lightDir;
+uniform vec3 cameraPos;
 uniform sampler2D textures[MAX_TEXTURE_UNITS];
 
 vec3 hsv2rgb(vec3 c)
@@ -19,11 +21,15 @@ vec3 hsv2rgb(vec3 c)
 void main()
 {
 	vec3 lightColor = vec3(1.0);
+	vec3 fogColor = vec3(0x87, 0xCE, 0xEB) / vec3(0xFF);
 
-	vec3 ambient = mix(0.2, 0.8, daylight) * lightColor;
-	vec3 diffuse = 0.2 * daylight * clamp(dot(normalize(fragmentNormal), normalize(lightDir)), 0.0, 1.0) * lightColor;
+	float ambientStrength = mix(0.3, 0.7, daylight);
+
+	vec3 ambient = ambientStrength * lightColor;
+	vec3 diffuse = 0.3 * daylight * clamp(dot(normalize(fragmentNormal), normalize(lightDir)), 0.0, 1.0) * lightColor;
 
 	vec3 light = ambient + diffuse;
 
 	outColor = texture(textures[int(fragmentTextureIndex + 0.5)], fragmentTextureCoords) * vec4(hsv2rgb(vec3(fragmentColor)), 1.0) * vec4(light, 1.0);
+	outColor.rgb = mix(outColor.rgb, ambientStrength * vec3(fogColor), clamp(length(fragmentPosition - cameraPos) / 255.0, 0.0, 1.0));
 }
