@@ -61,7 +61,7 @@ void scene_add_object(Object *obj)
 	pthread_mutex_unlock(&scene.mtx);
 }
 
-void scene_render()
+void scene_render(f64 dtime)
 {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
@@ -91,7 +91,7 @@ void scene_render()
 			free(pair);
 			object_delete(obj);
 		} else {
-			object_render(obj);
+			object_render(obj, dtime);
 			pairptr = &pair->next;
 		}
 	}

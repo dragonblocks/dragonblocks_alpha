@@ -28,7 +28,7 @@ extern struct Scene
 bool scene_init();
 void scene_deinit();
 void scene_add_object(Object *obj);
-void scene_render();
+void scene_render(f64 dtime);
 void scene_on_resize(int width, int height);
 GLuint scene_get_max_texture_units();
 void scene_get_view_proj(mat4x4 target);

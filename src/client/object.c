@@ -60,6 +60,8 @@ Object *object_create()
 	obj->frustum_culling = false;
 	obj->current_face = NULL;
 	obj->faces = array_create(sizeof(ObjectFace));
+	obj->on_render = NULL;
+	obj->extra = NULL;
 
 	return obj;
 }
@@ -204,8 +206,11 @@ static bool inside_frustum(aabb3f32 box, mat4x4 MVP)
 #pragma GCC diagnostic pop
 
 
-void object_render(Object *obj)
+void object_render(Object *obj, f64 dtime)
 {
+	if (obj->on_render)
+		obj->on_render(obj, dtime);
+
 	if (! obj->visible)
 		return;
 

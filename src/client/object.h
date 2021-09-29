@@ -45,7 +45,7 @@ typedef struct
 	Array vertices;
 } ObjectFace;
 
-typedef struct
+typedef struct Object
 {
 	v3f32 pos, rot, scale;
 	f32 angle;
@@ -59,6 +59,8 @@ typedef struct
 	aabb3f32 box;
 	ObjectFace *current_face;
 	Array faces;
+	void (*on_render)(struct Object *obj, f64 dtime);
+	void *extra;
 } Object;
 
 Object *object_create();
@@ -67,6 +69,6 @@ void object_set_texture(Object *obj, Texture *texture);
 void object_add_vertex(Object *obj, Vertex3D *vertex);
 bool object_add_to_scene(Object *obj);
 void object_transform(Object *obj);
-void object_render(Object *obj);
+void object_render(Object *obj, f64 dtime);
 
 #endif

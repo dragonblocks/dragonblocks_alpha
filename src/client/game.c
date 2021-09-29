@@ -39,7 +39,7 @@ static void crosshair_init()
 	});
 }
 
-static void render()
+static void render(f64 dtime)
 {
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_ALPHA_TEST);
@@ -53,7 +53,7 @@ static void render()
 	glFrontFace(GL_CCW);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	scene_render();
+	scene_render(dtime);
 
 	glDisable(GL_CULL_FACE);
 	sky_render();
@@ -90,7 +90,7 @@ static void game_loop(Client *client)
 		debug_menu_update_daylight();
 		debug_menu_update_sun_angle();
 
-		render();
+		render(dtime);
 
 		glfwSwapBuffers(window.handle);
 		glfwPollEvents();
@@ -190,7 +190,7 @@ void take_screenshot()
 
 	// render scene
 	glBindFramebuffer(GL_FRAMEBUFFER, FBOs[0]);
-	render();
+	render(0.0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// blit AA-buffer into no-AA buffer

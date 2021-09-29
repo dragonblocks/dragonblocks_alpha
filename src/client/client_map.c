@@ -42,21 +42,6 @@ static void *meshgen_thread(unused void *arg)
 	return NULL;
 }
 
-// enqueue mesh to block update queue
-static void schedule_update_block_mesh(MapBlock *block)
-{
-	if (! block)
-		return;
-
-	pthread_mutex_lock(&block->mtx);
-	MapBlockExtraData *extra = block->extra;
-	if (! extra->queue) {
-		extra->queue = true;
-		queue_enqueue(client_map.queue, block);
-	}
-	pthread_mutex_unlock(&block->mtx);
-}
-
 // sync functions
 
 // send block request command to server
@@ -229,12 +214,27 @@ void client_map_block_received(MapBlock *block)
 		extra->state = MBS_FRESH;
 	pthread_mutex_unlock(&block->mtx);
 
-	schedule_update_block_mesh(block);
+	client_map_schedule_update_block_mesh(block);
 
-	schedule_update_block_mesh(map_get_block(client_map.map, (v3s32) {block->pos.x + 1, block->pos.y + 0, block->pos.z + 0}, false));
-	schedule_update_block_mesh(map_get_block(client_map.map, (v3s32) {block->pos.x + 0, block->pos.y + 1, block->pos.z + 0}, false));
-	schedule_update_block_mesh(map_get_block(client_map.map, (v3s32) {block->pos.x + 0, block->pos.y + 0, block->pos.z + 1}, false));
-	schedule_update_block_mesh(map_get_block(client_map.map, (v3s32) {block->pos.x - 1, block->pos.y - 0, block->pos.z - 0}, false));
-	schedule_update_block_mesh(map_get_block(client_map.map, (v3s32) {block->pos.x - 0, block->pos.y - 1, block->pos.z - 0}, false));
-	schedule_update_block_mesh(map_get_block(client_map.map, (v3s32) {block->pos.x - 0, block->pos.y - 0, block->pos.z - 1}, false));
+	client_map_schedule_update_block_mesh(map_get_block(client_map.map, (v3s32) {block->pos.x + 1, block->pos.y + 0, block->pos.z + 0}, false));
+	client_map_schedule_update_block_mesh(map_get_block(client_map.map, (v3s32) {block->pos.x + 0, block->pos.y + 1, block->pos.z + 0}, false));
+	client_map_schedule_update_block_mesh(map_get_block(client_map.map, (v3s32) {block->pos.x + 0, block->pos.y + 0, block->pos.z + 1}, false));
+	client_map_schedule_update_block_mesh(map_get_block(client_map.map, (v3s32) {block->pos.x - 1, block->pos.y - 0, block->pos.z - 0}, false));
+	client_map_schedule_update_block_mesh(map_get_block(client_map.map, (v3s32) {block->pos.x - 0, block->pos.y - 1, block->pos.z - 0}, false));
+	client_map_schedule_update_block_mesh(map_get_block(client_map.map, (v3s32) {block->pos.x - 0, block->pos.y - 0, block->pos.z - 1}, false));
+}
+
+// enqueue block to mesh update queue
+void client_map_schedule_update_block_mesh(MapBlock *block)
+{
+	if (! block)
+		return;
+
+	pthread_mutex_lock(&block->mtx);
+	MapBlockExtraData *extra = block->extra;
+	if (! extra->queue) {
+		extra->queue = true;
+		queue_enqueue(client_map.queue, block);
+	}
+	pthread_mutex_unlock(&block->mtx);
 }

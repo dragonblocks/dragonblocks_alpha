@@ -39,5 +39,6 @@ void client_map_set_simulation_distance(u32 simulation_distance);	// update simu
 void client_map_start();											// start meshgen and sync threads
 void client_map_stop();												// stop meshgen and sync threads
 void client_map_block_received(MapBlock *block);					// called when a block was actually recieved from server
+void client_map_schedule_update_block_mesh(MapBlock *block);		// enqueue block to mesh update queue
 
 #endif
