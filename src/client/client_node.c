@@ -23,8 +23,8 @@ static void render_grass(v3s32 pos, unused MapNode *node, Vertex3D *vertex, unus
 
 static void render_stone(v3s32 pos, unused MapNode *node, Vertex3D *vertex, unused int f, unused int v)
 {
-	vertex->textureCoordinates.s += smooth2d(U32(pos.x), U32(pos.z), 0, seed + SO_TEXTURE_OFFSET_S);
-	vertex->textureCoordinates.t += smooth2d(U32(pos.x), U32(pos.z), 0, seed + SO_TEXTURE_OFFSET_T);
+	vertex->textureCoordinates.s += noise2d(pos.x, pos.z, 0, seed + SO_TEXTURE_OFFSET_S);
+	vertex->textureCoordinates.t += noise2d(pos.x, pos.z, 0, seed + SO_TEXTURE_OFFSET_T);
 }
 
 static void render_wood(unused v3s32 pos, unused MapNode *node, Vertex3D *vertex, int f, unused int v)
