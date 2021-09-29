@@ -21,7 +21,7 @@ vec3 hsv2rgb(vec3 c)
 void main()
 {
 	vec3 lightColor = vec3(1.0);
-	vec3 fogColor = vec3(0x87, 0xCE, 0xEB) / vec3(0xFF);
+	vec3 fogColor = mix(vec3(0x03, 0x0A, 0x1A), vec3(0x87, 0xCE, 0xEB), daylight) / vec3(0xFF);
 
 	float ambientStrength = mix(0.3, 0.7, daylight);
 
@@ -31,5 +31,5 @@ void main()
 	vec3 light = ambient + diffuse;
 
 	outColor = texture(textures[int(fragmentTextureIndex + 0.5)], fragmentTextureCoords) * vec4(hsv2rgb(vec3(fragmentColor)), 1.0) * vec4(light, 1.0);
-	outColor.rgb = mix(outColor.rgb, ambientStrength * vec3(fogColor), clamp(length(fragmentPosition - cameraPos) / 255.0, 0.0, 1.0));
+	outColor.rgb = mix(outColor.rgb, ambientStrength * fogColor, clamp(length(fragmentPosition - cameraPos) / 255.0, 0.0, 1.0));
 }
