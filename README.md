@@ -55,15 +55,23 @@ both the client and the server depend on ZLib.
 sudo apt install zlib1g
 ```
 
+## Setup Requirements
+Dragonblocks Alpha targets PCs only. Non x86-64 platforms may work, however there is no guarantee whatsoever.
+You need a POSIX system conforming to the ISO C and POSIX 2008 standards. However, so far only GNU/Linux systems, in particular Ubuntu and Debian, have been tested.
+The minimum OpenGL version is 4.6.0. Dragonblocks has been tested on Intel Integrated and NVIDIA GPUs, however other graphics cards should work as well.
+A PC with at least 4 CPU cores is recommended, but not necessarly required.
+
 ## Current Features
 - Multiplayer
 - Map generation with mountains, snow, temperature and humidity, dynamic grass color, oceans and beaches, vulcanos
 - Physics
 - FPS Camera
-- Mipmapping, Antialiasing, Shaders
+- Mipmapping, Antialiasing, Face Culling, Diffuse Lighting, Skybox, Fog
+- Taking screenshots
+- Daylight cycle
 - GUI
-- Saving the map to a SQLite3 database
-- Multithreaded map generation, mesh generation and network
+- Saving map, player positions and other data to a SQLite3 database
+- Multithreaded map generation, mesh generation and networking
 - Handlers for SIGINT und SIGTERM (just Ctrl+C to shut down the server)
 
 ## Usage
