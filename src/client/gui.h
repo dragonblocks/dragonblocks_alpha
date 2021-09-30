@@ -52,7 +52,7 @@ void gui_deinit();
 void gui_on_resize(int width, int height);
 void gui_render();
 GUIElement *gui_add(GUIElement *parent, GUIElementDefinition def);
-void gui_set_text(GUIElement *element, const char *text);
+void gui_set_text(GUIElement *element, char *text);
 void gui_update_transform(GUIElement *element);
 
 extern GUIElement gui_root;

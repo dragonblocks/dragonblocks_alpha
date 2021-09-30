@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <zlib.h>
+#include <dragonport/asprintf.h>
 #include "map.h"
 #include "util.h"
 
@@ -55,14 +56,6 @@ char *address_string(struct sockaddr_in6 *addr)
 	char *result = malloc(strlen(address) + 1 + strlen(port) + 1);
 	sprintf(result, "%s:%s", address, port);
 	return result;
-}
-
-// convert #RRGGBB color to v3f32
-v3f32 html_to_v3f32(const char *html)
-{
-	unsigned int r, g, b;
-	sscanf(html, "#%2x%2x%2x", &r, &g, &b);
-	return (v3f32) {(f32) r / 255.0f, (f32) g / 255.0f, (f32) b / 255.0f};
 }
 
 // compress data using ZLib and store result(buffer allocated by malloc) in compressed
@@ -118,4 +111,14 @@ bool within_simulation_distance(v3f64 player_pos, v3s32 block_pos, u32 simulatio
 f64 clamp(f64 v, f64 min, f64 max)
 {
 	return v < min ? min : v > max ? max : v;
+}
+
+char *format_string(const char *format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	char *ptr;
+	vasprintf(&ptr, format, args);
+	va_end(args);
+	return ptr;
 }

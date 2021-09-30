@@ -286,6 +286,8 @@ GUIElement *gui_add(GUIElement *parent, GUIElementDefinition def)
 	if (element->def.text) {
 		element->def.text = strdup(element->def.text);
 		element->text = font_create(element->def.text);
+	} else {
+		element->text = NULL;
 	}
 
 	bintree_insert(&parent->children, &element->def.z_index, element);
@@ -300,14 +302,15 @@ GUIElement *gui_add(GUIElement *parent, GUIElementDefinition def)
 	return element;
 }
 
-void gui_set_text(GUIElement *element, const char *text)
+void gui_set_text(GUIElement *element, char *text)
 {
-	if (! element->def.text || strcmp(element->def.text, text)) {
-		element->def.text = strdup(text);
-		font_delete(element->text);
-		element->text = font_create(text);
-		gui_update_transform(element);
-	}
+	if (element->def.text)
+		free(element->def.text);
+
+	element->def.text = text;
+	font_delete(element->text);
+	element->text = font_create(text);
+	gui_update_transform(element);
 }
 
 // transform code
@@ -334,13 +337,11 @@ static void calculate_element_scale(GUIElement *element)
 
 	switch (element->def.scale_type) {
 		case GST_IMAGE:
-			assert(element->def.image);
 			element->scale.x *= element->def.image->width;
 			element->scale.y *= element->def.image->height;
 			break;
 
 		case GST_TEXT:
-			assert(element->text);
 			element->scale.x *= element->text->size.x;
 			element->scale.y *= element->text->size.y;
 			break;
@@ -405,8 +406,8 @@ static void list_calculate_element_scale(void *key, unused void *value, unused v
 static void calculate_element_transform(GUIElement *element)
 {
 	element->pos = (v2f32) {
-		element->parent->pos.x + element->def.offset.x + element->def.pos.x * element->parent->scale.x - element->def.align.x * element->scale.x,
-		element->parent->pos.y + element->def.offset.y + element->def.pos.y * element->parent->scale.y - element->def.align.y * element->scale.y,
+		floor(element->parent->pos.x + element->def.offset.x + element->def.pos.x * element->parent->scale.x - element->def.align.x * element->scale.x),
+		floor(element->parent->pos.y + element->def.offset.y + element->def.pos.y * element->parent->scale.y - element->def.align.y * element->scale.y),
 	};
 
 	mat4x4_translate(element->transform, element->pos.x - element->def.margin.x, element->pos.y - element->def.margin.y, 0.0f);

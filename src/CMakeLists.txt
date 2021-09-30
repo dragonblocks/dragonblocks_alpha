@@ -40,6 +40,7 @@ set(SOURCES_COMMON
 	signal_handlers.c
 	util.c
 	"${DEPS_DIR}/dragontype/implementation.c"
+	"${DEPS_DIR}/dragonport/asprintf.c"
 	"${DEPS_DIR}/perlin/perlin.c"
 )
 

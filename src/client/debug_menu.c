@@ -8,6 +8,7 @@
 #include "day.h"
 #include "environment.h"
 #include "perlin.h"
+#include "util.h"
 #include "version.h"
 
 typedef enum
@@ -51,7 +52,7 @@ void debug_menu_init()
 			.scale = {1.0f, 1.0f},
 			.scale_type = GST_TEXT,
 			.affect_parent_scale = false,
-			.text = "",
+			.text = strdup(""),
 			.image = NULL,
 			.text_color = (v4f32) {1.0f, 1.0f, 1.0f, 1.0f},
 			.bg_color = (v4f32) {0.0f, 0.0f, 0.0f, 0.0f},
@@ -71,122 +72,87 @@ void debug_menu_toggle()
 
 void debug_menu_update_version()
 {
-	char text[BUFSIZ];
-	sprintf(text, "Dragonblocks Alpha %s", VERSION);
-	gui_set_text(gui_elements[DME_VERSION], text);
+	gui_set_text(gui_elements[DME_VERSION], format_string("Dragonblocks Alpha %s", VERSION));
 }
 
 void debug_menu_update_fps(int fps)
 {
-	char text[BUFSIZ];
-	sprintf(text, "%d FPS", fps);
-	gui_set_text(gui_elements[DME_FPS], text);
+	gui_set_text(gui_elements[DME_FPS], format_string("%d FPS", fps));
 }
 
 void debug_menu_update_pos()
 {
-	char text[BUFSIZ];
-	sprintf(text, "(%.1f %.1f %.1f)", client_player.pos.x, client_player.pos.y, client_player.pos.z);
-	gui_set_text(gui_elements[DME_POS], text);
+	gui_set_text(gui_elements[DME_POS], format_string("(%.1f %.1f %.1f)", client_player.pos.x, client_player.pos.y, client_player.pos.z));
 }
 
 void debug_menu_update_yaw()
 {
-	char text[BUFSIZ];
-	sprintf(text, "yaw = %.1f", client_player.yaw / M_PI * 180.0);
-	gui_set_text(gui_elements[DME_YAW], text);
+	gui_set_text(gui_elements[DME_YAW], format_string("yaw = %.1f", client_player.yaw / M_PI * 180.0));
 }
 
 void debug_menu_update_pitch()
 {
-	char text[BUFSIZ];
-	sprintf(text, "pitch = %.1f", client_player.pitch / M_PI * 180.0);
-	gui_set_text(gui_elements[DME_PITCH], text);
+	gui_set_text(gui_elements[DME_PITCH], format_string("pitch = %.1f", client_player.pitch / M_PI * 180.0));
 }
 
 void debug_menu_update_time()
 {
 	int hours, minutes;
 	split_time_of_day(&hours, &minutes);
-
-	char text[BUFSIZ];
-	sprintf(text, "%02d:%02d", hours, minutes);
-	gui_set_text(gui_elements[DME_TIME], text);
+	gui_set_text(gui_elements[DME_TIME], format_string("%02d:%02d", hours, minutes));
 }
 
 void debug_menu_update_daylight()
 {
-	char text[BUFSIZ];
-	sprintf(text, "daylight = %.2f", get_daylight());
-	gui_set_text(gui_elements[DME_DAYLIGHT], text);
+	gui_set_text(gui_elements[DME_DAYLIGHT], format_string("daylight = %.2f", get_daylight()));
 }
 
 void debug_menu_update_sun_angle()
 {
-	char text[BUFSIZ];
-	sprintf(text, "sun angle = %.1f", fmod(get_sun_angle() / M_PI * 180.0, 360.0));
-	gui_set_text(gui_elements[DME_SUN_ANGLE], text);
+	gui_set_text(gui_elements[DME_SUN_ANGLE], format_string("sun angle = %.1f", fmod(get_sun_angle() / M_PI * 180.0, 360.0)));
 }
 
 void debug_menu_update_humidity()
 {
-	char text[BUFSIZ];
-	sprintf(text, "humidity = %.2f", get_humidity((v3s32) {client_player.pos.x, client_player.pos.y, client_player.pos.z}));
-	gui_set_text(gui_elements[DME_HUMIDITY], text);
+	gui_set_text(gui_elements[DME_HUMIDITY], format_string("humidity = %.2f", get_humidity((v3s32) {client_player.pos.x, client_player.pos.y, client_player.pos.z})));
 }
 
 void debug_menu_update_temperature()
 {
-	char text[BUFSIZ];
-	sprintf(text, "temperature = %.2f", get_temperature((v3s32) {client_player.pos.x, client_player.pos.y, client_player.pos.z}));
-	gui_set_text(gui_elements[DME_TEMPERATURE], text);
+	gui_set_text(gui_elements[DME_TEMPERATURE], format_string("temperature = %.2f", get_temperature((v3s32) {client_player.pos.x, client_player.pos.y, client_player.pos.z})));
 }
 
 void debug_menu_update_seed()
 {
-	char text[BUFSIZ];
-	sprintf(text, "seed = %d", seed);
-	gui_set_text(gui_elements[DME_SEED], text);
+	gui_set_text(gui_elements[DME_SEED], format_string("seed = %d", seed));
 }
 
 void debug_menu_update_flight()
 {
-	char text[BUFSIZ];
-	sprintf(text, "flight: %s", client_player.fly ? "enabled" : "disabled");
-	gui_set_text(gui_elements[DME_FLIGHT], text);
+	gui_set_text(gui_elements[DME_FLIGHT], format_string("flight: %s", client_player.fly ? "enabled" : "disabled"));
 }
 
 void debug_menu_update_collision()
 {
-	char text[BUFSIZ];
-	sprintf(text, "collision: %s", client_player.collision ? "enabled" : "disabled");
-	gui_set_text(gui_elements[DME_COLLISION], text);
+	gui_set_text(gui_elements[DME_COLLISION], format_string("collision: %s", client_player.collision ? "enabled" : "disabled"));
 }
 
 void debug_menu_update_timelapse()
 {
-	char text[BUFSIZ];
-	sprintf(text, "timelapse: %s", timelapse ? "enabled" : "disabled");
-	gui_set_text(gui_elements[DME_TIMELAPSE], text);
+	gui_set_text(gui_elements[DME_TIMELAPSE], format_string("timelapse: %s", timelapse ? "enabled" : "disabled"));
 }
 
 void debug_menu_update_fullscreen()
 {
-	char text[BUFSIZ];
-	sprintf(text, "fullscreen: %s", window.fullscreen ? "enabled" : "disabled");
-	gui_set_text(gui_elements[DME_FULLSCREEN], text);
+	gui_set_text(gui_elements[DME_FULLSCREEN], format_string("fullscreen: %s", window.fullscreen ? "enabled" : "disabled"));
 }
 
 void debug_menu_update_opengl()
 {
-	char text[BUFSIZ];
-	sprintf(text, "OpenGL %s", glGetString(GL_VERSION));
-	gui_set_text(gui_elements[DME_OPENGL], text);
+	gui_set_text(gui_elements[DME_OPENGL], format_string("OpenGL %s", glGetString(GL_VERSION)));
 }
 
 void debug_menu_update_gpu()
 {
-	char text[BUFSIZ];
-	sprintf(text, "%s", glGetString(GL_RENDERER));
-	gui_set_text(gui_elements[DME_GPU], text);
+	gui_set_text(gui_elements[DME_GPU], format_string("%s", glGetString(GL_RENDERER)));
 }

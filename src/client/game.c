@@ -83,7 +83,7 @@ static void game_loop(Client *client)
 
 		frames++;
 
-		input_tick();
+		input_tick(dtime);
 		client_player_tick(dtime);
 
 		debug_menu_update_time();
@@ -157,7 +157,7 @@ bool game(Client *client)
 	return true;
 }
 
-void take_screenshot()
+char *take_screenshot()
 {
 	// renderbuffer for depth & stencil buffer
 	GLuint RBO;
@@ -217,6 +217,8 @@ void take_screenshot()
 	glDeleteRenderbuffers(1, &RBO);
 	glDeleteTextures(2, textures);
 	glDeleteFramebuffers(2, FBOs);
+
+	return strdup(filename);
 }
 
 void game_on_resize(int width, int height)

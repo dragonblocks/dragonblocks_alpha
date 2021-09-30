@@ -23,10 +23,10 @@ void syscall_error(const char *err);																						// print system call r
 void internal_error(const char *err);																						// print general error message and exit
 char *read_string(int fd, size_t bufsiz);																					// read from fd until \0 or EOF terminator
 char *address_string(struct sockaddr_in6 *addr);																			// convert IPv6 address to human readable, return allocated buffer
-v3f32 html_to_v3f32(const char *html);																						// convert #RRGGBB color to v3f32
 void my_compress(const void *uncompressed, size_t uncompressed_size, char **compressed, size_t *compressed_size);			// compress data using ZLib and store result(buffer allocated by malloc) in compressed
 bool my_decompress(const char *compressed, size_t compressed_size, void *decompressed, size_t expected_decompressed_size);	// decompress data and put result into decompressed, return false if decompressed size does not match expected_decompressed_size
 bool within_simulation_distance(v3f64 player_pos, v3s32 block_pos, u32 simulation_distance);								// return true if a player is close enough to a block to access it
 f64 clamp(f64 v, f64 min, f64 max);
+char *format_string(const char *format, ...);
 
 #endif

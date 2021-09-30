@@ -13,3 +13,6 @@
 [submodule "deps/endian.h"]
 	path = deps/endian.h
 	url = https://github.com/mikepb/endian.h
+[submodule "deps/dragonport"]
+	path = deps/dragonport
+	url = https://github.com/dragonblocks/dragonport

@@ -1,4 +1,6 @@
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "client/camera.h"
 #include "client/client.h"
 #include "client/client_player.h"
@@ -8,6 +10,7 @@
 #include "client/input.h"
 #include "client/window.h"
 #include "day.h"
+#include "util.h"
 
 typedef struct
 {
@@ -19,6 +22,7 @@ typedef struct
 static struct
 {
 	GUIElement *pause_menu;
+	GUIElement *status_message;
 	bool paused;
 	KeyListener pause_listener;
 	KeyListener fullscreen_listener;
@@ -94,8 +98,19 @@ static KeyListener create_key_listener(int key)
 	};
 }
 
-void input_tick()
+static void set_status_message(char *message)
 {
+	gui_set_text(input.status_message, message);
+	input.status_message->def.text_color.w = 2.0f;
+}
+
+void input_tick(f64 dtime)
+{
+	if (input.status_message->def.text_color.w > 1.0f)
+		input.status_message->def.text_color.w -= dtime * 1.0f;
+	else if (input.status_message->def.text_color.w > 0.0f)
+		input.status_message->def.text_color.w -= dtime * 1.0f;
+
 	do_key_listener(&input.pause_listener);
 	do_key_listener(&input.fullscreen_listener);
 
@@ -127,11 +142,13 @@ void input_tick()
 		if (input.fly_listener.fired) {
 			client_player.fly = ! client_player.fly;
 			debug_menu_update_flight();
+			set_status_message(format_string("Flight %s", client_player.fly ? "Enabled" : "Disabled"));
 		}
 
 		if (input.collision_listener.fired) {
 			client_player.collision = ! client_player.collision;
 			debug_menu_update_collision();
+			set_status_message(format_string("Collision %s", client_player.collision ? "Enabled" : "Disabled"));
 		}
 
 		if (input.timelapse_listener.fired) {
@@ -139,13 +156,17 @@ void input_tick()
 			timelapse = ! timelapse;
 			set_time_of_day(current_time);
 			debug_menu_update_timelapse();
+			set_status_message(format_string("Timelapse %s", timelapse ? "Enabled" : "Disabled"));
 		}
 
 		if (input.debug_menu_listener.fired)
 			debug_menu_toggle();
 
-		if (input.screenshot_listener.fired)
-			take_screenshot();
+		if (input.screenshot_listener.fired) {
+			char *screenshot_filename = take_screenshot();
+			set_status_message(format_string("Screenshot saved to %s", screenshot_filename));
+			free(screenshot_filename);
+		}
 	}
 
 	client_player.velocity.x = 0.0f;
@@ -190,6 +211,21 @@ void input_init()
 		.image = NULL,
 		.text_color = {0.0f, 0.0f, 0.0f, 0.0f},
 		.bg_color = {0.0f, 0.0f, 0.0f, 0.4f},
+	});
+
+	input.status_message = gui_add(&gui_root, (GUIElementDefinition) {
+		.pos = {0.5f, 0.25f},
+		.z_index = 0.1f,
+		.offset = {0, 0},
+		.margin = {0, 0},
+		.align = {0.5f, 0.5f},
+		.scale = {1.0f, 1.0f},
+		.scale_type = GST_TEXT,
+		.affect_parent_scale = false,
+		.text = strdup(""),
+		.image = NULL,
+		.text_color = {1.0f, 0.91f, 0.13f, 0.0f},
+		.bg_color = {0.0f, 0.0f, 0.0f, 0.0f},
 	});
 
 	glfwSetInputMode(window.handle, GLFW_STICKY_KEYS, GL_TRUE);
