@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "client/camera.h"
 #include "client/client.h"
+#include "client/frustum.h"
 #include "client/scene.h"
 #include "client/shader.h"
 #include "day.h"
@@ -74,6 +75,8 @@ void scene_render(f64 dtime)
 	mat4x4_rotate(sunlight_mat, sunlight_mat, 1.0f, 0.0f, 0.0f, get_sun_angle() + M_PI / 2.0f);
 	mat4x4_mul_vec4(sunlight_dir, sunlight_mat, base_sunlight_dir);
 #pragma GCC diagnostic pop
+
+	frustum_update(scene.VP);
 
 	glUseProgram(scene.prog);
 	glUniformMatrix4fv(scene.loc_VP, 1, GL_FALSE, scene.VP[0]);

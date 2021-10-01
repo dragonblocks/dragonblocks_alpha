@@ -63,10 +63,10 @@ A PC with at least 4 CPU cores is recommended, but not necessarly required.
 
 ## Current Features
 - Multiplayer
-- Map generation with mountains, snow, temperature and humidity, dynamic grass color, oceans and beaches, vulcanos
+- Mountains, snow, temperature and humidity, dynamic grass color, oceans and beaches, vulcanos, boulders
 - Physics
 - FPS Camera
-- Mipmapping, Antialiasing, Face Culling, Diffuse Lighting, Skybox, Fog
+- Mipmapping, Antialiasing, Face Culling, Frustum Culling, Diffuse Lighting, Skybox, Fog
 - Taking screenshots
 - Daylight cycle
 - GUI

@@ -85,8 +85,8 @@ void blockmesh_make(MapBlock *block)
 
 	obj->pos = (v3f32) {block->pos.x * MAPBLOCK_SIZE + half_block_size + 0.5f, block->pos.y * MAPBLOCK_SIZE + half_block_size + 0.5f, block->pos.z * MAPBLOCK_SIZE + half_block_size + 0.5f};
 	obj->scale = extra->obj ? extra->obj->scale : (v3f32) {0.1f, 0.1f, 0.1f};
-	obj->frustum_culling = false;
-	obj->box = (aabb3f32) {{-half_block_size, -half_block_size, -half_block_size}, {half_block_size, half_block_size, half_block_size}};
+	obj->frustum_culling = true;
+	obj->box = (aabb3f32) {{-half_block_size - 1.0f, -half_block_size - 1.0f, -half_block_size - 1.0f}, {half_block_size + 1.0f, half_block_size + 1.0f, half_block_size + 1.0f}};
 	obj->on_render = (obj->scale.x == 1.0f) ? NULL : &animate_mapblock_mesh;
 	obj->extra = block;
 

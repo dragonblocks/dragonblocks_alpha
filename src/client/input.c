@@ -101,13 +101,13 @@ static KeyListener create_key_listener(int key)
 static void set_status_message(char *message)
 {
 	gui_set_text(input.status_message, message);
-	input.status_message->def.text_color.w = 2.0f;
+	input.status_message->def.text_color.w = 1.01f;
 }
 
 void input_tick(f64 dtime)
 {
 	if (input.status_message->def.text_color.w > 1.0f)
-		input.status_message->def.text_color.w -= dtime * 1.0f;
+		input.status_message->def.text_color.w = 1.0f;
 	else if (input.status_message->def.text_color.w > 0.0f)
 		input.status_message->def.text_color.w -= dtime * 1.0f;
 
