@@ -52,7 +52,7 @@ void frustum_update(mat4x4 view_proj)
 		for (Plane a = PLANE_LEFT; a <= PLANE_RIGHT; a++) {
 			for (Plane b = PLANE_BOTTOM; b <= PLANE_TOP; b++) {
 				float d = -1.0f / vec3_mul_inner(frustum.planes[a], crosses[frustum.cross_indices[b][c]]);
-				vec3 w = {frustum.planes[a][4], frustum.planes[b][4], frustum.planes[c][4]};
+				vec3 w = {frustum.planes[a][3], frustum.planes[b][3], frustum.planes[c][3]};
 				float *res = frustum.points[j++];
 
 				vec3 res_1_cross = {-crosses[frustum.cross_indices[a][c]][0], -crosses[frustum.cross_indices[a][c]][1], -crosses[frustum.cross_indices[a][c]][2]};
