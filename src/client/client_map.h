@@ -6,6 +6,7 @@
 #include <dragontype/queue.h>
 #include "map.h"
 #include "client/object.h"
+#define NUM_MESHGEN_THREADS 4
 
 typedef enum
 {
@@ -27,7 +28,7 @@ extern struct ClientMap
 	Map *map;										// map object
 	Queue *queue;									// MapBlock * queue (thread safe)
 	bool cancel;									// used to notify meshgen and sync thread about quit
-	pthread_t meshgen_thread;						// consumer thread for meshgen queue
+	pthread_t meshgen_threads[NUM_MESHGEN_THREADS];	// consumer threads for meshgen queue
 	pthread_t sync_thread;							// this thread requests new / changed blocks from server
 	u32 simulation_distance;						// simulation distance sent by server
 	size_t blocks_count;							// cached number of facecache positions to process every sync step (matches simulation distance)

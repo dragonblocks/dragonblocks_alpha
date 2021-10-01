@@ -168,8 +168,11 @@ void client_map_init(Client *cli)
 	});
 	client_map.queue = queue_create();
 	client_map.cancel = false;
-	client_map.meshgen_thread = client_map.sync_thread = 0;
+	client_map.sync_thread = 0;
 	client_map_set_simulation_distance(10);
+
+	for (int i = 0; i < NUM_MESHGEN_THREADS; i++)
+		client_map.meshgen_threads[i] = 0;
 }
 
 // ClientMap singleton destructor
@@ -182,7 +185,9 @@ void client_map_deinit()
 // start meshgen and sync threads
 void client_map_start()
 {
-	pthread_create(&client_map.meshgen_thread, NULL, &meshgen_thread, NULL);
+	for (int i = 0; i < NUM_MESHGEN_THREADS; i++)
+		pthread_create(&client_map.meshgen_threads[i], NULL, &meshgen_thread, NULL);
+
 	pthread_create(&client_map.sync_thread, NULL, &sync_thread, NULL);
 }
 
@@ -191,8 +196,9 @@ void client_map_stop()
 {
 	client_map.cancel = true;
 
-	if (client_map.meshgen_thread)
-		pthread_join(client_map.meshgen_thread, NULL);
+	for (int i = 0; i < NUM_MESHGEN_THREADS; i++)
+		if (client_map.meshgen_threads[i])
+			pthread_join(client_map.meshgen_threads[i], NULL);
 
 	if (client_map.sync_thread)
 		pthread_join(client_map.sync_thread, NULL);

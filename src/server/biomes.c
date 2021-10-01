@@ -235,24 +235,25 @@ static Node generate_ocean(v3s32 pos, s32 diff, unused f64 humidity, unused f64 
 
 // hills biome
 
+static bool boulder_touching_ground(v3s32 pos, s32 diff)
+{
+	for (s32 dir = diff > 0 ? -1 : +1; dir > 0 ? diff <= 0 : diff >= 0; pos.y += dir, diff += dir) {
+		if (smooth3d(U32(pos.x) / 12.0, U32(pos.y) / 6.0, U32(pos.z) / 12.0, 0, seed + SO_BOULDER) < 0.8)
+			return false;
+	}
+
+	return true;
+}
+
 static s32 height_hills(unused v2s32 pos, unused f64 factor, s32 height, unused void *row_data, unused void *block_data)
 {
 	return height;
 }
 
-static Node generate_hills(v3s32 pos, s32 diff, unused f64 humidity, unused f64 temperature, unused f64 factor, unused MapBlock *block, List *changed_blocks, unused void *row_data, unused void *block_data)
+static Node generate_hills(v3s32 pos, s32 diff, unused f64 humidity, unused f64 temperature, unused f64 factor, unused MapBlock *block, unused List *changed_blocks, unused void *row_data, unused void *block_data)
 {
-	if (diff == 2 && noise2d(pos.x, pos.z, 0, seed + SO_BOULDER_CENTER) > 0.999) {
-		for (s8 bx = -1; bx <= 1; bx++) {
-			for (s8 by = -1; by <= 1; by++) {
-				for (s8 bz = -1; bz <= 1; bz++) {
-					v3s32 bpos = {pos.x + bx, pos.y + by, pos.z + bz};
-					if (noise3d(bpos.x, bpos.y, bpos.z, 0, seed + SO_BOULDER) > 0.0)
-						mapgen_set_node(bpos, map_node_create(NODE_STONE), MGS_BOULDERS, changed_blocks);
-				}
-			}
-		}
-	}
+	if (boulder_touching_ground(pos, diff))
+		return NODE_STONE;
 
 	if (diff <= -5)
 		return NODE_STONE;
