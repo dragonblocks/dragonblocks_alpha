@@ -5,7 +5,7 @@
 #include "client/client_map.h"
 #include "client/client_player.h"
 #include "util.h"
-#define MAX_BLOCK_REQUESTS 8
+#define MAX_BLOCK_REQUESTS 4
 
 struct ClientMap client_map;
 Client *client;

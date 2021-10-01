@@ -25,6 +25,7 @@ typedef enum
 	SO_VULCANO_HEIGHT,
 	SO_VULCANO_STONE,
 	SO_VULCANO_CRATER_TOP,
+	SO_HILLYNESS,
 } SeedOffset;
 
 extern s32 seed;
