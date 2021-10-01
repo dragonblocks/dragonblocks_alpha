@@ -56,6 +56,7 @@ typedef struct Object
 	bool visible;
 	bool wireframe;
 	bool frustum_culling;
+	bool transparent;
 	aabb3f32 box;
 	ObjectFace *current_face;
 	Array faces;
@@ -69,6 +70,7 @@ void object_set_texture(Object *obj, Texture *texture);
 void object_add_vertex(Object *obj, Vertex3D *vertex);
 bool object_add_to_scene(Object *obj);
 void object_transform(Object *obj);
-void object_render(Object *obj, f64 dtime);
+bool object_before_render(Object *obj, f64 dtime);
+void object_render(Object *obj);
 
 #endif

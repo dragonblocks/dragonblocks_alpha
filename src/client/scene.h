@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include <linmath.h/linmath.h>
+#include <dragontype/bintree.h>
 #include <dragontype/list.h>
 #include <dragontype/number.h>
 #include "client/object.h"
@@ -11,6 +12,7 @@
 extern struct Scene
 {
 	List objects;
+	Bintree render_objects;
 	pthread_mutex_t mtx;
 	GLuint prog;
 	GLint loc_model;

@@ -57,8 +57,9 @@ Object *object_create()
 	obj->meshes_count = 0;
 	obj->visible = true;
 	obj->wireframe = false;
-	obj->box = (aabb3f32) {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
 	obj->frustum_culling = false;
+	obj->transparent = false;
+	obj->box = (aabb3f32) {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
 	obj->current_face = NULL;
 	obj->faces = array_create(sizeof(ObjectFace));
 	obj->on_render = NULL;
@@ -182,21 +183,26 @@ void object_transform(Object *obj)
 #pragma GCC diagnostic pop
 }
 
-void object_render(Object *obj, f64 dtime)
+bool object_before_render(Object *obj, f64 dtime)
 {
 	if (obj->on_render)
 		obj->on_render(obj, dtime);
 
 	if (! obj->visible)
-		return;
+		return false;
 
 	if (obj->frustum_culling) {
 		aabb3f32 box = {v3f32_add(obj->box.min, obj->pos), v3f32_add(obj->box.max, obj->pos), };
 
 		 if (! frustum_is_visible(box))
-			return;
+			return false;
 	}
 
+	return true;
+}
+
+void object_render(Object *obj)
+{
 	glUniformMatrix4fv(scene.loc_model, 1, GL_FALSE, obj->transform[0]);
 
 	if (obj->wireframe)

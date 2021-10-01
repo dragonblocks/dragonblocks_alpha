@@ -10,9 +10,16 @@
 
 struct Scene scene;
 
+static int bintree_compare_f32(void *v1, void *v2, unused Bintree *tree)
+{
+	f32 diff = (*(f32 *) v2) - (*(f32 *) v1);
+	return CMPBOUNDS(diff);
+}
+
 bool scene_init()
 {
-	scene.objects = list_create(NULL),
+	scene.objects = list_create(NULL);
+	scene.render_objects = bintree_create(sizeof(f32), &bintree_compare_f32);
 	pthread_mutex_init(&scene.mtx, NULL);
 
 	glGetIntegerv(GL_MAX_TEXTURE_UNITS, &scene.max_texture_units);
@@ -38,7 +45,7 @@ bool scene_init()
 	glProgramUniform1iv(scene.prog, glGetUniformLocation(scene.prog, "textures"), scene.max_texture_units, texture_indices);
 
 	scene.fov = 86.1f;
-	scene.render_distance = 255.0f + 32.0f;
+	scene.render_distance = 255.0f;
 
 	return true;
 }
@@ -62,16 +69,25 @@ void scene_add_object(Object *obj)
 	pthread_mutex_unlock(&scene.mtx);
 }
 
+static void bintree_render_object(BintreeNode *node, unused void *arg)
+{
+	object_render(node->value);
+}
+
 void scene_render(f64 dtime)
 {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 	mat4x4_mul(scene.VP, scene.projection, camera.view);
+#pragma GCC diagnostic pop
 
 	vec4 base_sunlight_dir = {0.0f, 0.0f, -1.0f, 1.0f};
 	vec4 sunlight_dir;
 	mat4x4 sunlight_mat;
 	mat4x4_identity(sunlight_mat);
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 	mat4x4_rotate(sunlight_mat, sunlight_mat, 1.0f, 0.0f, 0.0f, get_sun_angle() + M_PI / 2.0f);
 	mat4x4_mul_vec4(sunlight_dir, sunlight_mat, base_sunlight_dir);
 #pragma GCC diagnostic pop
@@ -94,15 +110,24 @@ void scene_render(f64 dtime)
 			free(pair);
 			object_delete(obj);
 		} else {
-			object_render(obj, dtime);
+			f32 distance = sqrt(pow(obj->pos.x - camera.eye[0], 2) + pow(obj->pos.y - camera.eye[1], 2) + pow(obj->pos.z - camera.eye[2], 2));
+			if (distance < scene.render_distance && object_before_render(obj, dtime)) {
+				if (obj->transparent)
+					bintree_insert(&scene.render_objects, &distance, obj);
+				else
+					object_render(obj);
+			}
 			pairptr = &pair->next;
 		}
 	}
+
+	bintree_traverse(&scene.render_objects, BTT_INORDER, &bintree_render_object, NULL);
+	bintree_clear(&scene.render_objects, NULL, NULL);
 }
 
 void scene_on_resize(int width, int height)
 {
-	mat4x4_perspective(scene.projection, scene.fov / 180.0f * M_PI, (float) width / (float) height, 0.01f, scene.render_distance);
+	mat4x4_perspective(scene.projection, scene.fov / 180.0f * M_PI, (float) width / (float) height, 0.01f, scene.render_distance + 28.0f);
 }
 
 GLuint scene_get_max_texture_units()

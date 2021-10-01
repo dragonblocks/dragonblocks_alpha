@@ -273,7 +273,11 @@ static void render_element(BintreeNode *node, unused void *arg)
 
 void gui_render()
 {
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
 	bintree_traverse(&gui_root.children, BTT_INORDER, &render_element, NULL);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
 }
 
 GUIElement *gui_add(GUIElement *parent, GUIElementDefinition def)

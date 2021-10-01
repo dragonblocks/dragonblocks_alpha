@@ -228,6 +228,7 @@ void sky_render()
 	mat4x4 MVP;
 	mat4x4_mul(MVP, VP, model);
 
+	glDisable(GL_CULL_FACE);
 	glDepthFunc(GL_LEQUAL);
 
 	glUseProgram(sky.skybox_prog);
@@ -245,5 +246,6 @@ void sky_render()
 	mesh_render(sky.clouds_mesh);
 
 	glDepthFunc(GL_LESS);
+	glEnable(GL_CULL_FACE);
 }
 #pragma GCC diagnostic pop

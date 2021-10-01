@@ -53,12 +53,8 @@ static void render(f64 dtime)
 	glFrontFace(GL_CCW);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	scene_render(dtime);
-
-	glDisable(GL_CULL_FACE);
 	sky_render();
-
-	glDisable(GL_DEPTH_TEST);
+	scene_render(dtime);
 	gui_render();
 }
 

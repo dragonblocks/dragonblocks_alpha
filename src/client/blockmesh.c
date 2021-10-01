@@ -16,14 +16,23 @@ static s32 half_block_size = MAPBLOCK_SIZE / 2;
 
 static void make_vertices(Object *object, MapBlock *block, bool hide_edges)
 {
-	v3s32 node_bp = {block->pos.x * MAPBLOCK_SIZE, block->pos.y * MAPBLOCK_SIZE, block->pos.z * MAPBLOCK_SIZE};
+	object->visible = false;
+	v3s32 node_bp = {
+		block->pos.x * MAPBLOCK_SIZE,
+		block->pos.y * MAPBLOCK_SIZE,
+		block->pos.z * MAPBLOCK_SIZE
+	};
 
 	ITERATE_MAPBLOCK {
 		MapNode *node = &block->data[x][y][z];
 		ClientNodeDefintion *def = &client_node_definitions[node->type];
 
 		if (def->visibility != NV_NONE) {
-			v3f32 offset = {x - half_block_size - 0.5, y - half_block_size - 0.5, z - half_block_size - 0.5};
+			v3f32 offset = {
+				x - half_block_size - 0.5,
+				y - half_block_size - 0.5,
+				z - half_block_size - 0.5
+			};
 
 			for (int f = 0; f < 6; f++) {
 				v3s8 npos = {
@@ -32,18 +41,27 @@ static void make_vertices(Object *object, MapBlock *block, bool hide_edges)
 					z + fdir[f].z,
 				};
 
-				Node neighbor;
+				bool direct_neighbor = npos.x >= 0 && npos.x < MAPBLOCK_SIZE
+					&& npos.y >= 0 && npos.y < MAPBLOCK_SIZE
+					&& npos.z >= 0 && npos.z < MAPBLOCK_SIZE;
 
-				if (npos.x >= 0 && npos.x < MAPBLOCK_SIZE && npos.y >= 0 && npos.y < MAPBLOCK_SIZE && npos.z >= 0 && npos.z < MAPBLOCK_SIZE)
-					neighbor = block->data[npos.x][npos.y][npos.z].type;
-				else if (hide_edges) {
-					MapNode nn = map_get_node(client_map.map, (v3s32) {npos.x + node_bp.x, npos.y + node_bp.y, npos.z + node_bp.z});
-					neighbor = nn.type;
-				} else {
-					neighbor = NODE_AIR;
-				}
+				MapNode neighbor = direct_neighbor
+					? block->data[npos.x][npos.y][npos.z]
+					: map_get_node(client_map.map, (v3s32) {npos.x + node_bp.x, npos.y + node_bp.y, npos.z + node_bp.z});
 
-				if (neighbor != NODE_UNLOADED && client_node_definitions[neighbor].visibility != NV_SOLID && (def->visibility != NV_TRANSPARENT || neighbor != node->type)) {
+				bool transparency_edge = def->visibility != NV_TRANSPARENT || neighbor.type != node->type;
+
+				bool render_node = neighbor.type != NODE_UNLOADED
+					&& client_node_definitions[neighbor.type].visibility != NV_SOLID
+					&& transparency_edge;
+
+				object->visible = object->visible || render_node;
+
+				if (! hide_edges && ! direct_neighbor)
+					render_node = transparency_edge;
+
+				if (render_node) {
+					object->transparent = object->transparent || def->visibility == NV_TRANSPARENT;
 					object_set_texture(object, def->tiles.textures[f]);
 
 					for (int v = 0; v < 6; v++) {
