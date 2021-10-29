@@ -105,7 +105,7 @@ bool my_decompress(const char *compressed, size_t compressed_size, void *decompr
 bool within_simulation_distance(v3f64 player_pos, v3s32 block_pos, u32 simulation_distance)
 {
 	v3s32 player_block_pos = map_node_to_block_pos((v3s32) {player_pos.x, player_pos.y, player_pos.z}, NULL);
-	return abs(player_block_pos.x - block_pos.x) <= simulation_distance && abs(player_block_pos.y - block_pos.y) <= simulation_distance && abs(player_block_pos.z - block_pos.z) <= simulation_distance;
+	return abs(player_block_pos.x - block_pos.x) <= (s32) simulation_distance && abs(player_block_pos.y - block_pos.y) <= (s32) simulation_distance && abs(player_block_pos.z - block_pos.z) <= (s32) simulation_distance;
 }
 
 f64 clamp(f64 v, f64 min, f64 max)

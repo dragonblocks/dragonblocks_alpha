@@ -29,6 +29,11 @@ include_directories(BEFORE
 	${CMAKE_SOURCE_DIR}
 )
 
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
+	link_directories("/usr/local/lib")
+	include_directories("/usr/local/include")
+endif()
+
 add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 
 set(SOURCES_COMMON
