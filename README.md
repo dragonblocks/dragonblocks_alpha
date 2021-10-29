@@ -54,6 +54,12 @@ FreeBSD:
 sudo pkg install lzlib mesa-dri glfw glew freetype sqlite3
 ```
 
+OpenBSD:
+
+```sh
+sudo pkg_add lzlib glfw glew freetype sqlite3
+```
+
 ## Setup Requirements
 Dragonblocks Alpha targets PCs only. Non x86-64 platforms may work, however there is no guarantee whatsoever.
 You need a POSIX system conforming to the ISO C and POSIX 2008 standards. However, so far only GNU/Linux systems, in particular Ubuntu and Debian, have been tested.

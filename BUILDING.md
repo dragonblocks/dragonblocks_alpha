@@ -24,6 +24,12 @@ FreeBSD:
 sudo pkg install cmake gcc lzlib mesa-devel glfw glew freetype sqlite3
 ```
 
+OpenBSD:
+
+```sh
+sudo pkg_add cmake lzlib glfw glew freetype sqlite3
+```
+
 ## Building a debug build
 By default CMake will make a Debug build if nothing else is specified. Simply use
 
