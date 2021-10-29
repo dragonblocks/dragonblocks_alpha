@@ -47,7 +47,7 @@ static GLuint compile_and_attach_shader(GLenum type, const char *path, const cha
 
 	GLuint id = glCreateShader(type);
 
-	const char *version = "#version 460 core\n";
+	const char *version = "#version 420 core\n";
 
 	const char *code_list[3] = {
 		version,
