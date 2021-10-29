@@ -29,9 +29,14 @@ include_directories(BEFORE
 	${CMAKE_SOURCE_DIR}
 )
 
-if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD")
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD" OR "${CMAKE_SYSTEM_NAME}" STREQUAL "OpenBSD")
 	link_directories("/usr/local/lib")
 	include_directories("/usr/local/include")
+endif()
+
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "OpenBSD")
+	link_directories("/usr/X11R6/lib")
+	include_directories("/usr/X11R6/include")
 endif()
 
 add_compile_options(-Wall -Wextra -Wpedantic -Werror)

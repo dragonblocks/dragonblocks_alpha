@@ -42,7 +42,7 @@ static bool block_handler(Client *client, bool good)
 	if (! read_v3s32(client->fd, &pos))
 		return false;
 
-	size_t size;
+	u64 size;
 
 	if (! read_u64(client->fd, &size))
 		return false;

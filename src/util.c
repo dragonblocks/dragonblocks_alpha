@@ -98,7 +98,7 @@ bool my_decompress(const char *compressed, size_t compressed_size, void *decompr
 	inflate(&stream, Z_NO_FLUSH);
 	inflateEnd(&stream);
 
-	return stream.total_out == expected_decompressed_size;
+	return (size_t) stream.total_out == expected_decompressed_size;
 }
 
 // return true if a player is close enough to a block to access it
