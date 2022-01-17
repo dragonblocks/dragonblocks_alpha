@@ -8,21 +8,26 @@ git clone --recurse-submodules https://github.com/dragonblocks/dragonblocks_alph
 
 ## Dependencies
 To build anything you need CMake. The ZLib development library is needed as well.
-
-```bash
-sudo apt install build-essential cmake zlib1g-dev
-```
-
 The development versions of OpenGL, GLFW3, GLEW and Freetype are required to build the client.
-
-```bash
-sudo apt install libgl1-mesa-dev libglfw3-dev libglew-dev libfreetype-dev
-```
-
 For building the server the SQLite3 development library is required.
 
+
+Ubuntu / Debian:
+
 ```bash
-sudo apt install libsqlite3-dev
+sudo apt install build-essential cmake zlib1g-dev libgl1-mesa-dev libglfw3-dev libglew-dev libfreetype-dev libsqlite3-dev
+```
+
+FreeBSD:
+
+```csh
+sudo pkg install cmake gcc lzlib mesa-devel glfw glew freetype sqlite3
+```
+
+OpenBSD:
+
+```sh
+sudo pkg_add cmake lzlib glfw glew freetype sqlite3
 ```
 
 ## Building a debug build

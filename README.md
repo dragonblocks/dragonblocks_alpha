@@ -37,22 +37,27 @@ or alternatively:
 
 ## Dependencies
 
+Both the client and the server depend on ZLib.
 The client depends on GLFW3, OpenGL, GLEW and Freetype.
-
-```bash
-sudo apt install libgl1-mesa-dri libglfw3 libglew2.1 libfreetype6
-```
-
 The server depends on SQLite3.
 
+Ubuntu / Debian:
+
 ```bash
-sudo apt install libsqlite3-0
+sudo apt install zlib1g libgl1-mesa-dri libglfw3 libglew2.1 libfreetype6 libsqlite3-0
+
 ```
 
-both the client and the server depend on ZLib.
+FreeBSD:
 
-```bash
-sudo apt install zlib1g
+```csh
+sudo pkg install lzlib mesa-dri glfw glew freetype sqlite3
+```
+
+OpenBSD:
+
+```sh
+sudo pkg_add lzlib glfw glew freetype sqlite3
 ```
 
 ## Setup Requirements

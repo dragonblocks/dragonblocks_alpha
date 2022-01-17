@@ -374,7 +374,7 @@ void server_map_prepare_spawn()
 	} else {
 		s32 spawn_height = -1;
 
-		while (map_get_node(server_map.map, (v3s32) {0, ++spawn_height, 0}).type != NODE_AIR);
+		while (map_get_node(server_map.map, (v3s32) {0, ++spawn_height, 0}).type != NODE_AIR)
 			;
 
 		server_map.spawn_height = spawn_height + 5;
