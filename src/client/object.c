@@ -192,7 +192,7 @@ bool object_before_render(Object *obj, f64 dtime)
 		return false;
 
 	if (obj->frustum_culling) {
-		aabb3f32 box = {v3f32_add(obj->box.min, obj->pos), v3f32_add(obj->box.max, obj->pos), };
+		aabb3f32 box = {v3f32_add(obj->box.min, obj->pos), v3f32_add(obj->box.max, obj->pos)};
 
 		 if (! frustum_is_visible(box))
 			return false;

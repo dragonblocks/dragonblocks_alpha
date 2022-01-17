@@ -12,7 +12,7 @@
 extern struct Scene
 {
 	List objects;
-	Bintree render_objects;
+	Bintree transparent_objects;
 	pthread_mutex_t mtx;
 	GLuint prog;
 	GLint loc_model;

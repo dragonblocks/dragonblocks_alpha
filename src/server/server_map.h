@@ -33,6 +33,7 @@ typedef struct
 {
 	char *data;						// cached serialized data
 	size_t size;					// size of data
+	size_t rawsize;					// size of decompressed data
 	MapBlockState state;			// generation state of the block
 	pthread_t mapgen_thread;		// thread that is generating block
 	MapgenStageBuffer mgs_buffer;	// buffer to make sure mapgen only overrides things it should

@@ -10,9 +10,9 @@ typedef struct
 	int width, height;
 } Texture;
 
-Texture *texture_create(unsigned char *data, int width, int height, GLenum format);
+Texture *texture_create(unsigned char *data, int width, int height, GLenum format, bool mipmap);
 GLuint texture_create_cubemap(char *path);
 void texture_delete(Texture *texture);
-Texture *texture_get(char *path);
+Texture *texture_load(char *path, bool mipmap);
 
 #endif

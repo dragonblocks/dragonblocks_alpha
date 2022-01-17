@@ -22,7 +22,7 @@ __attribute((destructor)) static void textures_deinit()
 	list_clear_func(&textures, &list_delete_texture, NULL);
 }
 
-Texture *texture_create(unsigned char *data, int width, int height, GLenum format)
+Texture *texture_create(unsigned char *data, int width, int height, GLenum format, bool mipmap)
 {
 	Texture *texture = malloc(sizeof(Texture));
 	texture->width = width;
@@ -32,7 +32,7 @@ Texture *texture_create(unsigned char *data, int width, int height, GLenum forma
 
 	glBindTexture(GL_TEXTURE_2D, texture->id);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mipmap ? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -91,24 +91,21 @@ void texture_delete(Texture *texture)
 	free(texture);
 }
 
-static void *create_image_texture(void *key)
+Texture *texture_load(char *path, bool mipmap)
 {
 	int width, height, channels;
 
-	unsigned char *data = stbi_load(key, &width, &height, &channels, 0);
+	unsigned char *data = stbi_load(path, &width, &height, &channels, 0);
 	if (! data) {
-		fprintf(stderr, "Failed to load texture %s\n", (char *) key);
-		return 0;
+		fprintf(stderr, "Failed to load texture %s\n", path);
+		return NULL;
 	}
 
-	Texture *texture = texture_create(data, width, height, GL_RGBA);
+	Texture *texture = texture_create(data, width, height, GL_RGBA, mipmap);
 
 	stbi_image_free(data);
 
-	return texture;
-}
+	list_put(&textures, texture, NULL);
 
-Texture *texture_get(char *path)
-{
-	return list_get_cached(&textures, path, &create_image_texture);
+	return texture;
 }

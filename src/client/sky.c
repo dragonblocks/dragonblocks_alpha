@@ -149,7 +149,7 @@ bool sky_init()
 
 	sky.sun_loc_MVP = glGetUniformLocation(sky.sun_prog, "MVP");
 
-	sky.sun_texture = texture_get(RESSOURCEPATH "textures/sun.png");
+	sky.sun_texture = texture_load(RESSOURCEPATH "textures/sun.png", false);
 
 	sky.sun_mesh = mesh_create();
 	sky.sun_mesh->textures = &sky.sun_texture->id;

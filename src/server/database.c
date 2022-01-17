@@ -72,7 +72,7 @@ void database_init()
 	}
 
 	const char *init_stmts[3]= {
-		"CREATE TABLE IF NOT EXISTS map (pos BLOB PRIMARY KEY, generated INTEGER, size INTEGER, data BLOB, mgsb_size INTEGER, mgsb_data BLOB);",
+		"CREATE TABLE IF NOT EXISTS map (pos BLOB PRIMARY KEY, generated INTEGER, size INTEGER, rawsize INTEGER, data BLOB, mgsb_size INTEGER, mgsb_data BLOB);",
 		"CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value INTEGER);",
 		"CREATE TABLE IF NOT EXISTS players (name TEXT PRIMARY KEY, pos BLOB);"
 	};
@@ -115,7 +115,7 @@ bool database_load_block(MapBlock *block)
 {
 	sqlite3_stmt *stmt;
 
-	if (! (stmt = prepare_block_statement(block, "loading", "SELECT generated, size, data, mgsb_size, mgsb_data FROM map WHERE pos=?")))
+	if (! (stmt = prepare_block_statement(block, "loading", "SELECT generated, size, rawsize, data, mgsb_size, mgsb_data FROM map WHERE pos=?")))
 		return false;
 
 	int rc = sqlite3_step(stmt);
@@ -126,15 +126,16 @@ bool database_load_block(MapBlock *block)
 
 		extra->state = sqlite3_column_int(stmt, 0) ? MBS_READY : MBS_CREATED;
 		extra->size = sqlite3_column_int64(stmt, 1);
+		extra->rawsize = sqlite3_column_int64(stmt, 2);
 		extra->data = malloc(extra->size);
-		memcpy(extra->data, sqlite3_column_blob(stmt, 2), extra->size);
+		memcpy(extra->data, sqlite3_column_blob(stmt, 3), extra->size);
 
 		MapgenStageBuffer decompressed_mgsb;
-		my_decompress(sqlite3_column_blob(stmt, 4), sqlite3_column_int64(stmt, 3), &decompressed_mgsb, sizeof(MapgenStageBuffer));
+		my_decompress(sqlite3_column_blob(stmt, 5), sqlite3_column_int64(stmt, 4), &decompressed_mgsb, sizeof(MapgenStageBuffer));
 
 		ITERATE_MAPBLOCK extra->mgs_buffer[x][y][z] = be32toh(decompressed_mgsb[x][y][z]);
 
-		if (! map_deserialize_block(block, extra->data, extra->size))
+		if (! map_deserialize_block(block, extra->data, extra->size, extra->rawsize))
 			printf("Error with deserializing block at (%d, %d, %d)\n", block->pos.x, block->pos.y, block->pos.z);
 	} else if (rc != SQLITE_DONE) {
 		print_block_error(block, "loading");
@@ -149,7 +150,7 @@ void database_save_block(MapBlock *block)
 {
 	sqlite3_stmt *stmt;
 
-	if (! (stmt = prepare_block_statement(block, "saving", "REPLACE INTO map (pos, generated, size, data, mgsb_size, mgsb_data) VALUES(?1, ?2, ?3, ?4, ?5, ?6)")))
+	if (! (stmt = prepare_block_statement(block, "saving", "REPLACE INTO map (pos, generated, size, rawsize, data, mgsb_size, mgsb_data) VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7)")))
 		return;
 
 	MapBlockExtraData *extra = block->extra;
@@ -164,9 +165,10 @@ void database_save_block(MapBlock *block)
 
 	sqlite3_bind_int(stmt, 2, extra->state > MBS_CREATED);
 	sqlite3_bind_int64(stmt, 3, extra->size);
-	sqlite3_bind_blob(stmt, 4, extra->data, extra->size, SQLITE_TRANSIENT);
-	sqlite3_bind_int64(stmt, 5, mgsb_size);
-	sqlite3_bind_blob(stmt, 6, mgsb_data, mgsb_size, &free);
+	sqlite3_bind_int64(stmt, 4, extra->rawsize);
+	sqlite3_bind_blob(stmt, 5, extra->data, extra->size, SQLITE_TRANSIENT);
+	sqlite3_bind_int64(stmt, 6, mgsb_size);
+	sqlite3_bind_blob(stmt, 7, mgsb_data, mgsb_size, &free);
 
 	if (sqlite3_step(stmt) != SQLITE_DONE)
 		print_block_error(block, "saving");

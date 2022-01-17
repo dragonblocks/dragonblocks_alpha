@@ -100,7 +100,7 @@ void client_player_add_to_scene()
 	client_player.obj->scale = (v3f32) {0.6, 1.75, 0.6};
 	client_player.obj->visible = false;
 
-	object_set_texture(client_player.obj, texture_get(RESSOURCEPATH "textures/player.png"));
+	object_set_texture(client_player.obj, texture_load(RESSOURCEPATH "textures/player.png", true));
 
 	for (int f = 0; f < 6; f++) {
 		for (int v = 0; v < 6; v++) {

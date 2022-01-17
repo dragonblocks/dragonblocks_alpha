@@ -19,8 +19,6 @@ link_libraries(
 
 set(DEPS_DIR "${CMAKE_SOURCE_DIR}/../deps/")
 
-add_compile_definitions(DRAGONTYPE_ENDIAN_HEADER="${CMAKE_SOURCE_DIR}/../deps/endian.h/endian.h")
-
 include_directories(SYSTEM
 	${DEPS_DIR}
 )
@@ -29,9 +27,20 @@ include_directories(BEFORE
 	${CMAKE_SOURCE_DIR}
 )
 
-add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+add_compile_options(-Wall -Wextra -Wpedantic -Werror -fmax-errors=4)
 
-set(SOURCES_COMMON
+set(DEPS_SOURCES
+	"${DEPS_DIR}/dragontype/array.c"
+	"${DEPS_DIR}/dragontype/bintree.c"
+	"${DEPS_DIR}/dragontype/list.c"
+	"${DEPS_DIR}/dragontype/number.c"
+	"${DEPS_DIR}/dragontype/queue.c"
+	"${DEPS_DIR}/dragonport/asprintf.c"
+	"${DEPS_DIR}/perlin/perlin.c"
+)
+
+set(COMMON_SOURCES
+	${DEPS_SOURCES}
 	day.c
 	environment.c
 	map.c
@@ -39,13 +48,10 @@ set(SOURCES_COMMON
 	perlin.c
 	signal_handlers.c
 	util.c
-	"${DEPS_DIR}/dragontype/implementation.c"
-	"${DEPS_DIR}/dragonport/asprintf.c"
-	"${DEPS_DIR}/perlin/perlin.c"
 )
 
 add_executable(Dragonblocks
-	${SOURCES_COMMON}
+	${COMMON_SOURCES}
 	client/blockmesh.c
 	client/camera.c
 	client/client.c
@@ -83,13 +89,15 @@ target_include_directories(Dragonblocks PUBLIC
 )
 
 add_executable(DragonblocksServer
-	${SOURCES_COMMON}
+	${COMMON_SOURCES}
 	server/biomes.c
 	server/database.c
 	server/mapgen.c
 	server/server.c
 	server/server_commands.c
 	server/server_map.c
+	server/trees.c
+	server/voxelctx.c
 )
 
 target_link_libraries(DragonblocksServer

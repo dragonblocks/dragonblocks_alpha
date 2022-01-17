@@ -19,7 +19,7 @@ static int bintree_compare_f32(void *v1, void *v2, unused Bintree *tree)
 bool scene_init()
 {
 	scene.objects = list_create(NULL);
-	scene.render_objects = bintree_create(sizeof(f32), &bintree_compare_f32);
+	scene.transparent_objects = bintree_create(sizeof(f32), &bintree_compare_f32);
 	pthread_mutex_init(&scene.mtx, NULL);
 
 	glGetIntegerv(GL_MAX_TEXTURE_UNITS, &scene.max_texture_units);
@@ -113,7 +113,7 @@ void scene_render(f64 dtime)
 			f32 distance = sqrt(pow(obj->pos.x - camera.eye[0], 2) + pow(obj->pos.y - camera.eye[1], 2) + pow(obj->pos.z - camera.eye[2], 2));
 			if (distance < scene.render_distance && object_before_render(obj, dtime)) {
 				if (obj->transparent)
-					bintree_insert(&scene.render_objects, &distance, obj);
+					bintree_insert(&scene.transparent_objects, &distance, obj);
 				else
 					object_render(obj);
 			}
@@ -121,8 +121,8 @@ void scene_render(f64 dtime)
 		}
 	}
 
-	bintree_traverse(&scene.render_objects, BTT_INORDER, &bintree_render_object, NULL);
-	bintree_clear(&scene.render_objects, NULL, NULL);
+	bintree_traverse(&scene.transparent_objects, BTT_INORDER, &bintree_render_object, NULL);
+	bintree_clear(&scene.transparent_objects, NULL, NULL);
 }
 
 void scene_on_resize(int width, int height)

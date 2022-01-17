@@ -8,7 +8,8 @@
 typedef enum
 {
 	NV_NONE,
-	NV_TRANSPARENT,
+	NV_CLIP,
+	NV_BLEND,
 	NV_SOLID,
 } NodeVisibility;
 
@@ -21,10 +22,11 @@ typedef struct
 		Texture *textures[6];	// output
 	} tiles;
 	NodeVisibility visibility;
+	bool mipmap;
 	void (*render)(v3s32 pos, MapNode *node, Vertex3D *vertex, int f, int v);
-} ClientNodeDefintion;
+} ClientNodeDefinition;
 
-extern ClientNodeDefintion client_node_definitions[];
+extern ClientNodeDefinition client_node_definitions[];
 void client_node_init();
 
 #endif

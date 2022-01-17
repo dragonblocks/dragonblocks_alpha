@@ -25,7 +25,7 @@ static void make_vertices(Object *object, MapBlock *block, bool hide_edges)
 
 	ITERATE_MAPBLOCK {
 		MapNode *node = &block->data[x][y][z];
-		ClientNodeDefintion *def = &client_node_definitions[node->type];
+		ClientNodeDefinition *def = &client_node_definitions[node->type];
 
 		if (def->visibility != NV_NONE) {
 			v3f32 offset = {
@@ -49,11 +49,11 @@ static void make_vertices(Object *object, MapBlock *block, bool hide_edges)
 					? block->data[npos.x][npos.y][npos.z]
 					: map_get_node(client_map.map, (v3s32) {npos.x + node_bp.x, npos.y + node_bp.y, npos.z + node_bp.z});
 
-				bool transparency_edge = def->visibility != NV_TRANSPARENT || neighbor.type != node->type;
+				bool transparency_edge = def->visibility != NV_BLEND || neighbor.type != node->type;
 
-				bool render_node = neighbor.type != NODE_UNLOADED
+				bool render_node = def->visibility == NV_CLIP || (neighbor.type != NODE_UNLOADED
 					&& client_node_definitions[neighbor.type].visibility != NV_SOLID
-					&& transparency_edge;
+					&& transparency_edge);
 
 				object->visible = object->visible || render_node;
 
@@ -61,7 +61,7 @@ static void make_vertices(Object *object, MapBlock *block, bool hide_edges)
 					render_node = transparency_edge;
 
 				if (render_node) {
-					object->transparent = object->transparent || def->visibility == NV_TRANSPARENT;
+					object->transparent = object->transparent || def->visibility == NV_BLEND;
 					object_set_texture(object, def->tiles.textures[f]);
 
 					for (int v = 0; v < 6; v++) {
@@ -104,7 +104,7 @@ void blockmesh_make(MapBlock *block)
 	obj->pos = (v3f32) {block->pos.x * MAPBLOCK_SIZE + half_block_size + 0.5f, block->pos.y * MAPBLOCK_SIZE + half_block_size + 0.5f, block->pos.z * MAPBLOCK_SIZE + half_block_size + 0.5f};
 	obj->scale = extra->obj ? extra->obj->scale : (v3f32) {0.1f, 0.1f, 0.1f};
 	obj->frustum_culling = true;
-	obj->box = (aabb3f32) {{-half_block_size - 0.5f, -half_block_size - 0.5f, -half_block_size - 0.5f}, {half_block_size + 0.5f, half_block_size + 0.5f, half_block_size + 0.5f}};
+	obj->box = (aabb3f32) {{-half_block_size - 1.0f, -half_block_size - 1.0f, -half_block_size - 1.0f}, {half_block_size + 1.0f, half_block_size + 1.0f, half_block_size + 1.0f}};
 	obj->on_render = (obj->scale.x == 1.0f) ? NULL : &animate_mapblock_mesh;
 	obj->extra = block;
 

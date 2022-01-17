@@ -85,7 +85,7 @@ bool font_init()
 			};
 		} else {
 			font.chars[c] = (Character) {
-				.texture = texture_create(font.face->glyph->bitmap.buffer, font.face->glyph->bitmap.width, font.face->glyph->bitmap.rows, GL_RED),
+				.texture = texture_create(font.face->glyph->bitmap.buffer, font.face->glyph->bitmap.width, font.face->glyph->bitmap.rows, GL_RED, false),
 				.bearing = {font.face->glyph->bitmap_left, font.face->glyph->bitmap_top},
 				.advance = font.face->glyph->advance.x,
 			};

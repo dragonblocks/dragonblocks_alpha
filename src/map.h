@@ -14,6 +14,7 @@
 typedef struct MapNode
 {
 	Node type;
+	void *data;
 } MapNode;
 
 typedef MapNode MapBlockData[MAPBLOCK_SIZE][MAPBLOCK_SIZE][MAPBLOCK_SIZE];
@@ -60,15 +61,15 @@ MapBlock *map_get_block(Map *map, v3s32 pos, bool create);
 MapBlock *map_allocate_block(v3s32 pos);
 void map_free_block(MapBlock *block);
 
-bool map_deserialize_node(int fd, MapNode *buf);
-void map_serialize_block(MapBlock *block, char **dataptr, size_t *sizeptr);
-bool map_deserialize_block(MapBlock *block, const char *data, size_t size);
+void map_serialize_block(MapBlock *block, char **dataptr, size_t *sizeptr, size_t *rawsizeptr);
+bool map_deserialize_block(MapBlock *block, const char *data, size_t size, size_t rawsize);
 
 v3s32 map_node_to_block_pos(v3s32 pos, v3u8 *offset);
 
 MapNode map_get_node(Map *map, v3s32 pos);
 void map_set_node(Map *map, v3s32 pos, MapNode node, bool create, void *arg);
-MapNode map_node_create(Node type);
-void map_node_clear(MapNode *node);
+
+MapNode map_node_create(Node type, void *data, size_t size);
+void map_node_delete(MapNode node);
 
 #endif

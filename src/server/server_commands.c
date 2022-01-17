@@ -70,13 +70,13 @@ static bool setnode_handler(Client *client, bool good)
 	if (! read_v3s32(client->fd, &pos))
 		return false;
 
-	MapNode node;
+	Node node;
 
-	if (! map_deserialize_node(client->fd, &node))
+	if (! read_u32(client->fd, &node))
 		return false;
 
 	if (good)
-		map_set_node(server_map.map, pos, node, false, NULL);
+		map_set_node(server_map.map, pos, map_node_create(node, NULL, 0), false, NULL);
 
 	return true;
 }

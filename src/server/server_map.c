@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -21,7 +22,11 @@ static void send_block(Client *client, MapBlock *block)
 
 	pthread_mutex_lock(&client->mtx);
 	if (client->state == CS_ACTIVE)
-		(void) (write_u32(client->fd, CC_BLOCK) && write_v3s32(client->fd, block->pos) && write_u64(client->fd, extra->size) && write(client->fd, extra->data, extra->size) != -1);
+		(void) (write_u32(client->fd, CC_BLOCK)
+			&& write_v3s32(client->fd, block->pos)
+			&& write_u64(client->fd, extra->size)
+			&& write_u64(client->fd, extra->rawsize)
+			&& write(client->fd, extra->data, extra->size) != -1);
 	pthread_mutex_unlock(&client->mtx);
 }
 
@@ -37,7 +42,7 @@ static void send_block_to_near(MapBlock *block)
 	if (extra->data)
 		free(extra->data);
 
-	map_serialize_block(block, &extra->data, &extra->size);
+	map_serialize_block(block, &extra->data, &extra->size, &extra->rawsize);
 	database_save_block(block);
 
 	if (extra->state == MBS_CREATED)
@@ -126,7 +131,7 @@ static void on_create_block(MapBlock *block)
 		extra->data = NULL;
 
 		ITERATE_MAPBLOCK {
-			block->data[x][y][z] = map_node_create(NODE_AIR);
+			block->data[x][y][z] = map_node_create(NODE_AIR, NULL, 0);
 			extra->mgs_buffer[x][y][z] = MGS_VOID;
 		}
 	}
@@ -215,29 +220,29 @@ static void generate_spawn_hut()
 	for (s32 x = -4; x <= +4; x++) {
 		for (s32 y = 0; y <= 3; y++) {
 			for (s32 z = -3; z <= +2; z++) {
-				mapgen_set_node((v3s32) {x, server_map.spawn_height + y, z}, (MapNode) {NODE_AIR}, MGS_PLAYER, &changed_blocks);
+				mapgen_set_node((v3s32) {x, server_map.spawn_height + y, z}, map_node_create(NODE_AIR, NULL, 0), MGS_PLAYER, &changed_blocks);
 			}
 		}
 	}
 
 	for (s32 x = -5; x <= +5; x++) {
 		for (s32 z = -4; z <= +3; z++) {
-			mapgen_set_node((v3s32) {x, server_map.spawn_height - 1, z}, (MapNode) {NODE_WOOD}, MGS_PLAYER, &changed_blocks);
-			mapgen_set_node((v3s32) {x, server_map.spawn_height + 4, z}, (MapNode) {NODE_WOOD}, MGS_PLAYER, &changed_blocks);
+			mapgen_set_node((v3s32) {x, server_map.spawn_height - 1, z}, map_node_create(NODE_OAK_WOOD, NULL, 0), MGS_PLAYER, &changed_blocks);
+			mapgen_set_node((v3s32) {x, server_map.spawn_height + 4, z}, map_node_create(NODE_OAK_WOOD, NULL, 0), MGS_PLAYER, &changed_blocks);
 		}
 	}
 
 	for (s32 y = 0; y <= 3; y++) {
 		for (s32 x = -5; x <= +5; x++) {
-			mapgen_set_node((v3s32) {x, server_map.spawn_height + y, -4}, (MapNode) {((y == 1 || y == 2) && ((x >= -3 && x <= -1) || (x >= +1 && x <= +2))) ? NODE_AIR : NODE_WOOD}, MGS_PLAYER, &changed_blocks);
-			mapgen_set_node((v3s32) {x, server_map.spawn_height + y, +3}, (MapNode) {((y == 1 || y == 2) && ((x >= -3 && x <= -2) || (x >= +1 && x <= +3))) ? NODE_AIR : NODE_WOOD}, MGS_PLAYER, &changed_blocks);
+			mapgen_set_node((v3s32) {x, server_map.spawn_height + y, -4}, map_node_create(((y == 1 || y == 2) && ((x >= -3 && x <= -1) || (x >= +1 && x <= +2))) ? NODE_AIR : NODE_OAK_WOOD, NULL, 0), MGS_PLAYER, &changed_blocks);
+			mapgen_set_node((v3s32) {x, server_map.spawn_height + y, +3}, map_node_create(((y == 1 || y == 2) && ((x >= -3 && x <= -2) || (x >= +1 && x <= +3))) ? NODE_AIR : NODE_OAK_WOOD, NULL, 0), MGS_PLAYER, &changed_blocks);
 		}
 	}
 
 	for (s32 y = 0; y <= 3; y++) {
 		for (s32 z = -3; z <= +2; z++) {
-			mapgen_set_node((v3s32) {-5, server_map.spawn_height + y, z}, (MapNode) {NODE_WOOD}, MGS_PLAYER, &changed_blocks);
-			mapgen_set_node((v3s32) {+5, server_map.spawn_height + y, z}, (MapNode) {((y != 3) && (z == -1 || z == +0)) ? NODE_AIR : NODE_WOOD}, MGS_PLAYER, &changed_blocks);
+			mapgen_set_node((v3s32) {-5, server_map.spawn_height + y, z}, map_node_create(NODE_OAK_WOOD, NULL, 0), MGS_PLAYER, &changed_blocks);
+			mapgen_set_node((v3s32) {+5, server_map.spawn_height + y, z}, map_node_create(((y != 3) && (z == -1 || z == +0)) ? NODE_AIR : NODE_OAK_WOOD, NULL, 0), MGS_PLAYER, &changed_blocks);
 		}
 	}
 
@@ -265,7 +270,7 @@ static void generate_spawn_hut()
 			if (node_definitions[node].solid)
 				break;
 
-			mapgen_set_node(pos, (MapNode) {node == NODE_LAVA ? NODE_VULCANO_STONE : NODE_WOOD}, MGS_PLAYER, &changed_blocks);
+			mapgen_set_node(pos, map_node_create(node == NODE_LAVA ? NODE_VULCANO_STONE : NODE_OAK_WOOD, NULL, 0), MGS_PLAYER, &changed_blocks);
 		}
 	}
 

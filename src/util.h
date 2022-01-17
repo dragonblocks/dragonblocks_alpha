@@ -28,5 +28,7 @@ bool my_decompress(const char *compressed, size_t compressed_size, void *decompr
 bool within_simulation_distance(v3f64 player_pos, v3s32 block_pos, u32 simulation_distance);								// return true if a player is close enough to a block to access it
 f64 clamp(f64 v, f64 min, f64 max);
 char *format_string(const char *format, ...);
+void *buffer_read(unsigned char **buffer, size_t *bufsiz, size_t size);
+void buffer_write(unsigned char **buffer, size_t *bufsiz, void *data, size_t size);
 
 #endif

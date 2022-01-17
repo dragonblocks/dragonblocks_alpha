@@ -22,7 +22,7 @@ Biome get_biome(v2s32 pos, f64 *factor)
 
 // mountain biome
 
-static s32 height_mountain(v2s32 pos, f64 factor, s32 height, unused void *row_data, unused void *block_data)
+static s32 height_mountain(v2s32 pos, f64 factor, f32 height, unused void *row_data, unused void *block_data)
 {
 	return pow((height + 96) * pow(((smooth2d(U32(pos.x) / 48.0, U32(pos.y) / 48.0, 0, seed + SO_MOUNTAIN_HEIGHT) + 1.0) * 256.0 + 128.0), factor), 1.0 / (factor + 1.0)) - 96;
 }
@@ -173,7 +173,7 @@ static void preprocess_block_ocean(MapBlock *block, unused List *changed_blocks,
 		data->vulcano_pos = (v2s32) {vulcano_pos.x * MAPBLOCK_SIZE, vulcano_pos.y * MAPBLOCK_SIZE};
 }
 
-static void preprocess_row_ocean(v2s32 pos, unused s32 height, unused f64 factor, void *row_data, void *block_data)
+static void preprocess_row_ocean(v2s32 pos, unused f64 factor, void *row_data, void *block_data)
 {
 	OceanRowData *rdata = row_data;
 	OceanBlockData *bdata = block_data;
@@ -202,7 +202,7 @@ static void preprocess_row_ocean(v2s32 pos, unused s32 height, unused f64 factor
 	}
 }
 
-static s32 height_ocean(unused v2s32 pos, f64 factor, s32 height, void *row_data, unused void *block_data)
+static s32 height_ocean(unused v2s32 pos, f64 factor, f32 height, void *row_data, unused void *block_data)
 {
 	OceanRowData *rdata = row_data;
 	s32 ocean_floor = calculate_ocean_floor(factor, height);
@@ -210,7 +210,7 @@ static s32 height_ocean(unused v2s32 pos, f64 factor, s32 height, void *row_data
 	return rdata->vulcano ? max(ocean_floor, rdata->vulcano_height) : ocean_floor;
 }
 
-static Node generate_ocean(v3s32 pos, s32 diff, unused f64 humidity, unused f64 temperature, unused f64 factor, unused MapBlock *block, unused List *changed_blocks, void *row_data, unused void *block_data)
+Node ocean_get_node_at(v3s32 pos, s32 diff, void *row_data)
 {
 	OceanRowData *rdata = row_data;
 
@@ -233,6 +233,11 @@ static Node generate_ocean(v3s32 pos, s32 diff, unused f64 humidity, unused f64 
 	return NODE_AIR;
 }
 
+static Node generate_ocean(v3s32 pos, s32 diff, unused f64 humidity, unused f64 temperature, unused f64 factor, unused MapBlock *block, unused List *changed_blocks, void *row_data, unused void *block_data)
+{
+	return ocean_get_node_at(pos, diff, row_data);
+}
+
 // hills biome
 
 static bool boulder_touching_ground(v3s32 pos, s32 diff)
@@ -245,7 +250,7 @@ static bool boulder_touching_ground(v3s32 pos, s32 diff)
 	return true;
 }
 
-static s32 height_hills(unused v2s32 pos, unused f64 factor, s32 height, unused void *row_data, unused void *block_data)
+static s32 height_hills(unused v2s32 pos, unused f64 factor, f32 height, unused void *row_data, unused void *block_data)
 {
 	return height;
 }

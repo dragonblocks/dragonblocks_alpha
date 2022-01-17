@@ -42,12 +42,17 @@ static bool block_handler(Client *client, bool good)
 	if (! read_v3s32(client->fd, &pos))
 		return false;
 
-	size_t size;
+	u64 size;
 
 	if (! read_u64(client->fd, &size))
 		return false;
 
-	if (size > sizeof(MapBlockData))	// guard to prevent malicious or malfunctioning packets from allocating huge unnecessary amounts of memory
+	if (size > 1 << 16)
+		return false;
+
+	u64 rawsize;
+
+	if (! read_u64(client->fd, &rawsize))
 		return false;
 
 	char data[size];
@@ -61,7 +66,7 @@ static bool block_handler(Client *client, bool good)
 	else
 		block = map_allocate_block(pos);
 
-	bool ret = map_deserialize_block(block, data, size);
+	bool ret = map_deserialize_block(block, data, size, rawsize);
 
 	if (good)
 		client_map_block_received(block);

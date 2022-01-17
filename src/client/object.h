@@ -27,7 +27,7 @@ typedef struct {
 } __attribute__((packed)) Vertex3DTextureCoordinates;
 
 typedef struct {
-	GLfloat h, s, v;
+	GLfloat r, g, b;
 } __attribute__((packed)) Vertex3DColor;
 
 typedef struct

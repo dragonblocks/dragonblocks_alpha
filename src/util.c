@@ -122,3 +122,32 @@ char *format_string(const char *format, ...)
 	va_end(args);
 	return ptr;
 }
+
+void *buffer_read(unsigned char **buffer, size_t *bufsiz, size_t size)
+{
+	if (size == 0)
+		return NULL;
+
+	if (*bufsiz < size)
+		return NULL;
+
+	void *old_buffer = *buffer;
+
+	*bufsiz -= size;
+	*buffer += size;
+
+	return old_buffer;
+}
+
+void buffer_write(unsigned char **buffer, size_t *bufsiz, void *data, size_t size)
+{
+	if (size == 0)
+		return;
+
+	size_t old_bufsiz = *bufsiz;
+
+	*bufsiz += size;
+	*buffer = realloc(*buffer, *bufsiz);
+
+	memcpy(*buffer + old_bufsiz, data, size);
+}

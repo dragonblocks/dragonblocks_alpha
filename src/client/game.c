@@ -33,7 +33,7 @@ static void crosshair_init()
 		.scale_type = GST_IMAGE,
 		.affect_parent_scale = false,
 		.text = NULL,
-		.image = texture_get(RESSOURCEPATH "textures/crosshair.png"),
+		.image = texture_load(RESSOURCEPATH "textures/crosshair.png", false),
 		.text_color = (v4f32) {0.0f, 0.0f, 0.0f, 0.0f},
 		.bg_color = (v4f32) {0.0f, 0.0f, 0.0f, 0.0f},
 	});
@@ -48,7 +48,7 @@ static void render(f64 dtime)
 	glEnable(GL_CULL_FACE);
 
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glAlphaFunc(GL_GREATER, 0.0f);
+	glAlphaFunc(GL_GREATER, 0.1f);
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

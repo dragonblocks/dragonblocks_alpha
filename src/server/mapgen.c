@@ -1,10 +1,12 @@
 #include <math.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "environment.h"
 #include "perlin.h"
 #include "server/biomes.h"
 #include "server/mapgen.h"
 #include "server/server_map.h"
+#include "server/trees.h"
 #include "util.h"
 
 void mapgen_set_node(v3s32 pos, MapNode node, MapgenStage mgs, List *changed_blocks)
@@ -32,9 +34,9 @@ void mapgen_generate_block(MapBlock *block, List *changed_blocks)
 		for (u8 z = 0; z < MAPBLOCK_SIZE; z++) {
 			v2s32 pos_horizontal = {pos_x, block_node_pos.z + z};
 
-			s32 height = (pnoise2d(U32(pos_horizontal.x) / 32.0, U32(pos_horizontal.y) / 32.0, 0.45, 5, seed + SO_HEIGHT) * 16.0)
+			s32 default_height = (pnoise2d(U32(pos_horizontal.x) / 32.0, U32(pos_horizontal.y) / 32.0, 0.45, 5, seed + SO_HEIGHT) * 16.0)
 				* (pnoise2d(U32(pos_horizontal.x) / 256.0, U32(pos_horizontal.y) / 256.0, 0.45, 5, seed + SO_HILLYNESS) * 0.5 + 0.5)
-				+ 32;
+				+ 32.0;
 
 			f64 factor;
 			Biome biome = get_biome(pos_horizontal, &factor);
@@ -51,9 +53,9 @@ void mapgen_generate_block(MapBlock *block, List *changed_blocks)
 			char row_data[biome_def->row_data_size];
 
 			if (biome_def->preprocess_row)
-				biome_def->preprocess_row(pos_horizontal, height, factor, row_data, block_data[biome]);
+				biome_def->preprocess_row(pos_horizontal, factor, row_data, block_data[biome]);
 
-			height = biome_def->height(pos_horizontal, factor, height, row_data, block_data[biome]);
+			s32 height = biome_def->height(pos_horizontal, factor, default_height, row_data, block_data[biome]);
 
 			for (u8 y = 0; y < MAPBLOCK_SIZE; y++) {
 				v3s32 pos = {pos_horizontal.x, block_node_pos.y + y, pos_horizontal.y};
@@ -68,9 +70,22 @@ void mapgen_generate_block(MapBlock *block, List *changed_blocks)
 				if (biome_def->snow && diff <= 1 && temperature < 0.0 && node == NODE_AIR)
 					node = NODE_SNOW;
 
+				if (diff == 1) {
+					for (int i = 0; i < NUM_TREES; i++) {
+						TreeDef *def = &tree_definitions[i];
+
+						if (def->condition(pos, humidity, temperature, biome, factor, block, row_data, block_data)
+							&& noise2d(pos.x, pos.z, 0, seed + def->offset) * 0.5 + 0.5 < def->probability
+							&& smooth2d(U32(pos.x) / def->spread, U32(pos.z) / def->spread, 0, seed + def->area_offset) * 0.5 + 0.5 < def->area_probability) {
+							def->generate(pos, changed_blocks);
+							break;
+						}
+					}
+				}
+
 				pthread_mutex_lock(&block->mtx);
 				if (extra->mgs_buffer[x][y][z] <= MGS_TERRAIN) {
-					block->data[x][y][z] = map_node_create(node);
+					block->data[x][y][z] = map_node_create(node, NULL, 0);
 					extra->mgs_buffer[x][y][z] = MGS_TERRAIN;
 				}
 				pthread_mutex_unlock(&block->mtx);
