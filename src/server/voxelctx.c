@@ -14,12 +14,6 @@ static VoxelctxState *create_state(VoxelctxState *old)
 
 	if (old) {
 		*state = *old;
-		state->strs = array_create(sizeof(char *));
-
-		for (size_t i = 0; i < old->strs.siz; i++) {
-			char *s = strdup(((char **) old->strs.ptr)[i]);
-			array_append(&state->strs, &s);
-		}
 	} else {
 		state->pos[0] = 0.0f;
 		state->pos[1] = 0.0f;
@@ -33,10 +27,6 @@ static VoxelctxState *create_state(VoxelctxState *old)
 		state->s = 0.0f;
 		state->l = 1.0f;
 		state->life = 0;
-
-		state->strs = array_create(sizeof(char *));
-		char *s = format_string("glm.mat4()\n");
-		array_append(&state->strs, &s);
 	}
 
 	return state;
@@ -57,17 +47,8 @@ Voxelctx *voxelctx_create(List *changed_blocks, MapgenStage mgs, v3s32 pos)
 	return ctx;
 }
 
-static void delete_state(VoxelctxState *state)
-{
-	for (size_t i = 0; i < state->strs.siz; i++)
-		free(((char **) state->strs.ptr)[i]);
-
-	free(state->strs.ptr);
-}
-
 static void list_delete_state(void *key, unused void *value, unused void *arg)
 {
-	delete_state(key);
 	free(key);
 }
 
@@ -181,7 +162,6 @@ void voxelctx_s(Voxelctx *ctx, f32 value)
 void voxelctx_pop(Voxelctx *ctx)
 {
 	ListPair *next = ctx->statestack.first->next;
-	delete_state(ctx->statestack.first->key);
 	free(ctx->statestack.first->key);
 	free(ctx->statestack.first);
 	ctx->statestack.first = next;

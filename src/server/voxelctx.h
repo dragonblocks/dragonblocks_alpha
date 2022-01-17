@@ -8,11 +8,6 @@
 #include <dragontype/number.h>
 #include "server/server_map.h"
 
-
-
-#include <dragontype/array.h>
-
-
 typedef struct
 {
 	vec4 pos;
@@ -20,7 +15,6 @@ typedef struct
 	mat4x4 mat;
 	f32 h, s, l;
 	s32 life;
-	Array strs;
 } VoxelctxState;
 
 typedef struct
