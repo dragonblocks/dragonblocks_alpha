@@ -201,8 +201,7 @@ void sky_deinit()
 	mesh_delete(sky.sun_mesh);
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
+
 void sky_render()
 {
 	f64 daylight = get_daylight();
@@ -248,4 +247,3 @@ void sky_render()
 	glDepthFunc(GL_LESS);
 	glEnable(GL_CULL_FACE);
 }
-#pragma GCC diagnostic pop

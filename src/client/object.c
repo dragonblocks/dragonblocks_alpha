@@ -176,11 +176,8 @@ bool object_add_to_scene(Object *obj)
 void object_transform(Object *obj)
 {
 	mat4x4_translate(obj->transform, obj->pos.x, obj->pos.y, obj->pos.z);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
 	mat4x4_rotate(obj->transform, obj->transform, obj->rot.x, obj->rot.y, obj->rot.z, obj->angle);
 	mat4x4_scale_aniso(obj->transform, obj->transform, obj->scale.x, obj->scale.y, obj->scale.z);
-#pragma GCC diagnostic pop
 }
 
 bool object_before_render(Object *obj, f64 dtime)

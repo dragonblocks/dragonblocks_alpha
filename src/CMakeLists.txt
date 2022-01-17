@@ -37,7 +37,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "OpenBSD")
 	include_directories("/usr/X11R6/include")
 endif()
 
-add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+add_compile_options(-Wall -Wextra -Werror)
 
 set(DEPS_SOURCES
 	"${DEPS_DIR}/dragontype/array.c"

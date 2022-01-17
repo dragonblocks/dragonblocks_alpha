@@ -76,21 +76,15 @@ static void bintree_render_object(BintreeNode *node, unused void *arg)
 
 void scene_render(f64 dtime)
 {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
 	mat4x4_mul(scene.VP, scene.projection, camera.view);
-#pragma GCC diagnostic pop
 
 	vec4 base_sunlight_dir = {0.0f, 0.0f, -1.0f, 1.0f};
 	vec4 sunlight_dir;
 	mat4x4 sunlight_mat;
 	mat4x4_identity(sunlight_mat);
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
 	mat4x4_rotate(sunlight_mat, sunlight_mat, 1.0f, 0.0f, 0.0f, get_sun_angle() + M_PI / 2.0f);
 	mat4x4_mul_vec4(sunlight_dir, sunlight_mat, base_sunlight_dir);
-#pragma GCC diagnostic pop
 
 	frustum_update(scene.VP);
 

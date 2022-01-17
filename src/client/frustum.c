@@ -29,10 +29,7 @@ void frustum_update(mat4x4 view_proj)
 {
 	mat4x4 m;
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
 	mat4x4_transpose(m, view_proj);
-#pragma GCC diagnostic pop
 
 	vec4_add(frustum.planes[PLANE_LEFT], m[3], m[0]);
 	vec4_sub(frustum.planes[PLANE_RIGHT], m[3], m[0]);

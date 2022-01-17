@@ -416,11 +416,7 @@ static void calculate_element_transform(GUIElement *element)
 
 	mat4x4_translate(element->transform, element->pos.x - element->def.margin.x, element->pos.y - element->def.margin.y, 0.0f);
 	mat4x4_translate(element->text_transform, element->pos.x, element->pos.y, 0.0f);
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
 	mat4x4_scale_aniso(element->transform, element->transform, element->scale.x + element->def.margin.x * 2.0f, element->scale.y + element->def.margin.y * 2.0f, 1.0f);
-#pragma GCC diagnostic pop
 
 	bintree_traverse(&element->children, BTT_INORDER, &bintree_calculate_element_transform, NULL);
 }

@@ -112,10 +112,7 @@ void voxelctx_life(Voxelctx *ctx, s32 value)
 static void apply_translation(Voxelctx *ctx, v3f32 translate)
 {
 	vec4 translate_vec;
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
 	mat4x4_mul_vec4(translate_vec, VOXELCTXSTATE(ctx).mat, (vec4) {translate.x, translate.y, translate.z, 0.0f});
-#pragma GCC diagnostic pop
 	vec4_add(VOXELCTXSTATE(ctx).pos, VOXELCTXSTATE(ctx).pos, translate_vec);
 }
 
@@ -137,28 +134,18 @@ void voxelctx_y(Voxelctx *ctx, f32 value)
 
 void voxelctx_rx(Voxelctx *ctx, f32 value)
 {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
 	mat4x4_rotate_X(VOXELCTXSTATE(ctx).mat, VOXELCTXSTATE(ctx).mat, value * M_PI / 180.0f);
-#pragma GCC diagnostic pop
 }
 
 // swap y and z
 void voxelctx_rz(Voxelctx *ctx, f32 value)
 {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-
 	mat4x4_rotate_Y(VOXELCTXSTATE(ctx).mat, VOXELCTXSTATE(ctx).mat, value * M_PI / 180.0f);
-#pragma GCC diagnostic pop
 }
 
 void voxelctx_ry(Voxelctx *ctx, f32 value)
 {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
 	mat4x4_rotate_Z(VOXELCTXSTATE(ctx).mat, VOXELCTXSTATE(ctx).mat, value * M_PI / 180.0f);
-#pragma GCC diagnostic pop
 }
 
 static void apply_scale(Voxelctx *ctx, v3f32 scale)
@@ -167,10 +154,7 @@ static void apply_scale(Voxelctx *ctx, v3f32 scale)
 	VOXELCTXSTATE(ctx).scale[1] *= scale.y;
 	VOXELCTXSTATE(ctx).scale[2] *= scale.z;
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
 	mat4x4_scale_aniso(VOXELCTXSTATE(ctx).mat, VOXELCTXSTATE(ctx).mat, scale.x, scale.y, scale.z);
-#pragma GCC diagnostic pop
 }
 
 void voxelctx_sx(Voxelctx *ctx, f32 value)
@@ -245,16 +229,11 @@ void voxelctx_cube(Voxelctx *ctx, Node node, bool use_color)
 	s32 max_len = 0;
 
 	vec4 center;
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
+
 	mat4x4_mul_vec4(center, VOXELCTXSTATE(ctx).mat, (vec4) {0.5f, 0.5f, 0.5f});
-#pragma GCC diagnostic pop
 
 	for (int i = 0; i < 8; i++) {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
 		mat4x4_mul_vec4(corners[i], VOXELCTXSTATE(ctx).mat, base_corners[i]);
-#pragma GCC diagnostic pop
 
 		vec3 from_center;
 		vec3_sub(from_center, corners[i], center);
