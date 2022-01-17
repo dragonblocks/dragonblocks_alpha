@@ -71,8 +71,7 @@ static void oak_tree_part(Voxelctx *ctx, f32 n)
 			voxelctx_s(ctx, 4.0f);
 			voxelctx_x(ctx, 0.1f);
 			voxelctx_light(ctx, voxelctx_random(ctx, 0.0f, 0.1f));
-			// voxelctx_cylinder(ctx, NODE_OAK_WOOD, true);
-			voxelctx_cube(ctx, NODE_OAK_WOOD, true);
+			voxelctx_cylinder(ctx, NODE_OAK_WOOD, true);
 		voxelctx_pop(ctx);
 
 		if (i == (int) (n - 2.0f)) {

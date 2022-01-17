@@ -18,7 +18,7 @@ static VoxelctxState *create_state(VoxelctxState *old)
 		state->pos[0] = 0.0f;
 		state->pos[1] = 0.0f;
 		state->pos[2] = 0.0f;
-		state->pos[3] = 1.0f;
+		state->pos[3] = 0.0f;
 		state->scale[0] = 1.0f;
 		state->scale[1] = 1.0f;
 		state->scale[2] = 1.0f;
@@ -102,13 +102,12 @@ void voxelctx_x(Voxelctx *ctx, f32 value)
 	apply_translation(ctx, (v3f32) {value, 0.0f, 0.0f});
 }
 
-// swap y and z
-void voxelctx_z(Voxelctx *ctx, f32 value)
+void voxelctx_y(Voxelctx *ctx, f32 value)
 {
 	apply_translation(ctx, (v3f32) {0.0f, value, 0.0f});
 }
 
-void voxelctx_y(Voxelctx *ctx, f32 value)
+void voxelctx_z(Voxelctx *ctx, f32 value)
 {
 	apply_translation(ctx, (v3f32) {0.0f, 0.0f, value});
 }
@@ -118,13 +117,12 @@ void voxelctx_rx(Voxelctx *ctx, f32 value)
 	mat4x4_rotate_X(VOXELCTXSTATE(ctx).mat, VOXELCTXSTATE(ctx).mat, value * M_PI / 180.0f);
 }
 
-// swap y and z
-void voxelctx_rz(Voxelctx *ctx, f32 value)
+void voxelctx_ry(Voxelctx *ctx, f32 value)
 {
 	mat4x4_rotate_Y(VOXELCTXSTATE(ctx).mat, VOXELCTXSTATE(ctx).mat, value * M_PI / 180.0f);
 }
 
-void voxelctx_ry(Voxelctx *ctx, f32 value)
+void voxelctx_rz(Voxelctx *ctx, f32 value)
 {
 	mat4x4_rotate_Z(VOXELCTXSTATE(ctx).mat, VOXELCTXSTATE(ctx).mat, value * M_PI / 180.0f);
 }
@@ -143,13 +141,12 @@ void voxelctx_sx(Voxelctx *ctx, f32 value)
 	apply_scale(ctx, (v3f32) {value, 1.0f, 1.0f});
 }
 
-// swap y and z
-void voxelctx_sz(Voxelctx *ctx, f32 value)
+void voxelctx_sy(Voxelctx *ctx, f32 value)
 {
 	apply_scale(ctx, (v3f32) {1.0f, value, 1.0f});
 }
 
-void voxelctx_sy(Voxelctx *ctx, f32 value)
+void voxelctx_sz(Voxelctx *ctx, f32 value)
 {
 	apply_scale(ctx, (v3f32) {1.0f, 1.0f, value});
 }
@@ -230,13 +227,19 @@ void voxelctx_cube(Voxelctx *ctx, Node node, bool use_color)
 		s32 v[3];
 
 		for (int i = 0; i < 3; i++)
-			v[i] = floor(VOXELCTXSTATE(ctx).pos[0] + 0.5f
+			v[i] = floor(VOXELCTXSTATE(ctx).pos[i]
 				+ mix(corners[0][i], corners[4][i], (f32) x / (f32) max_len / 2.0f)
 				+ mix(corners[0][i], corners[2][i], (f32) y / (f32) max_len / 2.0f)
 				+ mix(corners[0][i], corners[1][i], (f32) z / (f32) max_len / 2.0f));
 
-		mapgen_set_node(v3s32_add(ctx->pos, (v3s32) {v[0], v[1], v[2]}), CREATE_NODE, ctx->mgs, ctx->changed_blocks);
+		mapgen_set_node(v3s32_add(ctx->pos, (v3s32) {v[0], v[2], v[1]}), CREATE_NODE, ctx->mgs, ctx->changed_blocks);
 	}
+}
+
+
+void voxelctx_cylinder(Voxelctx *ctx, Node node, bool use_color)
+{
+	voxelctx_cube(ctx, node, use_color);
 }
 
 /*
