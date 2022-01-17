@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include "server/mapgen.h"
@@ -226,11 +225,14 @@ void voxelctx_cube(Voxelctx *ctx, Node node, bool use_color)
 	for (s32 z = -max_len; z <= +max_len; z++) {
 		s32 v[3];
 
-		for (int i = 0; i < 3; i++)
-			v[i] = floor(VOXELCTXSTATE(ctx).pos[i]
+		for (int i = 0; i < 3; i++) {
+			f32 f = trunc(
 				+ mix(corners[0][i], corners[4][i], (f32) x / (f32) max_len / 2.0f)
 				+ mix(corners[0][i], corners[2][i], (f32) y / (f32) max_len / 2.0f)
 				+ mix(corners[0][i], corners[1][i], (f32) z / (f32) max_len / 2.0f));
+
+			v[i] = floor(VOXELCTXSTATE(ctx).pos[i] + f + 0.5f);
+		}
 
 		mapgen_set_node(v3s32_add(ctx->pos, (v3s32) {v[0], v[2], v[1]}), CREATE_NODE, ctx->mgs, ctx->changed_blocks);
 	}
