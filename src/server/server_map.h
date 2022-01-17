@@ -8,18 +8,18 @@
 
 typedef enum
 {
-	MBS_CREATED,	// block exists but was not yet generated
-	MBS_GENERATING,	// currently generating in a seperate thread
-	MBS_READY,		// generation finished
+	MBS_CREATED,    // block exists but was not yet generated
+	MBS_GENERATING, // currently generating in a seperate thread
+	MBS_READY,      // generation finished
 } MapBlockState;
 
 typedef enum
 {
-	MGS_VOID,		// initial air, can be overridden by anything
-	MGS_TERRAIN,	// basic terrain, can be overridden by anything except the void
-	MGS_BOULDERS,	// boulders, replace terrain
-	MGS_TREES,		// trees replace boulders
-	MGS_PLAYER,		// player-placed nodes or things placed after map generation
+	MGS_VOID,     // initial air, can be overridden by anything
+	MGS_TERRAIN,  // basic terrain, can be overridden by anything except the void
+	MGS_BOULDERS, // boulders, replace terrain
+	MGS_TREES,    // trees replace boulders
+	MGS_PLAYER,   // player-placed nodes or things placed after map generation
 } MapgenStage;
 
 typedef MapgenStage MapgenStageBuffer[MAPBLOCK_SIZE][MAPBLOCK_SIZE][MAPBLOCK_SIZE];
@@ -31,26 +31,26 @@ typedef struct {
 
 typedef struct
 {
-	char *data;						// cached serialized data
-	size_t size;					// size of data
-	size_t rawsize;					// size of decompressed data
-	MapBlockState state;			// generation state of the block
-	pthread_t mapgen_thread;		// thread that is generating block
-	MapgenStageBuffer mgs_buffer;	// buffer to make sure mapgen only overrides things it should
+	char *data;                   // cached serialized data
+	size_t size;                  // size of data
+	size_t rawsize;               // size of decompressed data
+	MapBlockState state;          // generation state of the block
+	pthread_t mapgen_thread;      // thread that is generating block
+	MapgenStageBuffer mgs_buffer; // buffer to make sure mapgen only overrides things it should
 } MapBlockExtraData;
 
 extern struct ServerMap {
-	Map *map;								// map object, data is stored here
-	bool joining_threads;					// prevent threads from removing themselves from the thread list if thread list is being cleared anyway
-	pthread_mutex_t joining_threads_mtx;	// mutex to protect joining threads
-	List mapgen_threads;					// a list of mapgen threads (need to be joined before shutdown)
-	pthread_mutex_t mapgen_threads_mtx;		// mutex to protect mapgen thread list
-	s32 spawn_height;						// height to spawn players at
+	Map *map;                            // map object, data is stored here
+	bool joining_threads;                // prevent threads from removing themselves from the thread list if thread list is being cleared anyway
+	pthread_mutex_t joining_threads_mtx; // mutex to protect joining threads
+	List mapgen_threads;                 // a list of mapgen threads (need to be joined before shutdown)
+	pthread_mutex_t mapgen_threads_mtx;  // mutex to protect mapgen thread list
+	s32 spawn_height;                    // height to spawn players at
 } server_map; // ServerMap singleton
 
-void server_map_init(Server *server);						// ServerMap singleton constructor
-void server_map_deinit();									// ServerMap singleton destructor
-void server_map_requested_block(Client *client, v3s32 pos);	// handle block request from client (thread safe)
-void server_map_prepare_spawn();							// prepare spawn region
+void server_map_init(Server *server);                       // ServerMap singleton constructor
+void server_map_deinit();                                   // ServerMap singleton destructor
+void server_map_requested_block(Client *client, v3s32 pos); // handle block request from client (thread safe)
+void server_map_prepare_spawn();                            // prepare spawn region
 
 #endif

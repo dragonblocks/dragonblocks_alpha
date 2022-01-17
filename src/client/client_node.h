@@ -17,9 +17,9 @@ typedef struct
 {
 	struct
 	{
-		char *paths[6];			// input
-		int indices[6];			// input
-		Texture *textures[6];	// output
+		char *paths[6];       // input
+		int indices[6];       // input
+		Texture *textures[6]; // output
 	} tiles;
 	NodeVisibility visibility;
 	bool mipmap;
