@@ -10,4 +10,4 @@ curl -f -i -X POST -H "Content-Type: multipart/form-data" \
 	-F "name=$VERSION" \
 	-F "is_release=$IS_RELEASE" \
 	-F "build=@DragonblocksAlpha-$VERSION.zip" \
-	https://elidragon.com/dragonblocks_alpha/upload.php
+	https://elidragon.tk/dragonblocks_alpha/upload.php
