@@ -2,7 +2,7 @@
 
 A multiplayer voxelgame for POSIX systems.
 
-Head to <https://www.elidragon.com/dragonblocks_alpha/> for ubuntu snapshot and release builds.
+Head to <https://www.elidragon.tk/dragonblocks_alpha/> for ubuntu snapshot and release builds.
 
 ## Invocation
 
