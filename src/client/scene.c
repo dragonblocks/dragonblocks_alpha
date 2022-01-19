@@ -35,6 +35,8 @@ bool scene_init()
 	scene.loc_model = glGetUniformLocation(scene.prog, "model");
 	scene.loc_VP = glGetUniformLocation(scene.prog, "VP");
 	scene.loc_daylight = glGetUniformLocation(scene.prog, "daylight");
+	scene.loc_fogColor = glGetUniformLocation(scene.prog, "fogColor");
+	scene.loc_ambientLight = glGetUniformLocation(scene.prog, "ambientLight");
 	scene.loc_lightDir = glGetUniformLocation(scene.prog, "lightDir");
 	scene.loc_cameraPos = glGetUniformLocation(scene.prog, "cameraPos");
 
@@ -88,11 +90,17 @@ void scene_render(f64 dtime)
 
 	frustum_update(scene.VP);
 
+	f32 daylight = get_daylight();
+	f32 ambient_light = f32_mix(0.3f, 0.7f, daylight);
+	v3f32 fog_color = v3f32_mix((v3f32) {0x03, 0x0A, 0x1A}, (v3f32) {0x87, 0xCE, 0xEB}, daylight);
+
 	glUseProgram(scene.prog);
 	glUniformMatrix4fv(scene.loc_VP, 1, GL_FALSE, scene.VP[0]);
 	glUniform3f(scene.loc_lightDir, sunlight_dir[0], sunlight_dir[1], sunlight_dir[2]);
 	glUniform3f(scene.loc_cameraPos, camera.eye[0], camera.eye[1], camera.eye[2]);
-	glUniform1f(scene.loc_daylight, get_daylight());
+	glUniform1f(scene.loc_daylight, daylight);
+	glUniform3f(scene.loc_fogColor, fog_color.x / 0xFF * ambient_light, fog_color.y / 0xFF * ambient_light, fog_color.z / 0xFF * ambient_light);
+	glUniform1f(scene.loc_ambientLight, ambient_light);
 
 	for (ListPair **pairptr = &scene.objects.first; *pairptr != NULL; ) {
 		ListPair *pair = *pairptr;

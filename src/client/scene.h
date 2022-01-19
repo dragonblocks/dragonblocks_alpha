@@ -18,6 +18,8 @@ extern struct Scene
 	GLint loc_model;
 	GLint loc_VP;
 	GLint loc_daylight;
+	GLint loc_fogColor;
+	GLint loc_ambientLight;
 	GLint loc_lightDir;
 	GLint loc_cameraPos;
 	GLint max_texture_units;

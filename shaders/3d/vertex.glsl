@@ -12,6 +12,9 @@ out vec3 fragmentColor;
 
 uniform mat4 model;
 uniform mat4 VP;
+uniform float daylight;
+uniform float ambientLight;
+uniform vec3 lightDir;
 
 void main()
 {
@@ -23,4 +26,9 @@ void main()
 	fragmentTextureIndex = vertexTextureIndex;
 	fragmentTextureCoords = vertexTextureCoords;
 	fragmentColor = vertexColor;
+
+	float diffuseLight = 0.3 * daylight * clamp(dot(normalize(fragmentNormal), normalize(lightDir)), 0.0, 1.0);
+	float light = ambientLight + diffuseLight;
+
+	fragmentColor *= light;
 }

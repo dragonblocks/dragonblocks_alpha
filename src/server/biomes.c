@@ -122,11 +122,6 @@ static bool find_near_vulcano(v2s32 pos, v2s32 *result)
 	return false;
 }
 
-static f64 mix(f64 a, f64 b, f64 f)
-{
-	return (a * (1.0 - f) + b * f);
-}
-
 static inline f64 min(f64 a, f64 b)
 {
 	return a < b ? a : b;
@@ -146,16 +141,16 @@ static s32 calculate_ocean_floor(f64 factor, s32 height)
 {
 	switch (get_ocean_level(factor)) {
 		case OL_BEACH_EDGE:
-			return mix(height + 1, 0, pow(get_ocean_level_factor(factor, OL_BEACH_EDGE), 0.8));
+			return f64_mix(height + 1, 0, pow(get_ocean_level_factor(factor, OL_BEACH_EDGE), 0.8));
 
 		case OL_BEACH:
 			return 0;
 
 		case OL_OCEAN:
-			return mix(0, -10, pow(get_ocean_level_factor(factor, OL_OCEAN), 0.5));
+			return f64_mix(0, -10, pow(get_ocean_level_factor(factor, OL_OCEAN), 0.5));
 
 		case OL_DEEP_OCEAN:
-			return mix(-10, -50, pow(get_ocean_level_factor(factor, OL_DEEP_OCEAN), 0.5));
+			return f64_mix(-10, -50, pow(get_ocean_level_factor(factor, OL_DEEP_OCEAN), 0.5));
 
 		default:
 			break;

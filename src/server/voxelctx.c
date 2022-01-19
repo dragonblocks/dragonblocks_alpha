@@ -57,16 +57,11 @@ void voxelctx_delete(Voxelctx *ctx)
 	free(ctx);
 }
 
-static inline f32 mix(f32 x, f32 y, f32 t)
-{
-    return (1.0 - t) * x + t * y;
-}
-
 static void move_value(f32 *x, f32 v, f32 range)
 {
     f32 dst = v >= 0 ? range : 0;
     v = fabs(v);
-    *x = mix(*x, dst, v);
+    *x = f32_mix(*x, dst, v);
 }
 
 void voxelctx_hue(Voxelctx *ctx, f32 value)
@@ -227,9 +222,9 @@ void voxelctx_cube(Voxelctx *ctx, Node node, bool use_color)
 
 		for (int i = 0; i < 3; i++) {
 			f32 f = trunc(
-				+ mix(corners[0][i], corners[4][i], (f32) x / (f32) max_len / 2.0f)
-				+ mix(corners[0][i], corners[2][i], (f32) y / (f32) max_len / 2.0f)
-				+ mix(corners[0][i], corners[1][i], (f32) z / (f32) max_len / 2.0f));
+				+ f32_mix(corners[0][i], corners[4][i], (f32) x / (f32) max_len / 2.0f)
+				+ f32_mix(corners[0][i], corners[2][i], (f32) y / (f32) max_len / 2.0f)
+				+ f32_mix(corners[0][i], corners[1][i], (f32) z / (f32) max_len / 2.0f));
 
 			v[i] = floor(VOXELCTXSTATE(ctx).pos[i] + f + 0.5f);
 		}
