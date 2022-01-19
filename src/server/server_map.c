@@ -215,6 +215,7 @@ static void join_mapgen_threads()
 // generate a hut for new players to spawn in
 static void generate_spawn_hut()
 {
+	f32 wood_color[3] = {0.11f, 1.0f, 0.29f};
 	List changed_blocks = list_create(NULL);
 
 	for (s32 x = -4; x <= +4; x++) {
@@ -227,22 +228,22 @@ static void generate_spawn_hut()
 
 	for (s32 x = -5; x <= +5; x++) {
 		for (s32 z = -4; z <= +3; z++) {
-			mapgen_set_node((v3s32) {x, server_map.spawn_height - 1, z}, map_node_create(NODE_OAK_WOOD, NULL, 0), MGS_PLAYER, &changed_blocks);
-			mapgen_set_node((v3s32) {x, server_map.spawn_height + 4, z}, map_node_create(NODE_OAK_WOOD, NULL, 0), MGS_PLAYER, &changed_blocks);
+			mapgen_set_node((v3s32) {x, server_map.spawn_height - 1, z}, map_node_create(NODE_OAK_WOOD, wood_color, sizeof wood_color), MGS_PLAYER, &changed_blocks);
+			mapgen_set_node((v3s32) {x, server_map.spawn_height + 4, z}, map_node_create(NODE_OAK_WOOD, wood_color, sizeof wood_color), MGS_PLAYER, &changed_blocks);
 		}
 	}
 
 	for (s32 y = 0; y <= 3; y++) {
 		for (s32 x = -5; x <= +5; x++) {
-			mapgen_set_node((v3s32) {x, server_map.spawn_height + y, -4}, map_node_create(((y == 1 || y == 2) && ((x >= -3 && x <= -1) || (x >= +1 && x <= +2))) ? NODE_AIR : NODE_OAK_WOOD, NULL, 0), MGS_PLAYER, &changed_blocks);
-			mapgen_set_node((v3s32) {x, server_map.spawn_height + y, +3}, map_node_create(((y == 1 || y == 2) && ((x >= -3 && x <= -2) || (x >= +1 && x <= +3))) ? NODE_AIR : NODE_OAK_WOOD, NULL, 0), MGS_PLAYER, &changed_blocks);
+			mapgen_set_node((v3s32) {x, server_map.spawn_height + y, -4}, map_node_create(((y == 1 || y == 2) && ((x >= -3 && x <= -1) || (x >= +1 && x <= +2))) ? NODE_AIR : NODE_OAK_WOOD, wood_color, sizeof(f32) * 3), MGS_PLAYER, &changed_blocks);
+			mapgen_set_node((v3s32) {x, server_map.spawn_height + y, +3}, map_node_create(((y == 1 || y == 2) && ((x >= -3 && x <= -2) || (x >= +1 && x <= +3))) ? NODE_AIR : NODE_OAK_WOOD, wood_color, sizeof(f32) * 3), MGS_PLAYER, &changed_blocks);
 		}
 	}
 
 	for (s32 y = 0; y <= 3; y++) {
 		for (s32 z = -3; z <= +2; z++) {
-			mapgen_set_node((v3s32) {-5, server_map.spawn_height + y, z}, map_node_create(NODE_OAK_WOOD, NULL, 0), MGS_PLAYER, &changed_blocks);
-			mapgen_set_node((v3s32) {+5, server_map.spawn_height + y, z}, map_node_create(((y != 3) && (z == -1 || z == +0)) ? NODE_AIR : NODE_OAK_WOOD, NULL, 0), MGS_PLAYER, &changed_blocks);
+			mapgen_set_node((v3s32) {-5, server_map.spawn_height + y, z}, map_node_create(NODE_OAK_WOOD, wood_color, sizeof(f32) * 3), MGS_PLAYER, &changed_blocks);
+			mapgen_set_node((v3s32) {+5, server_map.spawn_height + y, z}, map_node_create(((y != 3) && (z == -1 || z == +0)) ? NODE_AIR : NODE_OAK_WOOD, wood_color, sizeof(f32) * 3), MGS_PLAYER, &changed_blocks);
 		}
 	}
 
@@ -270,7 +271,7 @@ static void generate_spawn_hut()
 			if (node_definitions[node].solid)
 				break;
 
-			mapgen_set_node(pos, map_node_create(node == NODE_LAVA ? NODE_VULCANO_STONE : NODE_OAK_WOOD, NULL, 0), MGS_PLAYER, &changed_blocks);
+			mapgen_set_node(pos, map_node_create(node == NODE_LAVA ? NODE_VULCANO_STONE : NODE_OAK_WOOD, wood_color, sizeof(f32) * 3), MGS_PLAYER, &changed_blocks);
 		}
 	}
 
