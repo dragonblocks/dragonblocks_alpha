@@ -134,6 +134,10 @@ bool game(Client *client)
 	debug_menu_update_fullscreen();
 	debug_menu_update_opengl();
 	debug_menu_update_gpu();
+	debug_menu_update_antialiasing();
+	debug_menu_update_mipmap();
+	debug_menu_update_render_distance();
+	debug_menu_update_simulation_distance();
 
 	crosshair_init();
 

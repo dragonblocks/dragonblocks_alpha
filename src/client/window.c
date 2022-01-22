@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <GL/glew.h>
 #include <GL/gl.h>
+#include "client/client_config.h"
 #include "client/debug_menu.h"
 #include "client/game.h"
 #include "client/gui.h"
@@ -63,7 +64,7 @@ bool window_init(int width, int height)
 		return false;
 	}
 
-	glfwWindowHint(GLFW_SAMPLES, 8);
+	glfwWindowHint(GLFW_SAMPLES, client_config.antialiasing);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);

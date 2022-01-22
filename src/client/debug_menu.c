@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <GL/glew.h>
 #include <GL/gl.h>
+#include "client/client_config.h"
+#include "client/client_map.h"
 #include "client/client_player.h"
 #include "client/debug_menu.h"
 #include "client/gui.h"
@@ -30,6 +32,10 @@ typedef enum
 	DME_FULLSCREEN,
 	DME_OPENGL,
 	DME_GPU,
+	DME_ANTIALIASING,
+	DME_MIPMAP,
+	DME_RENDER_DISTANCE,
+	DME_SIMULATION_DISTANCE,
 	DME_COUNT,
 } DebugMenuEntry;
 
@@ -155,4 +161,27 @@ void debug_menu_update_opengl()
 void debug_menu_update_gpu()
 {
 	gui_set_text(gui_elements[DME_GPU], format_string("%s", glGetString(GL_RENDERER)));
+}
+
+void debug_menu_update_antialiasing()
+{
+	gui_set_text(gui_elements[DME_ANTIALIASING], client_config.antialiasing > 1
+		? format_string("antialiasing: %u samples", client_config.antialiasing)
+		: format_string("antialiasing: disabled")
+	);
+}
+
+void debug_menu_update_mipmap()
+{
+	gui_set_text(gui_elements[DME_MIPMAP], format_string("mipmap: %s", client_config.mipmap ? "enabled" : "disabled"));
+}
+
+void debug_menu_update_render_distance()
+{
+	gui_set_text(gui_elements[DME_RENDER_DISTANCE], format_string("render distance: %.1lf", client_config.render_distance));
+}
+
+void debug_menu_update_simulation_distance()
+{
+	gui_set_text(gui_elements[DME_SIMULATION_DISTANCE], format_string("simulation distance: %u", client_map.simulation_distance));
 }

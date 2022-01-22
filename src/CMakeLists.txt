@@ -51,6 +51,7 @@ set(DEPS_SOURCES
 
 set(COMMON_SOURCES
 	${DEPS_SOURCES}
+	config.c
 	day.c
 	environment.c
 	map.c
@@ -66,6 +67,7 @@ add_executable(Dragonblocks
 	client/camera.c
 	client/client.c
 	client/client_commands.c
+	client/client_config.c
 	client/client_map.c
 	client/client_node.c
 	client/client_player.c
@@ -105,6 +107,7 @@ add_executable(DragonblocksServer
 	server/mapgen.c
 	server/server.c
 	server/server_commands.c
+	server/server_config.c
 	server/server_map.c
 	server/trees.c
 	server/voxelctx.c

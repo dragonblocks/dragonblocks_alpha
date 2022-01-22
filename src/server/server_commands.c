@@ -3,6 +3,7 @@
 #include "day.h"
 #include "server/database.h"
 #include "server/server.h"
+#include "server/server_config.h"
 #include "server/server_map.h"
 #include "perlin.h"
 #include "util.h"
@@ -50,7 +51,7 @@ static bool auth_handler(Client *client, bool good)
 	bool ret = write_u32(client->fd, CC_AUTH) && write_u8(client->fd, success);
 	if (ret && success)
 		ret = ret
-			&& write_u32(client->fd, CC_INFO) && write_u32(client->fd, client->server->config.simulation_distance) && write_s32(client->fd, seed)
+			&& write_u32(client->fd, CC_INFO) && write_u32(client->fd, server_config.simulation_distance) && write_s32(client->fd, seed)
 			&& write_u32(client->fd, CC_SETPOS) && write_v3f64(client->fd, client->pos)
 			&& write_u32(client->fd, CC_TIMEOFDAY) && write_u64(client->fd, (u64) get_time_of_day());
 	pthread_mutex_unlock(&client->mtx);

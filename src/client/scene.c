@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "client/camera.h"
 #include "client/client.h"
+#include "client/client_config.h"
 #include "client/frustum.h"
 #include "client/scene.h"
 #include "client/shader.h"
@@ -24,13 +25,19 @@ bool scene_init()
 
 	glGetIntegerv(GL_MAX_TEXTURE_UNITS, &scene.max_texture_units);
 
-	char max_texture_units_def[BUFSIZ];
-	sprintf(max_texture_units_def, "#define MAX_TEXTURE_UNITS %d\n", scene.max_texture_units);
+	char *shader_defs = format_string(
+		"#define MAX_TEXTURE_UNITS %d\n"
+		"#define RENDER_DISTANCE %lf\n",
+		scene.max_texture_units,
+		client_config.render_distance
+	);
 
-	if (! shader_program_create(RESSOURCEPATH "shaders/3d", &scene.prog, max_texture_units_def)) {
+	if (! shader_program_create(RESSOURCEPATH "shaders/3d", &scene.prog, shader_defs)) {
 		fprintf(stderr, "Failed to create 3D shader program\n");
 		return false;
 	}
+
+	free(shader_defs);
 
 	scene.loc_model = glGetUniformLocation(scene.prog, "model");
 	scene.loc_VP = glGetUniformLocation(scene.prog, "VP");
@@ -47,7 +54,6 @@ bool scene_init()
 	glProgramUniform1iv(scene.prog, glGetUniformLocation(scene.prog, "textures"), scene.max_texture_units, texture_indices);
 
 	scene.fov = 86.1f;
-	scene.render_distance = 255.0f;
 
 	return true;
 }
@@ -113,7 +119,7 @@ void scene_render(f64 dtime)
 			object_delete(obj);
 		} else {
 			f32 distance = sqrt(pow(obj->pos.x - camera.eye[0], 2) + pow(obj->pos.y - camera.eye[1], 2) + pow(obj->pos.z - camera.eye[2], 2));
-			if (distance < scene.render_distance && object_before_render(obj, dtime)) {
+			if (distance < client_config.render_distance && object_before_render(obj, dtime)) {
 				if (obj->transparent)
 					bintree_insert(&scene.transparent_objects, &distance, obj);
 				else
@@ -129,7 +135,7 @@ void scene_render(f64 dtime)
 
 void scene_on_resize(int width, int height)
 {
-	mat4x4_perspective(scene.projection, scene.fov / 180.0f * M_PI, (float) width / (float) height, 0.01f, scene.render_distance + 28.0f);
+	mat4x4_perspective(scene.projection, scene.fov / 180.0f * M_PI, (float) width / (float) height, 0.01f, client_config.render_distance + 28.0f);
 }
 
 GLuint scene_get_max_texture_units()

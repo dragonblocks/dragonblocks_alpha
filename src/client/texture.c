@@ -2,6 +2,7 @@
 #include <stb/stb_image.h>
 #include <stdbool.h>
 #include <dragontype/list.h>
+#include "client/client_config.h"
 #include "client/texture.h"
 #include "util.h"
 
@@ -32,7 +33,7 @@ Texture *texture_create(unsigned char *data, int width, int height, GLenum forma
 
 	glBindTexture(GL_TEXTURE_2D, texture->id);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mipmap ? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mipmap && client_config.mipmap) ? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);

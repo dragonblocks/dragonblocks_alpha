@@ -4,6 +4,7 @@
 #include "client/facecache.h"
 #include "client/client_map.h"
 #include "client/client_player.h"
+#include "client/debug_menu.h"
 #include "util.h"
 #define MAX_BLOCK_REQUESTS 4
 

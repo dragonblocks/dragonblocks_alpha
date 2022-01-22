@@ -68,8 +68,6 @@ static void list_disconnect_client(void *key, unused void *value, unused void *a
 // start up the server after socket was created, then accept connections until interrupted, then shutdown server
 static void server_run(int fd)
 {
-	server.config.simulation_distance = 10;
-
 	server.sockfd = fd;
 	pthread_rwlock_init(&server.clients_rwlck, NULL);
 	server.clients = list_create(NULL);

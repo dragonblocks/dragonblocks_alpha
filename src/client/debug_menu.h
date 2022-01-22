@@ -23,5 +23,9 @@ void debug_menu_update_timelapse();
 void debug_menu_update_fullscreen();
 void debug_menu_update_opengl();
 void debug_menu_update_gpu();
+void debug_menu_update_antialiasing();
+void debug_menu_update_mipmap();
+void debug_menu_update_render_distance();
+void debug_menu_update_simulation_distance();
 
 #endif

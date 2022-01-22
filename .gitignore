@@ -16,3 +16,4 @@ world.sqlite-journal
 DragonblocksAlpha-*.zip
 src/version.h
 screenshot-*.png
+*.conf

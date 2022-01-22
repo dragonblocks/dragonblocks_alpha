@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -6,6 +5,7 @@
 #include "map.h"
 #include "server/database.h"
 #include "server/mapgen.h"
+#include "server/server_config.h"
 #include "server/server_map.h"
 #include "signal_handlers.h"
 #include "util.h"
@@ -52,7 +52,7 @@ static void send_block_to_near(MapBlock *block)
 	ITERATE_LIST(&server->players, pair) {
 		Client *client = pair->value;
 
-		if (within_simulation_distance(client->pos, block->pos, server->config.simulation_distance))
+		if (within_simulation_distance(client->pos, block->pos, server_config.simulation_distance))
 			send_block(client, block);
 	}
 	pthread_rwlock_unlock(&server->players_rwlck);
@@ -310,7 +310,7 @@ void server_map_deinit()
 // handle block request from client (thread safe)
 void server_map_requested_block(Client *client, v3s32 pos)
 {
-	if (within_simulation_distance(client->pos, pos, server->config.simulation_distance)) {
+	if (within_simulation_distance(client->pos, pos, server_config.simulation_distance)) {
 		MapBlock *block = map_get_block(server_map.map, pos, true);
 
 		pthread_mutex_lock(&block->mtx);
@@ -335,7 +335,7 @@ void server_map_requested_block(Client *client, v3s32 pos)
 void server_map_prepare_spawn()
 {
 	s32 done = 0;
-	s32 dist = server->config.simulation_distance;
+	s32 dist = server_config.simulation_distance;
 	s32 total = (dist * 2 + 1);
 	total *= total * total;
 	s32 last_percentage = -1;
