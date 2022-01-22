@@ -15,7 +15,8 @@ void config_read(char *path, ConfigEntry *entries, size_t num_entries)
 
 	while (! feof(f)) {
 		char key[BUFSIZ];
-		fscanf(f, "%s", key);
+		if (! fscanf(f, "%s", key))
+			break;
 
 		bool found = false;
 		for (size_t i = 0; i < num_entries; i++) {
