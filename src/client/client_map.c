@@ -9,7 +9,6 @@
 #define MAX_BLOCK_REQUESTS 4
 
 struct ClientMap client_map;
-Client *client;
 
 // meshgen functions
 
@@ -48,9 +47,9 @@ static void *meshgen_thread(unused void *arg)
 // send block request command to server
 static void request_position(v3s32 pos)
 {
-	pthread_mutex_lock(&client->mtx);
-	(void) (write_u32(client->fd, SC_REQUEST_BLOCK) && write_v3s32(client->fd, pos));
-	pthread_mutex_unlock(&client->mtx);
+	dragonnet_peer_send_ToServerRequestBlock(client, &(ToServerRequestBlock) {
+		.pos = pos
+	});
 }
 
 // mapblock synchronisation step
@@ -156,10 +155,8 @@ static bool on_get_block(MapBlock *block, bool create)
 // public functions
 
 // ClientMap singleton constructor
-void client_map_init(Client *cli)
+void client_map_init()
 {
-	client = cli;
-
 	client_map.map = map_create((MapCallbacks) {
 		.create_block = &on_create_block,
 		.delete_block = &on_delete_block,

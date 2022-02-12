@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "client/mesh.h"
+#include "types.h"
 
 typedef struct
 {

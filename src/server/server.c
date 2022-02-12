@@ -1,193 +1,93 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
-#include <netdb.h>
+#include <dragonnet/addr.h>
 #include "server/database.h"
 #include "server/server.h"
 #include "server/server_map.h"
+#include "server/server_player.h"
 #include "signal_handlers.h"
 #include "util.h"
 
-static Server server;
+DragonnetListener *server;
 
-// include handle_packets implementation
-
-#include "network.c"
-
-// utility functions
-
-// pthread start routine for reciever thread
-static void *reciever_thread(void *arg)
+static bool on_recv(DragonnetPeer *peer, DragonnetTypeId type, unused void *pkt)
 {
-	Client *client = arg;
-
-	if (! handle_packets(client))
-		server_disconnect_client(client, DISCO_NO_SEND | DISCO_NO_JOIN, "network error");
-
-	return NULL;
+	return ((ServerPlayer *) peer->extra)->auth != (type == DRAGONNET_TYPE_ToServerAuth);
 }
 
-// accept a new connection, initialize client and start reciever thread
-static void accept_client()
+static void on_ToServerAuth(DragonnetPeer *peer, ToServerAuth *pkt)
 {
-	struct sockaddr_storage client_address = {0};
-	socklen_t client_addrlen = sizeof(client_address);
-
-	int fd = accept(server.sockfd, (struct sockaddr *) &client_address, &client_addrlen);
-
-	if (fd == -1) {
-		if (errno != EINTR)
-			perror("accept");
-		return;
-	}
-
-	Client *client = malloc(sizeof(Client));
-	client->fd = fd;
-	pthread_mutex_init(&client->mtx, NULL);
-	client->state = CS_CREATED;
-	client->address = address_string((struct sockaddr_in6 *) &client_address);
-	client->name = client->address;
-	client->server = &server;
-	client->pos = (v3f64) {0.0f, 0.0f, 0.0f};
-	pthread_create(&client->net_thread, NULL, &reciever_thread, client);
-
-	pthread_rwlock_wrlock(&server.clients_rwlck);
-	list_put(&server.clients, client, NULL);
-	pthread_rwlock_unlock(&server.clients_rwlck);
-
-	printf("Connected %s\n", client->address);
+	if (server_player_auth(peer->extra, pkt->name))
+		pkt->name = NULL;
 }
 
-// list_clear_func callback used on server shutdown to disconnect all clients properly
-static void list_disconnect_client(void *key, unused void *value, unused void *arg)
+// set a node on the map
+static void on_ToServerSetnode(unused DragonnetPeer *peer, ToServerSetnode *pkt)
 {
-	server_disconnect_client(key, DISCO_NO_REMOVE | DISCO_NO_MESSAGE, "");
+	map_set_node(server_map.map, pkt->pos, map_node_create(pkt->node, (Blob) {0, NULL}), false, NULL);
 }
 
-// start up the server after socket was created, then accept connections until interrupted, then shutdown server
-static void server_run(int fd)
+// update player's position
+static void on_ToServerPos(DragonnetPeer *peer, ToServerPos *pkt)
 {
-	server.sockfd = fd;
-	pthread_rwlock_init(&server.clients_rwlck, NULL);
-	server.clients = list_create(NULL);
-	pthread_rwlock_init(&server.players_rwlck, NULL);
-	server.players = list_create(&list_compare_string);
+	ServerPlayer *player = peer->extra;
 
-	database_init();
-	server_map_init(&server);
-	server_map_prepare_spawn();
-
-	while (! interrupted)
-		accept_client();
-
-	printf("Shutting down\n");
-
-	pthread_rwlock_wrlock(&server.clients_rwlck);
-	list_clear_func(&server.clients, &list_disconnect_client, NULL);
-	pthread_rwlock_unlock(&server.clients_rwlck);
-
-	pthread_rwlock_wrlock(&server.players_rwlck);
-	list_clear(&server.players);
-	pthread_rwlock_unlock(&server.players_rwlck);
-
-	pthread_rwlock_destroy(&server.clients_rwlck);
-	pthread_rwlock_destroy(&server.players_rwlck);
-
-	shutdown(server.sockfd, SHUT_RDWR);
-	close(server.sockfd);
-
-	server_map_deinit();
-	database_deinit();
-
-	exit(EXIT_SUCCESS);
+	pthread_rwlock_wrlock(&player->pos_lock);
+	player->pos = pkt->pos;
+	database_update_player_pos(player->name, player->pos);
+	pthread_rwlock_unlock(&player->pos_lock);
 }
 
-// public functions
-
-// disconnect a client with various options an an optional detail message (flags: DiscoFlag bitmask)
-void server_disconnect_client(Client *client, int flags, const char *detail)
+// tell server map manager client requested the block
+static void on_ToServerRequestBlock(DragonnetPeer *peer, ToServerRequestBlock *pkt)
 {
-	client->state = CS_DISCONNECTED;
-
-	if (! (flags & DISCO_NO_REMOVE)) {
-		if (client->name) {
-			pthread_rwlock_wrlock(&server.players_rwlck);
-			list_delete(&server.players, client->name);
-			pthread_rwlock_unlock(&server.players_rwlck);
-		}
-		pthread_rwlock_wrlock(&server.clients_rwlck);
-		list_delete(&server.clients, client);
-		pthread_rwlock_unlock(&server.clients_rwlck);
-	}
-
-	if (! (flags & DISCO_NO_MESSAGE))
-		printf("Disconnected %s %s%s%s\n", client->name, INBRACES(detail));
-
-	if (! (flags & DISCO_NO_SEND))
-		send_command(client, CC_DISCONNECT);
-
-	pthread_mutex_lock(&client->mtx);
-	close(client->fd);
-	pthread_mutex_unlock(&client->mtx);
-
-	if (! (flags & DISCO_NO_JOIN))
-		pthread_join(client->net_thread, NULL);
-
-	if (client->name != client->address)
-		free(client->name);
-	free(client->address);
-
-	pthread_mutex_destroy(&client->mtx);
-	free(client);
+	server_map_requested_block(peer->extra, pkt->pos);
 }
 
 // server entry point
 int main(int argc, char **argv)
 {
-	program_name = argv[0];
+	if (argc < 2) {
+		fprintf(stderr, "Missing address\n");
+		return EXIT_FAILURE;
+	}
 
-	if (argc < 2)
-		internal_error("missing port");
+	if (! (server = dragonnet_listener_new(argv[1]))) {
+		fprintf(stderr, "Failed to listen to connections\n");
+		return EXIT_FAILURE;
+	}
 
-	struct addrinfo hints = {
-		.ai_family = AF_INET6,
-		.ai_socktype = SOCK_STREAM,
-		.ai_protocol = 0,
-		.ai_flags = AI_NUMERICSERV | AI_PASSIVE,
-	};
+	char *address = dragonnet_addr_str(server->laddr);
+	printf("Listening on %s\n", address);
+	free(address);
 
-	struct addrinfo *info = NULL;
-
-	int gai_state = getaddrinfo(NULL, argv[1], &hints, &info);
-
-	if (gai_state != 0)
-		internal_error(gai_strerror(gai_state));
-
-	int fd = socket(info->ai_family, info->ai_socktype, 0);
-
-	if (fd == -1)
-		syscall_error("socket");
-
-	int flag = 1;
-
-	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag)) == -1)
-		syscall_error("setsockopt");
-
-	if (bind(fd, info->ai_addr, info->ai_addrlen) == -1)
-		syscall_error("bind");
-
-	if (listen(fd, 3) == -1)
-		syscall_error("listen");
-
-	char *addrstr = address_string((struct sockaddr_in6 *) info->ai_addr);
-	printf("Listening on %s\n", addrstr);
-	free(addrstr);
-
-	freeaddrinfo(info);
+	server->on_connect = &server_player_add;
+	server->on_disconnect = &server_player_remove;
+	server->on_recv = &on_recv;
+	server->on_recv_type[DRAGONNET_TYPE_ToServerAuth] =         (void *) &on_ToServerAuth;
+	server->on_recv_type[DRAGONNET_TYPE_ToServerSetnode] =      (void *) &on_ToServerSetnode;
+	server->on_recv_type[DRAGONNET_TYPE_ToServerPos] =          (void *) &on_ToServerPos;
+	server->on_recv_type[DRAGONNET_TYPE_ToServerRequestBlock] = (void *) &on_ToServerRequestBlock;
 
 	signal_handlers_init();
-	server_run(fd);
+
+	server_player_init();
+	database_init();
+	server_map_init();
+	server_map_prepare_spawn();
+	dragonnet_listener_run(server);
+
+	while (! interrupted)
+		sched_yield();
+
+	printf("Shutting down\n");
+
+	dragonnet_listener_close(server);
+	server_map_deinit();
+	database_deinit();
+	server_player_deinit();
+
+	dragonnet_listener_delete(server);
 
 	return EXIT_SUCCESS;
 }

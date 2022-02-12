@@ -3,11 +3,11 @@
 
 #include <stdbool.h>
 #include <linmath.h/linmath.h>
-#include <dragontype/bintree.h>
-#include <dragontype/list.h>
-#include <dragontype/number.h>
+#include <dragonstd/bintree.h>
+#include <dragonstd/list.h>
 #include "client/font.h"
 #include "client/texture.h"
+#include "types.h"
 
 typedef enum
 {

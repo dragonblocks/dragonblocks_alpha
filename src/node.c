@@ -1,25 +1,8 @@
+#include "types.h"
 #include "map.h"
 #include "node.h"
 #include "util.h"
 #include <stdio.h>
-
-static void serialize_hsl(MapNode *node, unsigned char **buffer, size_t *bufsiz)
-{
-	HSLData *node_data = node->data;
-	buffer_write(buffer, bufsiz, (f32 []) {node_data->color.x, node_data->color.y, node_data->color.z}, sizeof(f32) * 3);
-}
-
-static void deserialize_hsl(MapNode *node, unsigned char *data, size_t size)
-{
-	HSLData *node_data = node->data;
-
-	f32 *color = buffer_read(&data, &size, sizeof(f32) * 3);
-
-	if (! color)
-		return;
-
-	*node_data = (HSLData) {.color = {color[0], color[1], color[2]}};
-}
 
 NodeDefinition node_definitions[NODE_UNLOADED] = {
 	// unknown
@@ -82,8 +65,8 @@ NodeDefinition node_definitions[NODE_UNLOADED] = {
 		.data_size = sizeof(HSLData),
 		.create = NULL,
 		.delete = NULL,
-		.serialize = &serialize_hsl,
-		.deserialize = &deserialize_hsl,
+		.serialize = (void *) &HSLData_write,
+		.deserialize = (void *) &HSLData_read,
 	},
 	// oak leaves
 	{
@@ -91,8 +74,8 @@ NodeDefinition node_definitions[NODE_UNLOADED] = {
 		.data_size = sizeof(HSLData),
 		.create = NULL,
 		.delete = NULL,
-		.serialize = &serialize_hsl,
-		.deserialize = &deserialize_hsl,
+		.serialize = (void *) &HSLData_write,
+		.deserialize = (void *) &HSLData_read,
 	},
 	// pine wood
 	{
@@ -100,8 +83,8 @@ NodeDefinition node_definitions[NODE_UNLOADED] = {
 		.data_size = sizeof(HSLData),
 		.create = NULL,
 		.delete = NULL,
-		.serialize = &serialize_hsl,
-		.deserialize = &deserialize_hsl,
+		.serialize = (void *) &HSLData_write,
+		.deserialize = (void *) &HSLData_read,
 	},
 	// pine leaves
 	{
@@ -109,8 +92,8 @@ NodeDefinition node_definitions[NODE_UNLOADED] = {
 		.data_size = sizeof(HSLData),
 		.create = NULL,
 		.delete = NULL,
-		.serialize = &serialize_hsl,
-		.deserialize = &deserialize_hsl,
+		.serialize = (void *) &HSLData_write,
+		.deserialize = (void *) &HSLData_read,
 	},
 	// palm wood
 	{
@@ -118,8 +101,8 @@ NodeDefinition node_definitions[NODE_UNLOADED] = {
 		.data_size = sizeof(HSLData),
 		.create = NULL,
 		.delete = NULL,
-		.serialize = &serialize_hsl,
-		.deserialize = &deserialize_hsl,
+		.serialize = (void *) &HSLData_write,
+		.deserialize = (void *) &HSLData_read,
 	},
 	// palm leaves
 	{
@@ -127,8 +110,8 @@ NodeDefinition node_definitions[NODE_UNLOADED] = {
 		.data_size = sizeof(HSLData),
 		.create = NULL,
 		.delete = NULL,
-		.serialize = &serialize_hsl,
-		.deserialize = &deserialize_hsl,
+		.serialize = (void *) &HSLData_write,
+		.deserialize = (void *) &HSLData_read,
 	},
 	// sand
 	{

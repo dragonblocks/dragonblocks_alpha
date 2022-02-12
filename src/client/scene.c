@@ -32,7 +32,7 @@ bool scene_init()
 		client_config.render_distance
 	);
 
-	if (! shader_program_create(RESSOURCEPATH "shaders/3d", &scene.prog, shader_defs)) {
+	if (! shader_program_create(RESSOURCE_PATH "shaders/3d", &scene.prog, shader_defs)) {
 		fprintf(stderr, "Failed to create 3D shader program\n");
 		return false;
 	}

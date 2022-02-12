@@ -2,7 +2,7 @@
 #define _PERLIN_H_
 
 #include <perlin/perlin.h>
-#include <dragontype/number.h>
+#include "types.h"
 
 typedef enum
 {

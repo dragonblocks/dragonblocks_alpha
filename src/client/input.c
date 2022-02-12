@@ -49,7 +49,7 @@ void input_on_cursor_pos(double current_x, double current_y)
 	client_player.pitch -= (f32) delta_y * M_PI / 180.0f / 8.0f;
 
 	client_player.yaw = fmod(client_player.yaw + M_PI * 2.0f, M_PI * 2.0f);
-	client_player.pitch = fmax(fmin(client_player.pitch, M_PI / 2.0f - 0.01f), -M_PI / 2.0f + 0.01f);
+	client_player.pitch = f32_clamp(client_player.pitch, -M_PI / 2.0f + 0.01f, M_PI / 2.0f - 0.01f);
 
 	camera_set_angle(client_player.yaw, client_player.pitch);
 

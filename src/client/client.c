@@ -2,159 +2,111 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <errno.h>
-#include <netdb.h>
 #include "client/client.h"
+#include "client/client_auth.h"
 #include "client/client_map.h"
 #include "client/client_player.h"
 #include "client/game.h"
 #include "client/input.h"
+#include "day.h"
 #include "signal_handlers.h"
+#include "perlin.h"
+#include "types.h"
 #include "util.h"
 
-static Client client;
+DragonnetPeer *client;
 
-void client_disconnect(bool send, const char *detail)
+static bool finished = false;
+
+static bool on_recv(unused DragonnetPeer *peer, DragonnetTypeId type, unused void *pkt)
 {
-	pthread_mutex_lock(&client.mtx);
-	if (client.state != CS_DISCONNECTED) {
-		if (send)
-			write_u32(client.fd, SC_DISCONNECT);
+	while (client_auth.state == AUTH_INIT)
+		;
 
-		client.state = CS_DISCONNECTED;
-		printf("Disconnected %s%s%s\n", INBRACES(detail));
-		close(client.fd);
+	return (client_auth.state == AUTH_WAIT) == (type == DRAGONNET_TYPE_ToClientAuth);
+}
+
+static void on_disconnect(unused DragonnetPeer *peer)
+{
+	interrupted = true;
+	while (! finished)
+		;
+}
+
+static void on_ToClientAuth(unused DragonnetPeer *peer, ToClientAuth *pkt)
+{
+	if (pkt->success) {
+		client_auth.state = AUTH_SUCCESS;
+		printf("Authenticated successfully\n");
+	} else {
+		client_auth.state = AUTH_INIT;
+		printf("Authentication failed, please try again\n");
 	}
-	pthread_mutex_unlock(&client.mtx);
 }
 
-void client_send_position(v3f64 pos)
+static void on_ToClientBlock(unused DragonnetPeer *peer, ToClientBlock *pkt)
 {
-	pthread_mutex_lock(&client.mtx);
-	(void) (write_u32(client.fd, SC_POS) && write_v3f64(client.fd, pos));
-	pthread_mutex_unlock(&client.mtx);
+	MapBlock *block = map_get_block(client_map.map, pkt->pos, true);
+
+	map_deserialize_block(block, pkt->data);
+	client_map_block_received(block);
 }
 
-#include "network.c"
-
-static void *reciever_thread(unused void *arg)
+static void on_ToClientInfo(unused DragonnetPeer *peer, ToClientInfo *pkt)
 {
-	handle_packets(&client);
-
-	if (errno != EINTR)
-		client_disconnect(false, "network error");
-
-	return NULL;
+	client_map_set_simulation_distance(pkt->simulation_distance);
+	seed = pkt->seed;
 }
 
-static bool client_name_prompt()
+static void on_ToClientPos(unused DragonnetPeer *peer, ToClientPos *pkt)
 {
-	printf("Enter name: ");
-	fflush(stdout);
-	char name[PLAYER_NAME_MAX];
-	if (scanf("%s", name) == EOF)
-		return false;
-	client.name = strdup(name);
-	pthread_mutex_lock(&client.mtx);
-	if (write_u32(client.fd, SC_AUTH) && write(client.fd, client.name, strlen(client.name) + 1)) {
-		client.state = CS_AUTH;
-		printf("Authenticating...\n");
-	}
-	pthread_mutex_unlock(&client.mtx);
-	return true;
+	client_player_set_position(pkt->pos);
 }
 
-static bool client_authenticate()
+static void on_ToClientTimeOfDay(unused DragonnetPeer *peer, ToClientTimeOfDay *pkt)
 {
-	for ever {
-		switch (client.state) {
-			case CS_CREATED:
-				if (client_name_prompt())
-					break;
-				else
-					return false;
-			case CS_AUTH:
-				if (interrupted)
-					return false;
-				else
-					sched_yield();
-				break;
-			case CS_ACTIVE:
-				return true;
-			case CS_DISCONNECTED:
-				return false;
-		}
-	}
-	return false;
-}
-
-static bool client_start(int fd)
-{
-	client.fd = fd;
-	pthread_mutex_init(&client.mtx, NULL);
-	client.state = CS_CREATED;
-	client.name = NULL;
-
-	client_map_init(&client);
-	client_player_init();
-
-	pthread_t recv_thread;
-	pthread_create(&recv_thread, NULL, &reciever_thread, NULL);
-
-	bool return_value = client_authenticate() && game(&client);
-
-	if (client.state != CS_DISCONNECTED)
-		client_disconnect(true, NULL);
-
-	if (client.name)
-		free(client.name);
-
-	pthread_join(recv_thread, NULL);
-
-	client_player_deinit();
-	client_map_deinit();
-
-	pthread_mutex_destroy(&client.mtx);
-
-	return return_value;
+	set_time_of_day(pkt->time_of_day);
 }
 
 int main(int argc, char **argv)
 {
-	program_name = argv[0];
+	if (argc < 2) {
+		fprintf(stderr, "Missing address\n");
+		return EXIT_FAILURE;
+	}
 
-	if (argc < 3)
-		internal_error("missing address or port");
+	if (! (client = dragonnet_connect(argv[1]))) {
+		fprintf(stderr, "Failed to connect to server\n");
+		return EXIT_FAILURE;
+	}
 
-	struct addrinfo hints = {
-		.ai_family = AF_UNSPEC,
-		.ai_socktype = SOCK_STREAM,
-		.ai_protocol = 0,
-		.ai_flags = AI_NUMERICSERV,
-	};
-
-	struct addrinfo *info = NULL;
-
-	int gai_state = getaddrinfo(argv[1], argv[2], &hints, &info);
-
-	if (gai_state != 0)
-		internal_error(gai_strerror(gai_state));
-
-	int fd = socket(info->ai_family, info->ai_socktype, info->ai_protocol);
-
-	if (fd == -1)
-		syscall_error("socket");
-
-	if (connect(fd, info->ai_addr, info->ai_addrlen) == -1)
-		syscall_error("connect");
-
-	char *addrstr = address_string((struct sockaddr_in6 *) info->ai_addr);
-	printf("Connected to %s\n", addrstr);
-	free(addrstr);
-
-	freeaddrinfo(info);
+	client->on_disconnect = &on_disconnect;
+	client->on_recv = &on_recv;
+	client->on_recv_type[DRAGONNET_TYPE_ToClientAuth     ] = (void *) &on_ToClientAuth;
+	client->on_recv_type[DRAGONNET_TYPE_ToClientBlock    ] = (void *) &on_ToClientBlock;
+	client->on_recv_type[DRAGONNET_TYPE_ToClientInfo     ] = (void *) &on_ToClientInfo;
+	client->on_recv_type[DRAGONNET_TYPE_ToClientPos      ] = (void *) &on_ToClientPos;
+	client->on_recv_type[DRAGONNET_TYPE_ToClientTimeOfDay] = (void *) &on_ToClientTimeOfDay;
 
 	signal_handlers_init();
+	client_map_init();
+	client_player_init();
+	dragonnet_peer_run(client);
 
-	return client_start(fd) ? EXIT_SUCCESS : EXIT_FAILURE;
+	if (! client_auth_init())
+		return EXIT_FAILURE;
+
+	if (! game())
+		return EXIT_FAILURE;
+
+	dragonnet_peer_shutdown(client);
+	client_auth_deinit();
+	client_player_deinit();
+	client_map_deinit();
+
+	pthread_t recv_thread = client->recv_thread;
+	finished = true;
+	pthread_join(recv_thread, NULL);
+
+	return EXIT_SUCCESS;
 }

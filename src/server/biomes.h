@@ -1,9 +1,9 @@
 #ifndef _BIOMES_H_
 #define _BIOMES_H_
 
-#include <dragontype/number.h>
 #include "map.h"
 #include "perlin.h"
+#include "types.h"
 
 typedef enum
 {

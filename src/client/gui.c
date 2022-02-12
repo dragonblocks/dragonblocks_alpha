@@ -127,7 +127,7 @@ bool gui_init()
 {
 	// initialize background pipeline
 
-	if (! shader_program_create(RESSOURCEPATH "shaders/gui/background", &gui.background_prog, NULL)) {
+	if (! shader_program_create(RESSOURCE_PATH "shaders/gui/background", &gui.background_prog, NULL)) {
 		fprintf(stderr, "Failed to create GUI background shader program\n");
 		return false;
 	}
@@ -147,7 +147,7 @@ bool gui_init()
 
 	// initialize image pipeline
 
-	if (! shader_program_create(RESSOURCEPATH "shaders/gui/image", &gui.image_prog, NULL)) {
+	if (! shader_program_create(RESSOURCE_PATH "shaders/gui/image", &gui.image_prog, NULL)) {
 		fprintf(stderr, "Failed to create GUI image shader program\n");
 		return false;
 	}
@@ -166,7 +166,7 @@ bool gui_init()
 
 	// initialize font pipeline
 
-	if (! shader_program_create(RESSOURCEPATH "shaders/gui/font", &gui.font_prog, NULL)) {
+	if (! shader_program_create(RESSOURCE_PATH "shaders/gui/font", &gui.font_prog, NULL)) {
 		fprintf(stderr, "Failed to create GUI font shader program\n");
 		return false;
 	}

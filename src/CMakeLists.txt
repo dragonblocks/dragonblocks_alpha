@@ -1,15 +1,31 @@
 cmake_minimum_required(VERSION 3.12)
-
 project(Dragonblocks)
 
+# Variables
+
+set(DEPS_DIR "${CMAKE_SOURCE_DIR}/../deps/")
+
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug)
+	set(CMAKE_BUILD_TYPE Debug)
 endif()
+
+if(NOT RESSOURCE_PATH)
+	set(RESSOURCE_PATH "../")
+endif()
+
+# Dependencies
 
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(glfw3 3.3 REQUIRED)
 find_package(Freetype REQUIRED)
+
+# Options
+
+add_compile_definitions("RESSOURCE_PATH=\"${RESSOURCE_PATH}\"")
+add_compile_definitions("USE_DRAGONNET")
+
+add_compile_options(-Wall -Wextra -Werror -fmax-errors=4)
 
 link_libraries(
 	pthread
@@ -17,15 +33,10 @@ link_libraries(
 	z
 )
 
-set(DEPS_DIR "${CMAKE_SOURCE_DIR}/../deps/")
+include_directories(SYSTEM ${DEPS_DIR})
+include_directories(BEFORE ${CMAKE_SOURCE_DIR})
 
-include_directories(SYSTEM
-	${DEPS_DIR}
-)
-
-include_directories(BEFORE
-	${CMAKE_SOURCE_DIR}
-)
+# System specific options
 
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD" OR "${CMAKE_SYSTEM_NAME}" STREQUAL "OpenBSD")
 	link_directories("/usr/local/lib")
@@ -37,20 +48,22 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "OpenBSD")
 	include_directories("/usr/X11R6/include")
 endif()
 
-add_compile_options(-Wall -Wextra -Werror)
-
-set(DEPS_SOURCES
-	"${DEPS_DIR}/dragontype/array.c"
-	"${DEPS_DIR}/dragontype/bintree.c"
-	"${DEPS_DIR}/dragontype/list.c"
-	"${DEPS_DIR}/dragontype/number.c"
-	"${DEPS_DIR}/dragontype/queue.c"
-	"${DEPS_DIR}/dragonport/asprintf.c"
-	"${DEPS_DIR}/perlin/perlin.c"
-)
+# Common sources
 
 set(COMMON_SOURCES
-	${DEPS_SOURCES}
+	"${DEPS_DIR}/dragonnet/addr.c"
+	"${DEPS_DIR}/dragonnet/listen.c"
+	"${DEPS_DIR}/dragonnet/peer.c"
+	"${DEPS_DIR}/dragonnet/recv.c"
+	"${DEPS_DIR}/dragonnet/recv_thread.c"
+	"${DEPS_DIR}/dragonnet/send.c"
+	"${DEPS_DIR}/dragonport/asprintf.c"
+	"${DEPS_DIR}/dragonstd/array.c"
+	"${DEPS_DIR}/dragonstd/bintree.c"
+	"${DEPS_DIR}/dragonstd/list.c"
+	"${DEPS_DIR}/dragonstd/queue.c"
+	"${DEPS_DIR}/linenoise/linenoise.c"
+	"${DEPS_DIR}/perlin/perlin.c"
 	config.c
 	day.c
 	environment.c
@@ -58,15 +71,18 @@ set(COMMON_SOURCES
 	node.c
 	perlin.c
 	signal_handlers.c
+	types.c
 	util.c
 )
+
+# Client
 
 add_executable(Dragonblocks
 	${COMMON_SOURCES}
 	client/blockmesh.c
 	client/camera.c
 	client/client.c
-	client/client_commands.c
+	client/client_auth.c
 	client/client_config.c
 	client/client_map.c
 	client/client_node.c
@@ -100,15 +116,17 @@ target_include_directories(Dragonblocks PUBLIC
 	${FREETYPE_INCLUDE_DIRS}
 )
 
+# Server
+
 add_executable(DragonblocksServer
 	${COMMON_SOURCES}
 	server/biomes.c
 	server/database.c
 	server/mapgen.c
 	server/server.c
-	server/server_commands.c
 	server/server_config.c
 	server/server_map.c
+	server/server_player.c
 	server/trees.c
 	server/voxelctx.c
 )
@@ -117,13 +135,27 @@ target_link_libraries(DragonblocksServer
 	sqlite3
 )
 
-add_custom_target(version
+# Version
+
+add_custom_target(Version
 	COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${CMAKE_SOURCE_DIR} -P ${CMAKE_SOURCE_DIR}/version.cmake
 )
 
-add_dependencies(Dragonblocks version)
-add_dependencies(DragonblocksServer version)
+add_dependencies(Dragonblocks Version)
+add_dependencies(DragonblocksServer Version)
 
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
-	add_compile_definitions(RELEASE)
-endif()
+# Types
+
+add_custom_command(
+	OUTPUT "${CMAKE_SOURCE_DIR}/types.c" "${CMAKE_SOURCE_DIR}/types.h"
+	COMMAND "${CMAKE_SOURCE_DIR}/mktypes.sh"
+	MAIN_DEPENDENCY "${CMAKE_SOURCE_DIR}/types.def"
+	WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+)
+
+add_custom_target(DragonnetTypes
+	DEPENDS "${CMAKE_SOURCE_DIR}/types.c" "${CMAKE_SOURCE_DIR}/types.h"
+)
+
+add_dependencies(Dragonblocks DragonnetTypes)
+add_dependencies(DragonblocksServer DragonnetTypes)

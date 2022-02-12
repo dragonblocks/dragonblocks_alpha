@@ -1,7 +1,7 @@
 #ifndef _INPUT_H_
 #define _INPUT_H_
 
-#include <dragontype/number.h>
+#include "types.h"
 
 void input_tick(f64 dtime);
 void input_init();

@@ -4,7 +4,8 @@
 #include <stddef.h>
 #include <pthread.h>
 #include "map.h"
-#include "server/server.h"
+#include "server/server_player.h"
+#include "types.h"
 
 typedef enum
 {
@@ -22,8 +23,6 @@ typedef enum
 	MGS_PLAYER,   // player-placed nodes or things placed after map generation
 } MapgenStage;
 
-typedef MapgenStage MapgenStageBuffer[MAPBLOCK_SIZE][MAPBLOCK_SIZE][MAPBLOCK_SIZE];
-
 typedef struct {
 	MapgenStage mgs;
 	List *changed_blocks;
@@ -31,12 +30,10 @@ typedef struct {
 
 typedef struct
 {
-	char *data;                   // cached serialized data
-	size_t size;                  // size of data
-	size_t rawsize;               // size of decompressed data
+	Blob data;                    // the big cum
 	MapBlockState state;          // generation state of the block
 	pthread_t mapgen_thread;      // thread that is generating block
-	MapgenStageBuffer mgs_buffer; // buffer to make sure mapgen only overrides things it should
+	MapgenStageBuffer mgsb;       // buffer to make sure mapgen only overrides things it should
 } MapBlockExtraData;
 
 extern struct ServerMap {
@@ -48,9 +45,9 @@ extern struct ServerMap {
 	s32 spawn_height;                    // height to spawn players at
 } server_map; // ServerMap singleton
 
-void server_map_init(Server *server);                       // ServerMap singleton constructor
-void server_map_deinit();                                   // ServerMap singleton destructor
-void server_map_requested_block(Client *client, v3s32 pos); // handle block request from client (thread safe)
-void server_map_prepare_spawn();                            // prepare spawn region
+void server_map_init();                                           // ServerMap singleton constructor
+void server_map_deinit();                                         // ServerMap singleton destructor
+void server_map_requested_block(ServerPlayer *player, v3s32 pos); // handle block request from client (thread safe)
+void server_map_prepare_spawn();                                  // prepare spawn region
 
 #endif

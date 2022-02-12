@@ -14,6 +14,7 @@
 #include "client/font.h"
 #include "client/gui.h"
 #include "client/input.h"
+#include "client/scene.h"
 #include "client/sky.h"
 #include "client/window.h"
 #include "day.h"
@@ -33,7 +34,7 @@ static void crosshair_init()
 		.scale_type = GST_IMAGE,
 		.affect_parent_scale = false,
 		.text = NULL,
-		.image = texture_load(RESSOURCEPATH "textures/crosshair.png", false),
+		.image = texture_load(RESSOURCE_PATH "textures/crosshair.png", false),
 		.text_color = (v4f32) {0.0f, 0.0f, 0.0f, 0.0f},
 		.bg_color = (v4f32) {0.0f, 0.0f, 0.0f, 0.0f},
 	});
@@ -58,7 +59,7 @@ static void render(f64 dtime)
 	gui_render();
 }
 
-static void game_loop(Client *client)
+static void game_loop()
 {
 	f64 fps_update_timer = 1.0f;
 	int frames = 0;
@@ -66,7 +67,7 @@ static void game_loop(Client *client)
 	struct timespec ts, ts_old;
 	clock_gettime(CLOCK_REALTIME, &ts_old);
 
-	while (! glfwWindowShouldClose(window.handle) && client->state != CS_DISCONNECTED && ! interrupted) {
+	while (! glfwWindowShouldClose(window.handle) && ! interrupted) {
 		clock_gettime(CLOCK_REALTIME, &ts);
 		f64 dtime = (f64) (ts.tv_sec - ts_old.tv_sec) + (f64) (ts.tv_nsec - ts_old.tv_nsec) / 1.0e9;
 		ts_old = ts;
@@ -93,7 +94,7 @@ static void game_loop(Client *client)
 	}
 }
 
-bool game(Client *client)
+bool game()
 {
 	window_width = 1250;
 	window_height = 750;
@@ -145,7 +146,7 @@ bool game(Client *client)
 
 	client_player_add_to_scene();
 
-	game_loop(client);
+	game_loop();
 
 	client_map_stop();
 

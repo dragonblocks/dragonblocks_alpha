@@ -130,9 +130,9 @@ static void pine_tree(v3s32 pos, List *changed_blocks)
 		s32 dir = (noise3d(tree_pos.x, tree_pos.y, tree_pos.z, 0, seed + SO_PINETREE_BRANCH_DIR) * 0.5 + 0.5) * 4.0;
 
 		for (v3s32 branch_pos = tree_pos; branch_length > 0; branch_length--, branch_pos = v3s32_add(branch_pos, dirs[dir]))
-			mapgen_set_node(branch_pos, map_node_create(NODE_PINE_WOOD, NULL, 0), MGS_TREES, changed_blocks);
+			mapgen_set_node(branch_pos, map_node_create(NODE_PINE_WOOD, (Blob) {0, NULL}), MGS_TREES, changed_blocks);
 
-		mapgen_set_node(tree_pos, map_node_create(NODE_PINE_WOOD, NULL, 0), MGS_TREES, changed_blocks);
+		mapgen_set_node(tree_pos, map_node_create(NODE_PINE_WOOD, (Blob) {0, NULL}), MGS_TREES, changed_blocks);
 	}
 }
 

@@ -6,11 +6,11 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <linmath.h/linmath.h>
-#include <dragontype/array.h>
-#include <dragontype/number.h>
+#include <dragonstd/array.h>
 #include "client/mesh.h"
 #include "client/texture.h"
 #include "client/vertex.h"
+#include "types.h"
 
 typedef struct {
 	GLfloat x, y, z;

@@ -4,8 +4,8 @@
 #define VOXELCTXSTATE(ctx) (*((VoxelctxState *) (ctx)->statestack.first->key))
 
 #include <linmath.h/linmath.h>
-#include <dragontype/list.h>
-#include <dragontype/number.h>
+#include <dragonstd/list.h>
+#include "types.h"
 #include "server/server_map.h"
 
 typedef struct

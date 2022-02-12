@@ -5,8 +5,6 @@
 #include "perlin.h"
 #include "util.h"
 
-#define CREATE_NODE map_node_create(node, use_color ? (f32[]) {VOXELCTXSTATE(ctx).h / 360.0, VOXELCTXSTATE(ctx).s, VOXELCTXSTATE(ctx).l} : NULL, use_color ? sizeof(f32) * 3 : 0)
-
 static VoxelctxState *create_state(VoxelctxState *old)
 {
 	VoxelctxState *state = malloc(sizeof(VoxelctxState));
@@ -229,7 +227,21 @@ void voxelctx_cube(Voxelctx *ctx, Node node, bool use_color)
 			v[i] = floor(VOXELCTXSTATE(ctx).pos[i] + f + 0.5f);
 		}
 
-		mapgen_set_node(v3s32_add(ctx->pos, (v3s32) {v[0], v[2], v[1]}), CREATE_NODE, ctx->mgs, ctx->changed_blocks);
+		Blob buffer = {0, NULL};
+
+		if (use_color)
+			HSLData_write(&buffer, &(HSLData) {{
+				VOXELCTXSTATE(ctx).h / 360.0,
+				VOXELCTXSTATE(ctx).s,
+				VOXELCTXSTATE(ctx).l,
+			}});
+
+		mapgen_set_node(
+			v3s32_add(ctx->pos, (v3s32) {v[0], v[2], v[1]}),
+			map_node_create(node, buffer),
+			ctx->mgs,
+			ctx->changed_blocks
+		);
 	}
 }
 

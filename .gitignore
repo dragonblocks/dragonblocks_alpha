@@ -1,3 +1,4 @@
+# CMake
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles
@@ -9,11 +10,20 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 _deps
-DragonblocksServer
+
+# Binaries
 Dragonblocks
+DragonblocksServer
+DragonblocksAlpha-*.zip
+
+# Data
+client.conf
+server.conf
 world.sqlite
 world.sqlite-journal
-DragonblocksAlpha-*.zip
-src/version.h
 screenshot-*.png
-*.conf
+
+# Generated code
+src/version.h
+src/types.c
+src/types.h

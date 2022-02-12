@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <dragontype/array.h>
+#include <dragonstd/array.h>
 #include "client/facecache.h"
 
 static struct

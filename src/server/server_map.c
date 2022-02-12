@@ -11,23 +11,31 @@
 #include "util.h"
 
 struct ServerMap server_map;
-static Server *server;
 
 // utility functions
 
-// send a block to a client and reset block request
-static void send_block(Client *client, MapBlock *block)
+// return true if a player is close enough to a block to access it
+static bool within_simulation_distance(ServerPlayer *player, v3s32 blkp, u32 dist)
 {
-	MapBlockExtraData *extra = block->extra;
+	pthread_rwlock_rdlock(&player->pos_lock);
+	v3s32 ppos = map_node_to_block_pos((v3s32) {player->pos.x, player->pos.y, player->pos.z}, NULL);
+	pthread_rwlock_unlock(&player->pos_lock);
 
-	pthread_mutex_lock(&client->mtx);
-	if (client->state == CS_ACTIVE)
-		(void) (write_u32(client->fd, CC_BLOCK)
-			&& write_v3s32(client->fd, block->pos)
-			&& write_u64(client->fd, extra->size)
-			&& write_u64(client->fd, extra->rawsize)
-			&& write(client->fd, extra->data, extra->size) != -1);
-	pthread_mutex_unlock(&client->mtx);
+	return abs(ppos.x - blkp.x) <= (s32) dist
+		&& abs(ppos.y - blkp.y) <= (s32) dist
+		&& abs(ppos.z - blkp.z) <= (s32) dist;
+}
+
+// send a block to a client and reset block request
+static void send_block(ServerPlayer *player, MapBlock *block)
+{
+	if (! within_simulation_distance(player, block->pos, server_config.simulation_distance))
+		return;
+
+	dragonnet_peer_send_ToClientBlock(player->peer, &(ToClientBlock) {
+		.pos = block->pos,
+		.data = ((MapBlockExtraData *) block->extra)->data,
+	});
 }
 
 // send block to near clients
@@ -39,23 +47,15 @@ static void send_block_to_near(MapBlock *block)
 	if (extra->state == MBS_GENERATING)
 		return;
 
-	if (extra->data)
-		free(extra->data);
+	Blob_free(&extra->data);
+	extra->data = map_serialize_block(block);
 
-	map_serialize_block(block, &extra->data, &extra->size, &extra->rawsize);
 	database_save_block(block);
 
 	if (extra->state == MBS_CREATED)
 		return;
 
-	pthread_rwlock_rdlock(&server->players_rwlck);
-	ITERATE_LIST(&server->players, pair) {
-		Client *client = pair->value;
-
-		if (within_simulation_distance(client->pos, block->pos, server_config.simulation_distance))
-			send_block(client, block);
-	}
-	pthread_rwlock_unlock(&server->players_rwlck);
+	server_player_iterate((void *) &send_block, block);
 }
 
 // list_clear_func callback for sending changed blocks to near clients
@@ -128,11 +128,11 @@ static void on_create_block(MapBlock *block)
 
 	if (! database_load_block(block)) {
 		extra->state = MBS_CREATED;
-		extra->data = NULL;
+		extra->data = (Blob) {0, NULL};
 
 		ITERATE_MAPBLOCK {
-			block->data[x][y][z] = map_node_create(NODE_AIR, NULL, 0);
-			extra->mgs_buffer[x][y][z] = MGS_VOID;
+			block->data[x][y][z] = map_node_create(NODE_AIR, (Blob) {0, NULL});
+			extra->mgsb.raw.nodes[x][y][z] = MGS_VOID;
 		}
 	}
 }
@@ -143,9 +143,7 @@ static void on_delete_block(MapBlock *block)
 {
 	MapBlockExtraData *extra = block->extra;
 
-	if (extra->data)
-		free(extra->data);
-
+	Blob_free(&extra->data);
 	free(extra);
 }
 
@@ -174,7 +172,7 @@ static bool on_set_node(MapBlock *block, v3u8 offset, unused MapNode *node, void
 	else
 		mgs = MGS_PLAYER;
 
-	MapgenStage *old_mgs = &((MapBlockExtraData *) block->extra)->mgs_buffer[offset.x][offset.y][offset.z];
+	MapgenStage *old_mgs = &((MapBlockExtraData *) block->extra)->mgsb.raw.nodes[offset.x][offset.y][offset.z];
 
 	if (mgs >= *old_mgs) {
 		*old_mgs = mgs;
@@ -215,35 +213,37 @@ static void join_mapgen_threads()
 // generate a hut for new players to spawn in
 static void generate_spawn_hut()
 {
-	f32 wood_color[3] = {0.11f, 1.0f, 0.29f};
+	Blob wood_color = {0, NULL};
+	HSLData_write(&wood_color, &(HSLData) {{0.11f, 1.0f, 0.29f}});
+
 	List changed_blocks = list_create(NULL);
 
 	for (s32 x = -4; x <= +4; x++) {
 		for (s32 y = 0; y <= 3; y++) {
 			for (s32 z = -3; z <= +2; z++) {
-				mapgen_set_node((v3s32) {x, server_map.spawn_height + y, z}, map_node_create(NODE_AIR, NULL, 0), MGS_PLAYER, &changed_blocks);
+				mapgen_set_node((v3s32) {x, server_map.spawn_height + y, z}, map_node_create(NODE_AIR, (Blob) {0, NULL}), MGS_PLAYER, &changed_blocks);
 			}
 		}
 	}
 
 	for (s32 x = -5; x <= +5; x++) {
 		for (s32 z = -4; z <= +3; z++) {
-			mapgen_set_node((v3s32) {x, server_map.spawn_height - 1, z}, map_node_create(NODE_OAK_WOOD, wood_color, sizeof wood_color), MGS_PLAYER, &changed_blocks);
-			mapgen_set_node((v3s32) {x, server_map.spawn_height + 4, z}, map_node_create(NODE_OAK_WOOD, wood_color, sizeof wood_color), MGS_PLAYER, &changed_blocks);
+			mapgen_set_node((v3s32) {x, server_map.spawn_height - 1, z}, map_node_create(NODE_OAK_WOOD, wood_color), MGS_PLAYER, &changed_blocks);
+			mapgen_set_node((v3s32) {x, server_map.spawn_height + 4, z}, map_node_create(NODE_OAK_WOOD, wood_color), MGS_PLAYER, &changed_blocks);
 		}
 	}
 
 	for (s32 y = 0; y <= 3; y++) {
 		for (s32 x = -5; x <= +5; x++) {
-			mapgen_set_node((v3s32) {x, server_map.spawn_height + y, -4}, map_node_create(((y == 1 || y == 2) && ((x >= -3 && x <= -1) || (x >= +1 && x <= +2))) ? NODE_AIR : NODE_OAK_WOOD, wood_color, sizeof(f32) * 3), MGS_PLAYER, &changed_blocks);
-			mapgen_set_node((v3s32) {x, server_map.spawn_height + y, +3}, map_node_create(((y == 1 || y == 2) && ((x >= -3 && x <= -2) || (x >= +1 && x <= +3))) ? NODE_AIR : NODE_OAK_WOOD, wood_color, sizeof(f32) * 3), MGS_PLAYER, &changed_blocks);
+			mapgen_set_node((v3s32) {x, server_map.spawn_height + y, -4}, map_node_create(((y == 1 || y == 2) && ((x >= -3 && x <= -1) || (x >= +1 && x <= +2))) ? NODE_AIR : NODE_OAK_WOOD, wood_color), MGS_PLAYER, &changed_blocks);
+			mapgen_set_node((v3s32) {x, server_map.spawn_height + y, +3}, map_node_create(((y == 1 || y == 2) && ((x >= -3 && x <= -2) || (x >= +1 && x <= +3))) ? NODE_AIR : NODE_OAK_WOOD, wood_color), MGS_PLAYER, &changed_blocks);
 		}
 	}
 
 	for (s32 y = 0; y <= 3; y++) {
 		for (s32 z = -3; z <= +2; z++) {
-			mapgen_set_node((v3s32) {-5, server_map.spawn_height + y, z}, map_node_create(NODE_OAK_WOOD, wood_color, sizeof(f32) * 3), MGS_PLAYER, &changed_blocks);
-			mapgen_set_node((v3s32) {+5, server_map.spawn_height + y, z}, map_node_create(((y != 3) && (z == -1 || z == +0)) ? NODE_AIR : NODE_OAK_WOOD, wood_color, sizeof(f32) * 3), MGS_PLAYER, &changed_blocks);
+			mapgen_set_node((v3s32) {-5, server_map.spawn_height + y, z}, map_node_create(NODE_OAK_WOOD, wood_color), MGS_PLAYER, &changed_blocks);
+			mapgen_set_node((v3s32) {+5, server_map.spawn_height + y, z}, map_node_create(((y != 3) && (z == -1 || z == +0)) ? NODE_AIR : NODE_OAK_WOOD, wood_color), MGS_PLAYER, &changed_blocks);
 		}
 	}
 
@@ -271,7 +271,7 @@ static void generate_spawn_hut()
 			if (node_definitions[node].solid)
 				break;
 
-			mapgen_set_node(pos, map_node_create(node == NODE_LAVA ? NODE_VULCANO_STONE : NODE_OAK_WOOD, wood_color, sizeof(f32) * 3), MGS_PLAYER, &changed_blocks);
+			mapgen_set_node(pos, map_node_create(node == NODE_LAVA ? NODE_VULCANO_STONE : NODE_OAK_WOOD, wood_color), MGS_PLAYER, &changed_blocks);
 		}
 	}
 
@@ -281,10 +281,8 @@ static void generate_spawn_hut()
 // public functions
 
 // ServerMap singleton constructor
-void server_map_init(Server *srv)
+void server_map_init()
 {
-	server = srv;
-
 	server_map.map = map_create((MapCallbacks) {
 		.create_block = &on_create_block,
 		.delete_block = &on_delete_block,
@@ -308,9 +306,9 @@ void server_map_deinit()
 }
 
 // handle block request from client (thread safe)
-void server_map_requested_block(Client *client, v3s32 pos)
+void server_map_requested_block(ServerPlayer *player, v3s32 pos)
 {
-	if (within_simulation_distance(client->pos, pos, server_config.simulation_distance)) {
+	if (within_simulation_distance(player, pos, server_config.simulation_distance)) {
 		MapBlock *block = map_get_block(server_map.map, pos, true);
 
 		pthread_mutex_lock(&block->mtx);
@@ -325,7 +323,7 @@ void server_map_requested_block(Client *client, v3s32 pos)
 				break;
 
 			case MBS_READY:
-				send_block(client, block);
+				send_block(player, block);
 		};
 		pthread_mutex_unlock(&block->mtx);
 	}

@@ -21,12 +21,12 @@ end
 "
 
 echo "$COMMON
-run ::1 4000 < $DEBUG_DIR/name
+run \"[::1]:4000\" < $DEBUG_DIR/name
 " > $DEBUG_DIR/client_script
 
 echo "$COMMON
 set print thread-events off
-run 4000
+run \"[::1]:4000\"
 " > $DEBUG_DIR/server_script
 
 kitty --detach -e bash -c "

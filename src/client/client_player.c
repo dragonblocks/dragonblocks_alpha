@@ -15,7 +15,9 @@ struct ClientPlayer client_player;
 static void update_pos()
 {
 	camera_set_position((v3f32) {client_player.pos.x, client_player.pos.y + client_player.eye_height, client_player.pos.z});
-	client_send_position(client_player.pos);
+	dragonnet_peer_send_ToServerPos(client, &(ToServerPos) {
+		.pos = client_player.pos,
+	});
 
 	client_player.obj->pos = (v3f32) {client_player.pos.x, client_player.pos.y, client_player.pos.z};
 	object_transform(client_player.obj);
@@ -100,7 +102,7 @@ void client_player_add_to_scene()
 	client_player.obj->scale = (v3f32) {0.6, 1.75, 0.6};
 	client_player.obj->visible = false;
 
-	object_set_texture(client_player.obj, texture_load(RESSOURCEPATH "textures/player.png", true));
+	object_set_texture(client_player.obj, texture_load(RESSOURCE_PATH "textures/player.png", true));
 
 	for (int f = 0; f < 6; f++) {
 		for (int v = 0; v < 6; v++) {
@@ -194,7 +196,7 @@ void client_player_tick(f64 dtime)
 				} \
 			} \
 		} \
-		a ## _physics_done: (void) 0;\
+		a ## _physics_done: (void) 0; \
 	}
 
 	PHYSICS(x, y, z)

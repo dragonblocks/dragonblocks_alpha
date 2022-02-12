@@ -3,9 +3,9 @@
 #include FT_FREETYPE_H
 #include "client/client.h"
 #include "client/font.h"
+#include "client/texture.h"
 
 #define NUM_CHARS 128
-
 
 typedef struct
 {
@@ -66,7 +66,7 @@ bool font_init()
 		return false;
 	}
 
-	if (FT_New_Face(font.library, RESSOURCEPATH "fonts/Minecraftia.ttf", 0, &font.face)) {
+	if (FT_New_Face(font.library, RESSOURCE_PATH "fonts/Minecraftia.ttf", 0, &font.face)) {
 		fprintf(stderr, "Failed to load Minecraftia.ttf\n");
 		return false;
 	}

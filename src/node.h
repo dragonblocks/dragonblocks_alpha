@@ -2,7 +2,7 @@
 #define _NODE_H_
 
 #include <stdbool.h>
-#include <dragontype/number.h>
+#include "types.h"
 
 #define NODE_DEFINITION(type) ((type) < NODE_UNLOADED ? &node_definitions[NODE_UNKNOWN] : &node_definitions[(type)]);
 
@@ -35,13 +35,9 @@ typedef struct
 	size_t data_size;
 	void (*create)(struct MapNode *node);
 	void (*delete)(struct MapNode *node);
-	void (*serialize)(struct MapNode *node, unsigned char **buffer, size_t *bufsiz);
-	void (*deserialize)(struct MapNode *node, unsigned char *data, size_t size);
+	void (*serialize)(Blob *buffer, void *data);
+	void (*deserialize)(Blob *buffer, void *data);
 } NodeDefinition;
-
-typedef struct {
-	v3f32 color;
-} HSLData;
 
 extern NodeDefinition node_definitions[];
 

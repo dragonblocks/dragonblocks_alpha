@@ -52,7 +52,7 @@ static void render_grass(v3s32 pos, unused MapNode *node, Vertex3D *vertex, unus
 	hum_max = 0.33f;
 	temp_max = 0.45f;
 
-	f32 temp_f = clamp(0.3f - get_temperature(pos), 0.0f, 0.3f) / 0.3f;
+	f32 temp_f = f64_clamp(0.3f - get_temperature(pos), 0.0f, 0.3f) / 0.3f;
 
 	vertex->color = hsl_to_rgb((v3f32) {(get_humidity(pos) * (hum_max - hum_min) + hum_min) * (1.0f - temp_f) + temp_max * temp_f, 1.0f, 0.5f});
 }
@@ -71,7 +71,7 @@ static void render_hsl(unused v3s32 pos, MapNode *node, Vertex3D *vertex, unused
 ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 	// unknown
 	{
-		.tiles = TILES_SIMPLE(RESSOURCEPATH "textures/unknown.png"),
+		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/unknown.png"),
 		.visibility = NV_SOLID,
 		.mipmap = true,
 		.render = NULL,
@@ -85,28 +85,28 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 	},
 	// grass
 	{
-		.tiles = TILES_SIMPLE(RESSOURCEPATH "textures/grass.png"),
+		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/grass.png"),
 		.visibility = NV_SOLID,
 		.mipmap = true,
 		.render = &render_grass,
 	},
 	// dirt
 	{
-		.tiles = TILES_SIMPLE(RESSOURCEPATH "textures/dirt.png"),
+		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/dirt.png"),
 		.visibility = NV_SOLID,
 		.mipmap = true,
 		.render = NULL,
 	},
 	// stone
 	{
-		.tiles = TILES_SIMPLE(RESSOURCEPATH "textures/stone.png"),
+		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/stone.png"),
 		.visibility = NV_SOLID,
 		.mipmap = true,
 		.render = &render_stone,
 	},
 	// snow
 	{
-		.tiles = TILES_SIMPLE(RESSOURCEPATH "textures/snow.png"),
+		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/snow.png"),
 		.visibility = NV_SOLID,
 		.mipmap = true,
 		.render = NULL,
@@ -114,7 +114,7 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 	// oak wood
 	{
 		.tiles = {
-			.paths = {RESSOURCEPATH "textures/oak_wood.png", RESSOURCEPATH "textures/oak_wood_top.png", NULL, NULL, NULL, NULL},
+			.paths = {RESSOURCE_PATH "textures/oak_wood.png", RESSOURCE_PATH "textures/oak_wood_top.png", NULL, NULL, NULL, NULL},
 			.indices = {0, 0, 0, 0, 1, 1},
 			.textures = {NULL},
 		},
@@ -124,7 +124,7 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 	},
 	// oak leaves
 	{
-		.tiles = TILES_SIMPLE(RESSOURCEPATH "textures/oak_leaves.png"),
+		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/oak_leaves.png"),
 		.visibility = NV_SOLID,
 		.mipmap = true,
 		.render = &render_hsl,
@@ -132,7 +132,7 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 	// pine wood
 	{
 		.tiles = {
-			.paths = {RESSOURCEPATH "textures/pine_wood.png", RESSOURCEPATH "textures/pine_wood_top.png", NULL, NULL, NULL, NULL},
+			.paths = {RESSOURCE_PATH "textures/pine_wood.png", RESSOURCE_PATH "textures/pine_wood_top.png", NULL, NULL, NULL, NULL},
 			.indices = {0, 0, 0, 0, 1, 1},
 			.textures = {NULL},
 		},
@@ -142,7 +142,7 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 	},
 	// pine leaves
 	{
-		.tiles = TILES_SIMPLE(RESSOURCEPATH "textures/pine_leaves.png"),
+		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/pine_leaves.png"),
 		.visibility = NV_CLIP,
 		.mipmap = true,
 		.render = &render_hsl,
@@ -150,7 +150,7 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 	// palm wood
 	{
 		.tiles = {
-			.paths = {RESSOURCEPATH "textures/palm_wood.png", RESSOURCEPATH "textures/palm_wood_top.png", NULL, NULL, NULL, NULL},
+			.paths = {RESSOURCE_PATH "textures/palm_wood.png", RESSOURCE_PATH "textures/palm_wood_top.png", NULL, NULL, NULL, NULL},
 			.indices = {0, 0, 0, 0, 1, 1},
 			.textures = {NULL},
 		},
@@ -160,35 +160,35 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 	},
 	// palm leaves
 	{
-		.tiles = TILES_SIMPLE(RESSOURCEPATH "textures/palm_leaves.png"),
+		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/palm_leaves.png"),
 		.visibility = NV_SOLID,
 		.mipmap = true,
 		.render = &render_hsl,
 	},
 	// sand
 	{
-		.tiles = TILES_SIMPLE(RESSOURCEPATH "textures/sand.png"),
+		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/sand.png"),
 		.visibility = NV_SOLID,
 		.mipmap = true,
 		.render = NULL,
 	},
 	// water
 	{
-		.tiles = TILES_SIMPLE(RESSOURCEPATH "textures/water.png"),
+		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/water.png"),
 		.visibility = NV_BLEND,
 		.mipmap = true,
 		.render = NULL,
 	},
 	// lava
 	{
-		.tiles = TILES_SIMPLE(RESSOURCEPATH "textures/lava.png"),
+		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/lava.png"),
 		.visibility = NV_BLEND,
 		.mipmap = true,
 		.render = NULL,
 	},
 	// vulcano_stone
 	{
-		.tiles = TILES_SIMPLE(RESSOURCEPATH "textures/vulcano_stone.png"),
+		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/vulcano_stone.png"),
 		.visibility = NV_SOLID,
 		.mipmap = true,
 		.render = NULL,

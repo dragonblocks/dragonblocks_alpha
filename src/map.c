@@ -2,7 +2,6 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <math.h>
-#include <endian.h/endian.h>
 #include <string.h>
 #include "map.h"
 #include "util.h"
@@ -131,7 +130,7 @@ MapBlock *map_allocate_block(v3s32 pos)
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 	pthread_mutex_init(&block->mtx, &attr);
 
-	ITERATE_MAPBLOCK block->data[x][y][z] = map_node_create(NODE_UNKNOWN, NULL, 0);
+	ITERATE_MAPBLOCK block->data[x][y][z] = map_node_create(NODE_UNKNOWN, (Blob) {0, NULL});
 
 	return block;
 }
@@ -144,77 +143,48 @@ void map_free_block(MapBlock *block)
 	free(block);
 }
 
-void map_serialize_block(MapBlock *block, char **dataptr, size_t *sizeptr, size_t *rawsizeptr)
+Blob map_serialize_block(MapBlock *block)
 {
-	unsigned char *uncompressed = NULL;
-	size_t uncompressed_size = 0;
+	SerializedMapBlock block_data;
 
 	ITERATE_MAPBLOCK {
-		MapNode node = block->data[x][y][z];
-		NodeDefinition *def = &node_definitions[node.type];
+		MapNode *node = &block->data[x][y][z];
+		SerializedMapNode *node_data = &block_data.raw.nodes[x][y][z];
 
-		u32 type = htobe32(node.type);
-		buffer_write(&uncompressed, &uncompressed_size, &type, sizeof(u32));
+		*node_data = (SerializedMapNode) {
+			.type = node->type,
+			.data = {
+				.siz = 0,
+				.data = NULL,
+			},
+		};
 
-		unsigned char *data_buffer = NULL;
-		size_t data_bufsiz = 0;
+		NodeDefinition *def = &node_definitions[node->type];
 
 		if (def->serialize)
-			def->serialize(&node, &data_buffer, &data_bufsiz);
-
-		u16 data_size = htobe16(data_bufsiz);
-		buffer_write(&uncompressed, &uncompressed_size, &data_size, sizeof(u16));
-		buffer_write(&uncompressed, &uncompressed_size, data_buffer, data_bufsiz);
-
-		if (data_buffer)
-			free(data_buffer);
+			def->serialize(&node_data->data, node->data);
 	}
 
-	my_compress(uncompressed, uncompressed_size, dataptr, sizeptr);
-	*rawsizeptr = uncompressed_size;
+	Blob buffer = {0, NULL};
+	SerializedMapBlock_write(&buffer, &block_data);
+	SerializedMapBlock_free(&block_data);
 
-	if (uncompressed)
-		free(uncompressed);
+	return buffer;
 }
 
-bool map_deserialize_block(MapBlock *block, const char *data, size_t size, size_t rawsize)
+bool map_deserialize_block(MapBlock *block, Blob buffer)
 {
-	unsigned char decompressed[rawsize];
-	size_t decompressed_size = rawsize;
+	// it's important to copy Blobs that have been malloc'd before reading from them
+	// because reading from a Blob modifies its data and size pointer,
+	// but does not free anything
+	SerializedMapBlock block_data = {0};
+	bool success = SerializedMapBlock_read(&buffer, &block_data);
 
-	if (! my_decompress(data, size, decompressed, decompressed_size))
-		return false;
+	if (success) ITERATE_MAPBLOCK
+		block->data[x][y][z] = map_node_create(block_data.raw.nodes[x][y][z].type, block_data.raw.nodes[x][y][z].data);
 
-	unsigned char *ptr = decompressed;
-
-	ITERATE_MAPBLOCK {
-		// node type
-		u32 *type_ptr = buffer_read(&ptr, &decompressed_size, sizeof(u32));
-
-		if (! type_ptr)
-			return false;
-
-		u32 type = be32toh(*type_ptr);
-
-		// data size
-		u16 *data_size_ptr = buffer_read(&ptr, &decompressed_size, sizeof(u16));
-
-		if (! data_size_ptr)
-			return false;
-
-		u16 data_size = be16toh(*data_size_ptr);
-
-		// data
-		void *data = buffer_read(&ptr, &decompressed_size, data_size);
-
-		if (! data && data_size)
-			return false;
-
-		// set node
-		block->data[x][y][z] = map_node_create(type, data, data_size);
-	}
-
-	return true;
+	SerializedMapBlock_free(&block_data);
+	return success;
 }
 
 v3s32 map_node_to_block_pos(v3s32 pos, v3u8 *offset)
@@ -230,7 +200,7 @@ MapNode map_get_node(Map *map, v3s32 pos)
 	v3s32 blockpos = map_node_to_block_pos(pos, &offset);
 	MapBlock *block = map_get_block(map, blockpos, false);
 	if (! block)
-		return map_node_create(NODE_UNLOADED, NULL, 0);
+		return map_node_create(NODE_UNLOADED, (Blob) {0, NULL});
 	return block->data[offset.x][offset.y][offset.z];
 }
 
@@ -251,7 +221,7 @@ void map_set_node(Map *map, v3s32 pos, MapNode node, bool create, void *arg)
 	}
 }
 
-MapNode map_node_create(Node type, void *data, size_t size)
+MapNode map_node_create(Node type, Blob buffer)
 {
 	if (type >= NODE_UNLOADED)
 		type = NODE_UNKNOWN;
@@ -265,8 +235,8 @@ MapNode map_node_create(Node type, void *data, size_t size)
 	if (def->create)
 		def->create(&node);
 
-	if (def->deserialize && size)
-		def->deserialize(&node, data, size);
+	if (def->deserialize)
+		def->deserialize(&buffer, node.data);
 
 	return node;
 }

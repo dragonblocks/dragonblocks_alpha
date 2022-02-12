@@ -122,16 +122,6 @@ static bool find_near_vulcano(v2s32 pos, v2s32 *result)
 	return false;
 }
 
-static inline f64 min(f64 a, f64 b)
-{
-	return a < b ? a : b;
-}
-
-static inline f64 max(f64 a, f64 b)
-{
-	return a > b ? a : b;
-}
-
 static f64 distance(v2s32 a, v2s32 b)
 {
 	return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2));
@@ -183,7 +173,7 @@ static void preprocess_row_ocean(v2s32 pos, unused f64 factor, void *row_data, v
 			bool is_crater = vulcano_height > 0;
 
 			if (! is_crater)
-				vulcano_height = min(vulcano_height + 5.0, 0.0);
+				vulcano_height = f64_min(vulcano_height + 5.0, 0.0);
 
 			if (vulcano_height < 0)
 				vulcano_height *= 2.0;
@@ -202,7 +192,7 @@ static s32 height_ocean(unused v2s32 pos, f64 factor, f32 height, void *row_data
 	OceanRowData *rdata = row_data;
 	s32 ocean_floor = calculate_ocean_floor(factor, height);
 
-	return rdata->vulcano ? max(ocean_floor, rdata->vulcano_height) : ocean_floor;
+	return rdata->vulcano ? f64_max(ocean_floor, rdata->vulcano_height) : ocean_floor;
 }
 
 Node ocean_get_node_at(v3s32 pos, s32 diff, void *row_data)

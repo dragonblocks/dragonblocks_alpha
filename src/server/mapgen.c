@@ -15,6 +15,7 @@ void mapgen_set_node(v3s32 pos, MapNode node, MapgenStage mgs, List *changed_blo
 		.mgs = mgs,
 		.changed_blocks = changed_blocks,
 	};
+
 	map_set_node(server_map.map, pos, node, true, &arg);
 }
 
@@ -84,9 +85,9 @@ void mapgen_generate_block(MapBlock *block, List *changed_blocks)
 				}
 
 				pthread_mutex_lock(&block->mtx);
-				if (extra->mgs_buffer[x][y][z] <= MGS_TERRAIN) {
-					block->data[x][y][z] = map_node_create(node, NULL, 0);
-					extra->mgs_buffer[x][y][z] = MGS_TERRAIN;
+				if (extra->mgsb.raw.nodes[x][y][z] <= MGS_TERRAIN) {
+					block->data[x][y][z] = map_node_create(node, (Blob) {0, NULL});
+					extra->mgsb.raw.nodes[x][y][z] = MGS_TERRAIN;
 				}
 				pthread_mutex_unlock(&block->mtx);
 			}

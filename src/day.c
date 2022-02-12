@@ -30,7 +30,7 @@ f64 get_sun_angle()
 
 f64 get_daylight()
 {
-	return clamp(cos(get_sun_angle()) * 2.0 + 0.5, 0.0, 1.0);
+	return f64_clamp(cos(get_sun_angle()) * 2.0 + 0.5, 0.0, 1.0);
 }
 
 void split_time_of_day(int *hours, int *minutes)

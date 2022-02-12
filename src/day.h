@@ -2,7 +2,7 @@
 #define _DAY_H_
 
 #include <stdbool.h>
-#include <dragontype/number.h>
+#include "types.h"
 #define MINUTES_PER_HOUR 60
 #define HOURS_PER_DAY 24
 #define MINUTES_PER_DAY (HOURS_PER_DAY * MINUTES_PER_HOUR)

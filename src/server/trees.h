@@ -1,9 +1,9 @@
 #ifndef _TREES_H_
 #define _TREES_H_
 
-#include <dragontype/list.h>
-#include <dragontype/number.h>
+#include <dragonstd/list.h>
 #include "perlin.h"
+#include "types.h"
 
 #define NUM_TREES 3
 

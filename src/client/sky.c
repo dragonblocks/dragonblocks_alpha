@@ -106,7 +106,7 @@ bool sky_init()
 {
 	// skybox
 
-	if (! shader_program_create(RESSOURCEPATH "shaders/sky/skybox", &sky.skybox_prog, NULL)) {
+	if (! shader_program_create(RESSOURCE_PATH "shaders/sky/skybox", &sky.skybox_prog, NULL)) {
 		fprintf(stderr, "Failed to create skybox shader program\n");
 		return false;
 	}
@@ -114,8 +114,8 @@ bool sky_init()
 	sky.skybox_loc_VP = glGetUniformLocation(sky.skybox_prog, "VP");
 	sky.skybox_loc_daylight = glGetUniformLocation(sky.skybox_prog, "daylight");
 
-	sky.skybox_textures[0] = texture_create_cubemap(RESSOURCEPATH "textures/skybox/day");
-	sky.skybox_textures[1] = texture_create_cubemap(RESSOURCEPATH "textures/skybox/night");
+	sky.skybox_textures[0] = texture_create_cubemap(RESSOURCE_PATH "textures/skybox/day");
+	sky.skybox_textures[1] = texture_create_cubemap(RESSOURCE_PATH "textures/skybox/night");
 
 	GLint texture_indices[2];
 	for (GLint i = 0; i < 2; i++)
@@ -142,14 +142,14 @@ bool sky_init()
 
 	// sun
 
-	if (! shader_program_create(RESSOURCEPATH "shaders/sky/sun", &sky.sun_prog, NULL)) {
+	if (! shader_program_create(RESSOURCE_PATH "shaders/sky/sun", &sky.sun_prog, NULL)) {
 		fprintf(stderr, "Failed to create sun shader program\n");
 		return false;
 	}
 
 	sky.sun_loc_MVP = glGetUniformLocation(sky.sun_prog, "MVP");
 
-	sky.sun_texture = texture_load(RESSOURCEPATH "textures/sun.png", false);
+	sky.sun_texture = texture_load(RESSOURCE_PATH "textures/sun.png", false);
 
 	sky.sun_mesh = mesh_create();
 	sky.sun_mesh->textures = &sky.sun_texture->id;
@@ -162,7 +162,7 @@ bool sky_init()
 
 	// clouds
 
-	if (! shader_program_create(RESSOURCEPATH "shaders/sky/clouds", &sky.clouds_prog, NULL)) {
+	if (! shader_program_create(RESSOURCE_PATH "shaders/sky/clouds", &sky.clouds_prog, NULL)) {
 		fprintf(stderr, "Failed to create clouds shader program\n");
 		return false;
 	}

@@ -1,0 +1,50 @@
+#define MAPBLOCK_SIZE 16
+
+HSLData
+	v3f32 color
+
+SerializedMapNode
+	u32 type
+	Blob data
+
+SerializedMapBlockRaw
+	SerializedMapNode[MAPBLOCK_SIZE][MAPBLOCK_SIZE][MAPBLOCK_SIZE] nodes
+
+SerializedMapBlock
+	compressed SerializedMapBlockRaw raw
+
+MapgenStageBufferRaw
+	u32[MAPBLOCK_SIZE][MAPBLOCK_SIZE][MAPBLOCK_SIZE] nodes
+
+MapgenStageBuffer
+	compressed MapgenStageBufferRaw raw
+
+pkt ToServerAuth
+	String name
+
+pkt ToServerSetnode
+	v3s32 pos
+	u32 node
+
+pkt ToServerPos
+	v3f64 pos
+
+pkt ToServerRequestBlock
+	v3s32 pos
+
+pkt ToClientAuth
+	u8 success
+
+pkt ToClientBlock
+	v3s32 pos
+	Blob data
+
+pkt ToClientInfo
+	u32 simulation_distance
+	s32 seed
+
+pkt ToClientPos
+	v3f64 pos
+
+pkt ToClientTimeOfDay
+	u64 time_of_day
