@@ -110,7 +110,7 @@ void font_deinit()
 
 Font *font_create(const char *text)
 {
-	Font *fnt = malloc(sizeof(fnt));
+	Font *fnt = malloc(sizeof *fnt);
 
 	size_t len = strlen(text);
 
