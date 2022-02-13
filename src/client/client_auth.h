@@ -8,7 +8,7 @@ typedef enum
 	AUTH_SUCCESS,
 } ClientAuthState;
 
-extern struct ClientAuth
+extern volatile struct ClientAuth
 {
 	char *name;
 	ClientAuthState state;

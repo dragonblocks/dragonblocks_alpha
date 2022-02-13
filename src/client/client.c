@@ -16,12 +16,12 @@
 
 DragonnetPeer *client;
 
-static bool finished = false;
+static volatile bool finished = false;
 
 static bool on_recv(unused DragonnetPeer *peer, DragonnetTypeId type, unused void *pkt)
 {
 	while (client_auth.state == AUTH_INIT)
-		;
+		sched_yield();
 
 	return (client_auth.state == AUTH_WAIT) == (type == DRAGONNET_TYPE_ToClientAuth);
 }
@@ -29,8 +29,9 @@ static bool on_recv(unused DragonnetPeer *peer, DragonnetTypeId type, unused voi
 static void on_disconnect(unused DragonnetPeer *peer)
 {
 	interrupted = true;
+
 	while (! finished)
-		;
+		sched_yield();
 }
 
 static void on_ToClientAuth(unused DragonnetPeer *peer, ToClientAuth *pkt)

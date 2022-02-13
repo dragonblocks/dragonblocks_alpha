@@ -6,7 +6,7 @@
 #include "signal_handlers.h"
 #include "types.h"
 
-struct ClientAuth client_auth;
+volatile struct ClientAuth client_auth;
 
 static bool name_prompt()
 {

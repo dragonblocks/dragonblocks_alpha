@@ -4,7 +4,7 @@ cp -r * .build/
 cd .build/
 mkdir build
 cd build
-if ! (cmake -B . -S ../src -DCMAKE_BUILD_TYPE=Release -DRESSOURCE_PATH="" && make clean && make -j$(nproc)); then
+if ! (cmake -B . -S ../src -DCMAKE_BUILD_TYPE=Release -DRESSOURCE_PATH="\"\"" && make clean && make -j$(nproc)); then
 	cd ../..
 	rm -rf .build
 	exit 1

@@ -15,6 +15,7 @@ _deps
 Dragonblocks
 DragonblocksServer
 DragonblocksAlpha-*.zip
+DragonblocksAlpha
 
 # Data
 client.conf
