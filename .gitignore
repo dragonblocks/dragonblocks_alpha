@@ -20,8 +20,8 @@ DragonblocksAlpha
 # Data
 client.conf
 server.conf
-world.sqlite
-world.sqlite-journal
+*.sqlite
+*.sqlite-journal
 screenshot-*.png
 
 # Generated code

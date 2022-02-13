@@ -70,7 +70,10 @@ int main(int argc, char **argv)
 	server->on_recv_type[DRAGONNET_TYPE_ToServerRequestBlock] = (void *) &on_ToServerRequestBlock;
 
 	interrupt_init();
-	database_init();
+
+	if (! database_init())
+		return EXIT_FAILURE;
+
 	server_map_init();
 	server_player_init();
 

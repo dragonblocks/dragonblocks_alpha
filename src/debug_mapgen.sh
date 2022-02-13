@@ -1,3 +1,3 @@
 #! /bin/bash
-rm -f world.sqlite
+rm -f map.sqlite
 ./debug.sh
