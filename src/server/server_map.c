@@ -2,12 +2,12 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
+#include "interrupt.h"
 #include "map.h"
 #include "server/database.h"
 #include "server/mapgen.h"
 #include "server/server_config.h"
 #include "server/server_map.h"
-#include "signal_handlers.h"
 #include "util.h"
 
 struct ServerMap server_map;
@@ -341,7 +341,7 @@ void server_map_prepare_spawn()
 	for (s32 x = -dist; x <= (s32) dist; x++) {
 		for (s32 y = -dist; y <= (s32) dist; y++) {
 			for (s32 z = -dist; z <= (s32) dist; z++) {
-				if (interrupted) {
+				if (interrupt->done) {
 					join_mapgen_threads();
 					return;
 				}

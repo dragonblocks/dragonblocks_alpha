@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <dragonnet/addr.h>
+#include "interrupt.h"
 #include "server/database.h"
 #include "server/server.h"
 #include "server/server_map.h"
 #include "server/server_player.h"
-#include "signal_handlers.h"
 #include "util.h"
 
 DragonnetListener *server;
@@ -69,23 +69,23 @@ int main(int argc, char **argv)
 	server->on_recv_type[DRAGONNET_TYPE_ToServerPos] =          (void *) &on_ToServerPos;
 	server->on_recv_type[DRAGONNET_TYPE_ToServerRequestBlock] = (void *) &on_ToServerRequestBlock;
 
-	signal_handlers_init();
-
+	interrupt_init();
 	server_player_init();
 	database_init();
 	server_map_init();
+
 	server_map_prepare_spawn();
 	dragonnet_listener_run(server);
 
-	while (! interrupted)
-		sched_yield();
+	flag_wait(interrupt);
 
 	printf("Shutting down\n");
-
 	dragonnet_listener_close(server);
+
 	server_map_deinit();
 	database_deinit();
 	server_player_deinit();
+	interrupt_deinit();
 
 	dragonnet_listener_delete(server);
 

@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <dragonstd/flag.h>
 #include "client/client.h"
 #include "client/client_auth.h"
 #include "client/client_map.h"
@@ -9,29 +10,23 @@
 #include "client/game.h"
 #include "client/input.h"
 #include "day.h"
-#include "signal_handlers.h"
+#include "interrupt.h"
 #include "perlin.h"
 #include "types.h"
 #include "util.h"
 
 DragonnetPeer *client;
-
-static volatile bool finished = false;
+static Flag *finish;
 
 static bool on_recv(unused DragonnetPeer *peer, DragonnetTypeId type, unused void *pkt)
 {
-	while (client_auth.state == AUTH_INIT)
-		sched_yield();
-
 	return (client_auth.state == AUTH_WAIT) == (type == DRAGONNET_TYPE_ToClientAuth);
 }
 
 static void on_disconnect(unused DragonnetPeer *peer)
 {
-	interrupted = true;
-
-	while (! finished)
-		sched_yield();
+	flag_set(interrupt);
+	flag_wait(finish);
 }
 
 static void on_ToClientAuth(unused DragonnetPeer *peer, ToClientAuth *pkt)
@@ -89,7 +84,9 @@ int main(int argc, char **argv)
 	client->on_recv_type[DRAGONNET_TYPE_ToClientPos      ] = (void *) &on_ToClientPos;
 	client->on_recv_type[DRAGONNET_TYPE_ToClientTimeOfDay] = (void *) &on_ToClientTimeOfDay;
 
-	signal_handlers_init();
+	finish = flag_create();
+
+	interrupt_init();
 	client_map_init();
 	client_player_init();
 	dragonnet_peer_run(client);
@@ -104,10 +101,14 @@ int main(int argc, char **argv)
 	client_auth_deinit();
 	client_player_deinit();
 	client_map_deinit();
+	interrupt_deinit();
 
 	pthread_t recv_thread = client->recv_thread;
-	finished = true;
+
+	flag_set(finish);
 	pthread_join(recv_thread, NULL);
+
+	flag_delete(finish);
 
 	return EXIT_SUCCESS;
 }

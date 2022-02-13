@@ -60,6 +60,7 @@ set(COMMON_SOURCES
 	"${DEPS_DIR}/dragonport/asprintf.c"
 	"${DEPS_DIR}/dragonstd/array.c"
 	"${DEPS_DIR}/dragonstd/bintree.c"
+	"${DEPS_DIR}/dragonstd/flag.c"
 	"${DEPS_DIR}/dragonstd/list.c"
 	"${DEPS_DIR}/dragonstd/queue.c"
 	"${DEPS_DIR}/linenoise/linenoise.c"
@@ -67,10 +68,10 @@ set(COMMON_SOURCES
 	config.c
 	day.c
 	environment.c
+	interrupt.c
 	map.c
 	node.c
 	perlin.c
-	signal_handlers.c
 	types.c
 	util.c
 )

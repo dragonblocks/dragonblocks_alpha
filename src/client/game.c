@@ -18,7 +18,7 @@
 #include "client/sky.h"
 #include "client/window.h"
 #include "day.h"
-#include "signal_handlers.h"
+#include "interrupt.h"
 
 int window_width, window_height;
 
@@ -67,7 +67,7 @@ static void game_loop()
 	struct timespec ts, ts_old;
 	clock_gettime(CLOCK_REALTIME, &ts_old);
 
-	while (! glfwWindowShouldClose(window.handle) && ! interrupted) {
+	while (! glfwWindowShouldClose(window.handle) && ! interrupt->done) {
 		clock_gettime(CLOCK_REALTIME, &ts);
 		f64 dtime = (f64) (ts.tv_sec - ts_old.tv_sec) + (f64) (ts.tv_nsec - ts_old.tv_nsec) / 1.0e9;
 		ts_old = ts;
