@@ -27,7 +27,7 @@ void mapgen_generate_block(MapBlock *block, List *changed_blocks)
 	v3s32 block_node_pos = {block->pos.x * MAPBLOCK_SIZE, block->pos.y * MAPBLOCK_SIZE, block->pos.z * MAPBLOCK_SIZE};
 
 	char *block_data[BIOME_COUNT] = {NULL};
-	bool preprocessed_block[BIOME_COUNT];
+	bool preprocessed_block[BIOME_COUNT] = {false};
 
 	for (u8 x = 0; x < MAPBLOCK_SIZE; x++) {
 		s32 pos_x = block_node_pos.x + x;

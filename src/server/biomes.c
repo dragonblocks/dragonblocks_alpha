@@ -279,7 +279,6 @@ BiomeDef biomes[BIOME_COUNT] = {
 		.preprocess_block = &preprocess_block_ocean,
 		.row_data_size = sizeof(OceanRowData),
 		.preprocess_row = &preprocess_row_ocean,
-
 	},
 	{
 		.probability = 1.0,

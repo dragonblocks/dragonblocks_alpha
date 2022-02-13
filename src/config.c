@@ -82,4 +82,6 @@ void config_read(char *path, ConfigEntry *entries, size_t num_entries)
 		if (! found)
 			fprintf(stderr, "Unknown setting %s in %s\n", key, path);
 	}
+
+	fclose(f);
 }
