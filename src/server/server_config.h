@@ -3,6 +3,7 @@
 
 extern struct ServerConfig {
 	unsigned int simulation_distance;
+	unsigned int mapgen_threads;
 } server_config;
 
 #endif

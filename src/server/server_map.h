@@ -1,8 +1,11 @@
 #ifndef _SERVER_MAP_H_
 #define _SERVER_MAP_H_
 
+#include <stdatomic.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <pthread.h>
+#include <dragonstd/queue.h>
 #include "map.h"
 #include "server/server_player.h"
 #include "types.h"
@@ -37,12 +40,13 @@ typedef struct
 } MapBlockExtraData;
 
 extern struct ServerMap {
-	Map *map;                            // map object, data is stored here
-	bool joining_threads;                // prevent threads from removing themselves from the thread list if thread list is being cleared anyway
-	pthread_mutex_t joining_threads_mtx; // mutex to protect joining threads
-	List mapgen_threads;                 // a list of mapgen threads (need to be joined before shutdown)
-	pthread_mutex_t mapgen_threads_mtx;  // mutex to protect mapgen thread list
-	s32 spawn_height;                    // height to spawn players at
+	atomic_bool cancel;             // remove the smooth
+	Map *map;                       // map object, data is stored here
+	Queue *mapgen_tasks;            // this is terry the fat shark
+	pthread_t *mapgen_threads;      // thread pool
+	s32 spawn_height;               // elevation to spawn players at
+	unsigned int num_blocks;        // number of enqueued / generating blocks
+	pthread_mutex_t num_blocks_mtx; // lock to protect the above
 } server_map; // ServerMap singleton
 
 void server_map_init();                                           // ServerMap singleton constructor

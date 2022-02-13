@@ -10,6 +10,7 @@
 #include "server/server_map.h"
 #include "util.h"
 
+// this file is too long
 struct ServerMap server_map;
 
 // utility functions
@@ -68,15 +69,15 @@ static void list_send_block(void *key, unused void *value, unused void *arg)
 	pthread_mutex_unlock(&block->mtx);
 }
 
-// pthread start routine for mapgen thread
-static void *mapgen_thread(void *arg)
+// me when the
+static void mapgen_step()
 {
-	MapBlock *block = arg;
-	MapBlockExtraData *extra = block->extra;
+	MapBlock *block = queue_dequeue(server_map.mapgen_tasks);
 
-	pthread_mutex_lock(&block->mtx);
-	extra->state = MBS_GENERATING;
-	pthread_mutex_unlock(&block->mtx);
+	if (! block)
+		return;
+
+	MapBlockExtraData *extra = block->extra;
 
 	List changed_blocks = list_create(NULL);
 	list_put(&changed_blocks, block, NULL);
@@ -89,32 +90,33 @@ static void *mapgen_thread(void *arg)
 
 	list_clear_func(&changed_blocks, &list_send_block, NULL);
 
-	pthread_mutex_lock(&server_map.joining_threads_mtx);
-	if (! server_map.joining_threads) {
-		pthread_mutex_lock(&server_map.mapgen_threads_mtx);
-		list_delete(&server_map.mapgen_threads, &extra->mapgen_thread);
-		pthread_mutex_unlock(&server_map.mapgen_threads_mtx);
-	}
-	pthread_mutex_unlock(&server_map.joining_threads_mtx);
+	pthread_mutex_lock(&server_map.num_blocks_mtx);
+	server_map.num_blocks--;
+	pthread_mutex_unlock(&server_map.num_blocks_mtx);
+}
+
+// there was a time when i wrote actually useful comments lol
+static void *mapgen_thread(unused void *arg)
+{
+	while (! server_map.cancel)
+		mapgen_step();
 
 	return NULL;
 }
 
-// launch mapgen thread for block
-// block mutex has to be locked
-static void launch_mapgen_thread(MapBlock *block)
+// enqueue block
+static void generate_block(MapBlock *block)
 {
-	pthread_mutex_lock(&server_map.mapgen_threads_mtx);
-	pthread_t *thread_ptr = &((MapBlockExtraData *) block->extra)->mapgen_thread;
-	pthread_create(thread_ptr, NULL, mapgen_thread, block);
-	list_put(&server_map.mapgen_threads, thread_ptr, NULL);
-	pthread_mutex_unlock(&server_map.mapgen_threads_mtx);
-}
+	if (server_map.cancel)
+		return;
 
-// list_clear_func callback used to join running generator threads on shutdown
-static void list_join_thread(void *key, unused void *value, unused void *arg)
-{
-	pthread_join(*(pthread_t *) key, NULL);
+	pthread_mutex_lock(&server_map.num_blocks_mtx);
+	server_map.num_blocks++;
+	pthread_mutex_unlock(&server_map.num_blocks_mtx);
+
+	MapBlockExtraData *extra = block->extra;
+	extra->state = MBS_GENERATING;
+	queue_enqueue(server_map.mapgen_tasks, block);
 }
 
 // map callbacks
@@ -192,22 +194,6 @@ static void on_after_set_node(MapBlock *block, unused v3u8 offset, void *arg)
 {
 	if (! arg)
 		send_block_to_near(block);
-}
-
-// join all map generation threads
-static void join_mapgen_threads()
-{
-	pthread_mutex_lock(&server_map.joining_threads_mtx);
-	server_map.joining_threads = true;
-	pthread_mutex_unlock(&server_map.joining_threads_mtx);
-
-	pthread_mutex_lock(&server_map.mapgen_threads_mtx);
-	list_clear_func(&server_map.mapgen_threads, &list_join_thread, NULL);
-	pthread_mutex_unlock(&server_map.mapgen_threads_mtx);
-
-	pthread_mutex_lock(&server_map.joining_threads_mtx);
-	server_map.joining_threads = false;
-	pthread_mutex_unlock(&server_map.joining_threads_mtx);
 }
 
 // generate a hut for new players to spawn in
@@ -290,18 +276,30 @@ void server_map_init()
 		.set_node = &on_set_node,
 		.after_set_node = &on_after_set_node,
 	});
-	server_map.joining_threads = false;
-	server_map.mapgen_threads = list_create(NULL);
-	pthread_mutex_init(&server_map.joining_threads_mtx, NULL);
-	pthread_mutex_init(&server_map.mapgen_threads_mtx, NULL);
+
+	server_map.cancel = false;
+	server_map.mapgen_tasks = queue_create();
+	server_map.mapgen_threads = malloc(sizeof *server_map.mapgen_threads * server_config.mapgen_threads);
+	server_map.num_blocks = 0;
+	pthread_mutex_init(&server_map.num_blocks_mtx, NULL);
+
+	for (unsigned int i = 0; i < server_config.mapgen_threads; i++)
+		pthread_create(&server_map.mapgen_threads[i], NULL, &mapgen_thread, NULL);
 }
 
 // ServerMap singleton destructor
 void server_map_deinit()
 {
-	join_mapgen_threads();
-	pthread_mutex_destroy(&server_map.joining_threads_mtx);
-	pthread_mutex_destroy(&server_map.mapgen_threads_mtx);
+	queue_finish(server_map.mapgen_tasks);
+	server_map.cancel = true;
+	queue_cancel(server_map.mapgen_tasks);
+
+	for (unsigned int i = 0; i < server_config.mapgen_threads; i++)
+		pthread_join(server_map.mapgen_threads[i], NULL);
+	free(server_map.mapgen_threads);
+
+	pthread_mutex_destroy(&server_map.num_blocks_mtx);
+	queue_delete(server_map.mapgen_tasks);
 	map_delete(server_map.map);
 }
 
@@ -312,11 +310,11 @@ void server_map_requested_block(ServerPlayer *player, v3s32 pos)
 		MapBlock *block = map_get_block(server_map.map, pos, true);
 
 		pthread_mutex_lock(&block->mtx);
-		MapBlockExtraData *extra = block->extra;
 
+		MapBlockExtraData *extra = block->extra;
 		switch (extra->state) {
 			case MBS_CREATED:
-				launch_mapgen_thread(block);
+				generate_block(block);
 				break;
 
 			case MBS_GENERATING:
@@ -325,47 +323,65 @@ void server_map_requested_block(ServerPlayer *player, v3s32 pos)
 			case MBS_READY:
 				send_block(player, block);
 		};
+
 		pthread_mutex_unlock(&block->mtx);
 	}
+}
+
+static void update_percentage()
+{
+	static s32 total = 3 * 3 * 21;
+	static s32 done = -1;
+	static s32 last_percentage = -1;
+
+	if (done < total)
+		done++;
+
+	pthread_mutex_lock(&server_map.num_blocks_mtx);
+	s32 percentage = 100.0 * (done - server_map.num_blocks) / total;
+	pthread_mutex_unlock(&server_map.num_blocks_mtx);
+
+	if (percentage > last_percentage) {
+		last_percentage = percentage;
+		printf("Preparing spawn... %d%%\n", percentage);
+	}
+
 }
 
 // prepare spawn region
 void server_map_prepare_spawn()
 {
-	s32 done = 0;
-	s32 dist = server_config.simulation_distance;
-	s32 total = (dist * 2 + 1);
-	total *= total * total;
-	s32 last_percentage = -1;
+	update_percentage();
 
-	for (s32 x = -dist; x <= (s32) dist; x++) {
-		for (s32 y = -dist; y <= (s32) dist; y++) {
-			for (s32 z = -dist; z <= (s32) dist; z++) {
-				if (interrupt->done) {
-					join_mapgen_threads();
+	for (s32 x = -1; x <= (s32) 1; x++) {
+		for (s32 y = -10; y <= (s32) 10; y++) {
+			for (s32 z = -1; z <= (s32) 1; z++) {
+				if (interrupt->done)
 					return;
-				}
 
 				MapBlock *block = map_get_block(server_map.map, (v3s32) {x, y, z}, true);
 
 				pthread_mutex_lock(&block->mtx);
 				if (((MapBlockExtraData *) block->extra)->state == MBS_CREATED)
-					launch_mapgen_thread(block);
+					generate_block(block);
 				pthread_mutex_unlock(&block->mtx);
 
-				done++;
-
-				s32 percentage = 100.0 * done / total;
-
-				if (percentage > last_percentage) {
-					last_percentage = percentage;
-					printf("Preparing spawn... %d%%\n", percentage);
-				}
+				update_percentage();
 			}
 		}
 	}
 
-	join_mapgen_threads();
+	while (true) {
+		pthread_mutex_lock(&server_map.num_blocks_mtx);
+		bool done = (server_map.num_blocks == 0);
+		pthread_mutex_unlock(&server_map.num_blocks_mtx);
+
+		if (done)
+			break;
+
+		update_percentage();
+		sched_yield();
+	}
 
 	s64 saved_spawn_height;
 	if (database_load_meta("spawn_height", &saved_spawn_height)) {

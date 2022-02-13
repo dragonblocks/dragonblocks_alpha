@@ -168,7 +168,7 @@ void client_map_init()
 
 	client_map.meshgen_threads = malloc(sizeof *client_map.meshgen_threads * client_config.meshgen_threads);
 	for (unsigned int i = 0; i < client_config.meshgen_threads; i++)
-		client_map.meshgen_threads[i] = 0;
+		client_map.meshgen_threads[i] = 0; // why
 }
 
 // ClientMap singleton destructor

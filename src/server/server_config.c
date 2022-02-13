@@ -3,6 +3,7 @@
 
 struct ServerConfig server_config = {
 	.simulation_distance = 10,
+	.mapgen_threads = 4,
 };
 
 __attribute__((constructor)) static void server_config_init()
@@ -13,6 +14,11 @@ __attribute__((constructor)) static void server_config_init()
 			.key = "simulation_distance",
 			.value = &server_config.simulation_distance,
 		},
-	}, 1);
+		{
+			.type = CT_UINT,
+			.key = "mapgen_threads",
+			.value = &server_config.mapgen_threads,
+		},
+	}, 2);
 }
 
