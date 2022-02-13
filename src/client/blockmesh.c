@@ -117,10 +117,12 @@ void blockmesh_make(MapBlock *block)
 
 	pthread_mutex_lock(&block->mtx);
 	if (extra->obj) {
-		extra->obj->remove = true;
+		if (obj) {
+			obj->scale = extra->obj->scale;
+			object_transform(obj);
+		}
 
-		obj->scale = extra->obj->scale;
-		object_transform(obj);
+		extra->obj->remove = true;
 	}
 
 	extra->obj = obj;
