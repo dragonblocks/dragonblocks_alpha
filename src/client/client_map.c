@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "client/blockmesh.h"
 #include "client/facecache.h"
+#include "client/client_config.h"
 #include "client/client_map.h"
 #include "client/client_player.h"
 #include "client/debug_menu.h"
@@ -165,7 +166,8 @@ void client_map_init()
 	client_map.sync_thread = 0;
 	client_map_set_simulation_distance(10);
 
-	for (int i = 0; i < NUM_MESHGEN_THREADS; i++)
+	client_map.meshgen_threads = malloc(sizeof *client_map.meshgen_threads * client_config.meshgen_threads);
+	for (unsigned int i = 0; i < client_config.meshgen_threads; i++)
 		client_map.meshgen_threads[i] = 0;
 }
 
@@ -179,7 +181,7 @@ void client_map_deinit()
 // start meshgen and sync threads
 void client_map_start()
 {
-	for (int i = 0; i < NUM_MESHGEN_THREADS; i++)
+	for (unsigned int i = 0; i < client_config.meshgen_threads; i++)
 		pthread_create(&client_map.meshgen_threads[i], NULL, &meshgen_thread, NULL);
 
 	pthread_create(&client_map.sync_thread, NULL, &sync_thread, NULL);
@@ -191,9 +193,10 @@ void client_map_stop()
 	client_map.cancel = true;
 	queue_cancel(client_map.queue);
 
-	for (int i = 0; i < NUM_MESHGEN_THREADS; i++)
+	for (unsigned int i = 0; i < client_config.meshgen_threads; i++)
 		if (client_map.meshgen_threads[i])
 			pthread_join(client_map.meshgen_threads[i], NULL);
+	free(client_map.meshgen_threads);
 
 	if (client_map.sync_thread)
 		pthread_join(client_map.sync_thread, NULL);

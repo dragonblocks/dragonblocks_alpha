@@ -6,6 +6,7 @@ struct ClientConfig client_config = {
 	.mipmap = true,
 	.render_distance = 255.0,
 	.vsync = true,
+	.meshgen_threads = 4,
 };
 
 __attribute__((constructor)) static void client_config_init()
@@ -30,7 +31,12 @@ __attribute__((constructor)) static void client_config_init()
 			.type = CT_BOOL,
 			.key = "vsync",
 			.value = &client_config.vsync,
-		}
-	}, 4);
+		},
+		{
+			.type = CT_UINT,
+			.key = "meshgen_threads",
+			.value = &client_config.meshgen_threads,
+		},
+	}, 5);
 }
 

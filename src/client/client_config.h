@@ -8,6 +8,7 @@ extern struct ClientConfig {
 	bool mipmap;
 	double render_distance;
 	bool vsync;
+	unsigned int meshgen_threads;
 } client_config;
 
 #endif
