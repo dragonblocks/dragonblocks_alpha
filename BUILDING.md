@@ -15,7 +15,7 @@ For building the server the SQLite3 development library is required.
 Ubuntu / Debian:
 
 ```bash
-sudo apt install build-essential cmake zlib1g-dev libgl1-mesa-dev libglfw3-dev libglew-dev libfreetype-dev libsqlite3-dev lua
+sudo apt install build-essential cmake zlib1g-dev libgl1-mesa-dev libglfw3-dev libglew-dev libfreetype-dev libsqlite3-dev lua5.3
 ```
 
 FreeBSD:
