@@ -133,6 +133,7 @@ static void on_create_block(MapBlock *block)
 	extra->queue = false;
 	extra->last_synced = 0;
 	extra->obj = NULL;
+	extra->all_air = false;
 }
 
 // callback for deleting a block
@@ -236,9 +237,17 @@ void client_map_schedule_update_block_mesh(MapBlock *block)
 
 	pthread_mutex_lock(&block->mtx);
 	MapBlockExtraData *extra = block->extra;
+
 	if (! extra->queue) {
-		extra->queue = true;
-		queue_enqueue(client_map.queue, block);
+		if (extra->all_air) {
+			if (extra->obj) {
+				extra->obj->remove = true;
+				extra->obj = NULL;
+			}
+		} else {
+			extra->queue = true;
+			queue_enqueue(client_map.queue, block);
+		}
 	}
 	pthread_mutex_unlock(&block->mtx);
 }

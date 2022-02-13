@@ -45,6 +45,7 @@ static void on_ToClientBlock(unused DragonnetPeer *peer, ToClientBlock *pkt)
 	MapBlock *block = map_get_block(client_map.map, pkt->pos, true);
 
 	map_deserialize_block(block, pkt->data);
+	((MapBlockExtraData *) block->extra)->all_air = (pkt->data.siz == 0);
 	client_map_block_received(block);
 }
 

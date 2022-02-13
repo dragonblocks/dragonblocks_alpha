@@ -145,6 +145,18 @@ void map_free_block(MapBlock *block)
 
 Blob map_serialize_block(MapBlock *block)
 {
+	bool all_air = true;
+
+	ITERATE_MAPBLOCK {
+		if (block->data[x][y][z].type != NODE_AIR) {
+			all_air = false;
+			break;
+		}
+	}
+
+	if (all_air)
+		return (Blob) {0, NULL};
+
 	SerializedMapBlock block_data;
 
 	ITERATE_MAPBLOCK {
@@ -174,6 +186,13 @@ Blob map_serialize_block(MapBlock *block)
 
 bool map_deserialize_block(MapBlock *block, Blob buffer)
 {
+	if (buffer.siz == 0) {
+		ITERATE_MAPBLOCK
+			block->data[x][y][z] = map_node_create(NODE_AIR, (Blob) {0, NULL});
+
+		return true;
+	}
+
 	// it's important to copy Blobs that have been malloc'd before reading from them
 	// because reading from a Blob modifies its data and size pointer,
 	// but does not free anything
