@@ -82,6 +82,9 @@ bool window_init(int width, int height)
 
 	glfwMakeContextCurrent(window.handle);
 
+	if (! client_config.vsync)
+		glfwSwapInterval(0);
+
 	if (glewInit() != GLEW_OK) {
 		fprintf(stderr, "Failed to initialize GLEW\n");
 		return false;
