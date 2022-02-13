@@ -70,9 +70,9 @@ int main(int argc, char **argv)
 	server->on_recv_type[DRAGONNET_TYPE_ToServerRequestBlock] = (void *) &on_ToServerRequestBlock;
 
 	interrupt_init();
-	server_player_init();
 	database_init();
 	server_map_init();
+	server_player_init();
 
 	server_map_prepare_spawn();
 	dragonnet_listener_run(server);
@@ -82,9 +82,9 @@ int main(int argc, char **argv)
 	printf("Shutting down\n");
 	dragonnet_listener_close(server);
 
+	server_player_deinit();
 	server_map_deinit();
 	database_deinit();
-	server_player_deinit();
 	interrupt_deinit();
 
 	dragonnet_listener_delete(server);

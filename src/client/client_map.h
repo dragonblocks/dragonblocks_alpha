@@ -27,7 +27,7 @@ extern struct ClientMap
 {
 	Map *map;                                       // map object
 	Queue *queue;                                   // MapBlock * queue (thread safe)
-	bool cancel;                                    // used to notify meshgen and sync thread about quit
+	atomic_bool cancel;                             // used to notify meshgen and sync thread about quit
 	pthread_t meshgen_threads[NUM_MESHGEN_THREADS]; // consumer threads for meshgen queue
 	pthread_t sync_thread;                          // this thread requests new / changed blocks from server
 	u32 simulation_distance;                        // simulation distance sent by server

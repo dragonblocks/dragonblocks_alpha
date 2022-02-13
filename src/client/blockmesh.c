@@ -102,7 +102,7 @@ void blockmesh_make(MapBlock *block)
 	Object *obj = object_create();
 
 	obj->pos = (v3f32) {block->pos.x * MAPBLOCK_SIZE + half_block_size + 0.5f, block->pos.y * MAPBLOCK_SIZE + half_block_size + 0.5f, block->pos.z * MAPBLOCK_SIZE + half_block_size + 0.5f};
-	obj->scale = extra->obj ? extra->obj->scale : (v3f32) {0.1f, 0.1f, 0.1f};
+	obj->scale = (v3f32) {0.1f, 0.1f, 0.1f};
 	obj->frustum_culling = true;
 	obj->box = (aabb3f32) {{-half_block_size - 1.0f, -half_block_size - 1.0f, -half_block_size - 1.0f}, {half_block_size + 1.0f, half_block_size + 1.0f, half_block_size + 1.0f}};
 	obj->on_render = (obj->scale.x == 1.0f) ? NULL : &animate_mapblock_mesh;
@@ -115,8 +115,14 @@ void blockmesh_make(MapBlock *block)
 		obj = NULL;
 	}
 
-	if (extra->obj)
+	pthread_mutex_lock(&block->mtx);
+	if (extra->obj) {
 		extra->obj->remove = true;
 
+		obj->scale = extra->obj->scale;
+		object_transform(obj);
+	}
+
 	extra->obj = obj;
+	pthread_mutex_unlock(&block->mtx);
 }

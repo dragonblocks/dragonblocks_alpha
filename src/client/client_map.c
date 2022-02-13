@@ -13,10 +13,8 @@ struct ClientMap client_map;
 // meshgen functions
 
 // dequeue callback to thread-safely update
-static void set_dequeued(void *arg)
+static void set_dequeued(MapBlock *block)
 {
-	MapBlock *block = arg;
-
 	pthread_mutex_lock(&block->mtx);
 	((MapBlockExtraData *) block->extra)->queue = false;
 	pthread_mutex_unlock(&block->mtx);
@@ -25,12 +23,10 @@ static void set_dequeued(void *arg)
 // mesh generator step
 static void meshgen_step()
 {
-	MapBlock *block;
+	MapBlock *block = queue_dequeue_callback(client_map.queue, (void *) &set_dequeued);
 
-	if ((block = queue_dequeue_callback(client_map.queue, &set_dequeued)))
+	if (block)
 		blockmesh_make(block);
-	else
-		sched_yield();
 }
 
 // pthread start routine for meshgen thread
@@ -193,6 +189,7 @@ void client_map_start()
 void client_map_stop()
 {
 	client_map.cancel = true;
+	queue_cancel(client_map.queue);
 
 	for (int i = 0; i < NUM_MESHGEN_THREADS; i++)
 		if (client_map.meshgen_threads[i])
