@@ -1,6 +1,6 @@
 #include <math.h>
-#include "client/client.h"
 #include "client/camera.h"
+#include "client/client.h"
 
 struct Camera camera;
 

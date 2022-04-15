@@ -5,4 +5,4 @@
 
 extern DragonnetPeer *client;
 
-#endif
+#endif // _CLIENT_H_

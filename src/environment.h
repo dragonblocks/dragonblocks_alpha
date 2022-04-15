@@ -6,4 +6,4 @@
 f64 get_humidity(v3s32 pos);
 f64 get_temperature(v3s32 pos);
 
-#endif
+#endif // _ENVIRONMENT_H_

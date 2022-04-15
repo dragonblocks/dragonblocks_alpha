@@ -1,21 +1,19 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include "server/biomes.h"
-#include "server/mapgen.h"
+#include "server/server_terrain.h"
 #include "server/trees.h"
 #include "server/voxelctx.h"
-#include "util.h"
 
 // oak
 
-static bool oak_condition(unused v3s32 pos, unused f64 humidity, unused f64 temperature, Biome biome, unused f64 factor, unused MapBlock *block, unused void *row_data, unused void *block_data)
+static bool oak_condition(TreeArgsCondition *args)
 {
-	return biome == BIOME_HILLS;
+	return args->biome == BIOME_HILLS;
 }
 
 static void oak_tree_leaf(Voxelctx *ctx)
 {
-	if (! voxelctx_is_alive(ctx))
+	if (!voxelctx_is_alive(ctx))
 		return;
 
 	voxelctx_push(ctx);
@@ -35,7 +33,7 @@ static void oak_tree_leaf(Voxelctx *ctx)
 
 static void oak_tree_top(Voxelctx *ctx)
 {
-	if (! voxelctx_is_alive(ctx))
+	if (!voxelctx_is_alive(ctx))
 		return;
 
 	voxelctx_push(ctx);
@@ -58,7 +56,7 @@ static void oak_tree_top(Voxelctx *ctx)
 
 static void oak_tree_part(Voxelctx *ctx, f32 n)
 {
-	if (! voxelctx_is_alive(ctx))
+	if (!voxelctx_is_alive(ctx))
 		return;
 
 	voxelctx_push(ctx);
@@ -83,9 +81,9 @@ static void oak_tree_part(Voxelctx *ctx, f32 n)
 	voxelctx_pop(ctx);
 }
 
-static void oak_tree(v3s32 pos, List *changed_blocks)
+static void oak_tree(v3s32 pos, List *changed_chunks)
 {
-	Voxelctx *ctx = voxelctx_create(changed_blocks, MGS_TREES, pos);
+	Voxelctx *ctx = voxelctx_create(changed_chunks, STAGE_TREES, pos);
 
 	voxelctx_hue(ctx, 40.0f);
 	voxelctx_light(ctx, -0.5f);
@@ -109,12 +107,12 @@ static void oak_tree(v3s32 pos, List *changed_blocks)
 
 // pine
 
-static bool pine_condition(unused v3s32 pos, unused f64 humidity, unused f64 temperature, Biome biome, unused f64 factor, unused MapBlock *block, unused void *row_data, unused void *block_data)
+static bool pine_condition(TreeArgsCondition *args)
 {
-	return biome == BIOME_MOUNTAIN;
+	return args->biome == BIOME_MOUNTAIN;
 }
 
-static void pine_tree(v3s32 pos, List *changed_blocks)
+static void pine_tree(v3s32 pos, List *changed_chunks)
 {
 	s32 tree_top = (noise2d(pos.x, pos.z, 0, seed + SO_PINETREE_HEIGHT) * 0.5 + 0.5) * (35.0 - 20.0) + 20.0 + pos.y;
 	for (v3s32 tree_pos = pos; tree_pos.y < tree_top; tree_pos.y++) {
@@ -130,24 +128,28 @@ static void pine_tree(v3s32 pos, List *changed_blocks)
 		s32 dir = (noise3d(tree_pos.x, tree_pos.y, tree_pos.z, 0, seed + SO_PINETREE_BRANCH_DIR) * 0.5 + 0.5) * 4.0;
 
 		for (v3s32 branch_pos = tree_pos; branch_length > 0; branch_length--, branch_pos = v3s32_add(branch_pos, dirs[dir]))
-			mapgen_set_node(branch_pos, map_node_create(NODE_PINE_WOOD, (Blob) {0, NULL}), MGS_TREES, changed_blocks);
+			server_terrain_gen_node(branch_pos,
+				terrain_node_create(NODE_PINE_WOOD, (Blob) {0, NULL}),
+				STAGE_TREES, changed_chunks);
 
-		mapgen_set_node(tree_pos, map_node_create(NODE_PINE_WOOD, (Blob) {0, NULL}), MGS_TREES, changed_blocks);
+		server_terrain_gen_node(tree_pos,
+			terrain_node_create(NODE_PINE_WOOD, (Blob) {0, NULL}),
+			STAGE_TREES, changed_chunks);
 	}
 }
 
 // palm
 
-static bool palm_condition(v3s32 pos, unused f64 humidity, unused f64 temperature, Biome biome, unused f64 factor, unused MapBlock *block, void *row_data, unused void *block_data)
+static bool palm_condition(TreeArgsCondition *args)
 {
-	return biome == BIOME_OCEAN
-		&& ocean_get_node_at((v3s32) {pos.x, pos.y - 0, pos.z}, 1, row_data) == NODE_AIR
-		&& ocean_get_node_at((v3s32) {pos.x, pos.y - 1, pos.z}, 0, row_data) == NODE_SAND;
+	return args->biome == BIOME_OCEAN
+		&& ocean_get_node_at((v3s32) {args->pos.x, args->pos.y - 0, args->pos.z}, 1, args->row_data) == NODE_AIR
+		&& ocean_get_node_at((v3s32) {args->pos.x, args->pos.y - 1, args->pos.z}, 0, args->row_data) == NODE_SAND;
 }
 
 static void palm_branch(Voxelctx *ctx)
 {
-	if (! voxelctx_is_alive(ctx))
+	if (!voxelctx_is_alive(ctx))
 		return;
 
 	voxelctx_cube(ctx, NODE_PALM_LEAVES, true);
@@ -160,9 +162,9 @@ static void palm_branch(Voxelctx *ctx)
 	voxelctx_pop(ctx);
 }
 
-static void palm_tree(v3s32 pos, List *changed_blocks)
+static void palm_tree(v3s32 pos, List *changed_chunks)
 {
-	Voxelctx *ctx = voxelctx_create(changed_blocks, MGS_TREES, (v3s32) {pos.x, pos.y - 1, pos.z});
+	Voxelctx *ctx = voxelctx_create(changed_chunks, STAGE_TREES, (v3s32) {pos.x, pos.y - 1, pos.z});
 
 	f32 s = voxelctx_random(ctx, 8.0f, 2.0f);
 

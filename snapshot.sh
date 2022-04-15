@@ -1,4 +1,9 @@
-#! /bin/bash
+#!/bin/bash
+VERSION=`git tag --points-at HEAD`
+if [[ $VERSION = "" ]]; then
+	VERSION=`git rev-parse --short HEAD`
+fi
+DIR=dragonblocks_alpha-$VERSION
 mkdir .build
 cp -r * .build/
 cd .build/
@@ -9,14 +14,10 @@ if ! (cmake -B . -S ../src -DCMAKE_BUILD_TYPE=Release -DRESSOURCE_PATH="\"\"" &&
 	rm -rf .build
 	exit 1
 fi
-cp Dragonblocks DragonblocksServer ..
+cp dragonblocks dragonblocks_server ..
 cd ..
-rm -rf .git* deps src build BUILDING.md snapshot.sh upload.sh DragonblocksAlpha-*.zip DragonblocksAlpha screenshot-*.png
+rm -rf .git* deps src build BUILDING.md snapshot.sh upload.sh dragonblocks_alpha-* screenshot-*.png
 cd ..
-mv .build DragonblocksAlpha
-VERSION=`git tag --points-at HEAD`
-if [[ $VERSION = "" ]]; then
-	VERSION=`git rev-parse --short HEAD`
-fi
-zip -r DragonblocksAlpha-$VERSION.zip DragonblocksAlpha/*
-rm -rf DragonblocksAlpha
+mv .build $DIR
+zip -r $DIR.zip $DIR/*
+rm -rf $DIR

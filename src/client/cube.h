@@ -1,8 +1,15 @@
 #ifndef _CUBE_H_
 #define _CUBE_H_
 
-#include "client/object.h"
+#include "client/model.h"
+#include "types.h"
 
-extern Vertex3D cube_vertices[6][6];
+typedef struct {
+	v3f32 position;
+	v3f32 normal;
+	v2f32 textureCoordinates;
+} __attribute__((packed)) CubeVertex;
 
-#endif
+extern CubeVertex cube_vertices[6][6];
+
+#endif // _CUBE_H_

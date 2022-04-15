@@ -78,6 +78,7 @@ A PC with at least 4 CPU cores is recommended, but not necessarly required.
 - Saving map, player positions and other data to a SQLite3 database
 - Multithreaded map generation, mesh generation and networking
 - Handlers for SIGINT und SIGTERM (just Ctrl+C to shut down the server)
+- Log levels: error, warning, access, action, info, verbose
 
 ## Usage
 

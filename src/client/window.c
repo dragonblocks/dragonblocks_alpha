@@ -6,36 +6,45 @@
 #include "client/game.h"
 #include "client/gui.h"
 #include "client/input.h"
-#include "client/scene.h"
 #include "client/window.h"
-#include "util.h"
 
 struct Window window;
 
-static void framebuffer_size_callback(unused GLFWwindow *handle, int width, int height)
+static int small_x, small_y, small_width, small_height;
+
+static void update_projection()
+{
+	mat4x4_perspective(window.projection,
+		window.fov / 180.0f * M_PI,
+		(float) window.width / (float) window.height,
+		0.01f, client_config.view_distance + 28.0f);
+}
+
+static void framebuffer_size_callback(__attribute__((unused)) GLFWwindow *handle, int width, int height)
 {
 	glViewport(0, 0, width, height);
+	window.width = width;
+	window.height = height;
 
-	if (! window.fullscreen) {
-		window.small_bounds.width = width;
-		window.small_bounds.height = height;
+	if (!window.fullscreen) {
+		small_width = width;
+		small_height = height;
 	}
 
-	scene_on_resize(width, height);
-	gui_on_resize(width, height);
-	game_on_resize(width, height);
+	update_projection();
+	gui_update_projection();
 }
 
-static void cursor_pos_callback(unused GLFWwindow *handle, double current_x, double current_y)
+static void cursor_pos_callback(__attribute__((unused)) GLFWwindow *handle, double x, double y)
 {
-	input_on_cursor_pos(current_x, current_y);
+	input_cursor(x, y);
 }
 
-static void window_pos_callback(unused GLFWwindow *handle, int x, int y)
+static void window_pos_callback(__attribute__((unused)) GLFWwindow *handle, int x, int y)
 {
-	if (! window.fullscreen) {
-		window.small_bounds.x = x;
-		window.small_bounds.y = y;
+	if (!window.fullscreen) {
+		small_x = x;
+		small_y = y;
 	}
 }
 
@@ -46,21 +55,21 @@ void window_enter_fullscreen()
 	const GLFWvidmode *vidmode = glfwGetVideoMode(monitor);
 	glfwSetWindowMonitor(window.handle, monitor, 0, 0, vidmode->width, vidmode->height, 0);
 
-	debug_menu_update_fullscreen();
+	debug_menu_changed(ENTRY_FULLSCREEN);
 }
 
 void window_exit_fullscreen()
 {
 	window.fullscreen = false;
-	glfwSetWindowMonitor(window.handle, NULL, window.small_bounds.x, window.small_bounds.y, window.small_bounds.width, window.small_bounds.height, 0);
+	glfwSetWindowMonitor(window.handle, NULL, small_x, small_y, small_width, small_height, 0);
 
-	debug_menu_update_fullscreen();
+	debug_menu_changed(ENTRY_FULLSCREEN);
 }
 
-bool window_init(int width, int height)
+bool window_init()
 {
-	if(! glfwInit()) {
-		fprintf(stderr, "Failed to initialize GLFW\n");
+	if(!glfwInit()) {
+		fprintf(stderr, "[error] failed to initialize GLFW\n");
 		return false;
 	}
 
@@ -69,24 +78,29 @@ bool window_init(int width, int height)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	window.handle = glfwCreateWindow(width, height, "Dragonblocks", NULL, NULL);
+	window.width = 1250;
+	window.height = 750;
+	window.handle = glfwCreateWindow(window.width, window.height, "Dragonblocks", NULL, NULL);
+	window.fullscreen = false;
+	window.fov = 86.1f;
+	update_projection();
 
-	window.small_bounds.width = width;
-	window.small_bounds.height = height;
+	small_width = window.width;
+	small_height = window.height;
 
-	if (! window.handle) {
-		fprintf(stderr, "Failed to create window\n");
+	if (!window.handle) {
+		fprintf(stderr, "[error] failed to create window\n");
 		glfwTerminate();
 		return false;
 	}
 
 	glfwMakeContextCurrent(window.handle);
 
-	if (! client_config.vsync)
+	if (!client_config.vsync)
 		glfwSwapInterval(0);
 
 	if (glewInit() != GLEW_OK) {
-		fprintf(stderr, "Failed to initialize GLEW\n");
+		fprintf(stderr, "[error] failed to initialize GLEW\n");
 		return false;
 	}
 

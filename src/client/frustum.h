@@ -5,7 +5,9 @@
 #include <linmath.h/linmath.h>
 #include "types.h"
 
-void frustum_update(mat4x4 view_proj);
-bool frustum_is_visible(aabb3f32 box);
+extern mat4x4 frustum;
+
+void frustum_update();
+bool frustum_cull(aabb3f32 box);
 
 #endif

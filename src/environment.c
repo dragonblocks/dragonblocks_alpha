@@ -1,6 +1,5 @@
 #include "environment.h"
 #include "perlin.h"
-#include "util.h"
 
 f64 get_humidity(v3s32 pos)
 {

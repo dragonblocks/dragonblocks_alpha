@@ -1,4 +1,5 @@
-#! /bin/bash
+#!/bin/bash
+
 if ! make -j$(nproc); then
 	exit 1
 fi
@@ -29,13 +30,13 @@ set print thread-events off
 run \"[::1]:4000\"
 " > $DEBUG_DIR/server_script
 
-kitty --detach -e bash -c "
+alacritty -e bash -c "
 	echo \$\$ > $DEBUG_DIR/server_pid
-	exec gdb --command $DEBUG_DIR/server_script ./DragonblocksServer
-"
+	exec gdb --command $DEBUG_DIR/server_script ./dragonblocks_server
+" &
 sleep 0.5
 
-gdb --command $DEBUG_DIR/client_script ./Dragonblocks
+gdb --command $DEBUG_DIR/client_script ./dragonblocks
 
 kill `cat $DEBUG_DIR/server_pid`
 

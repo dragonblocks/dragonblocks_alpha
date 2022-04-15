@@ -3,8 +3,8 @@
 
 #include "types.h"
 
-void input_tick(f64 dtime);
 void input_init();
-void input_on_cursor_pos(double current_x, double current_y);
+void input_tick(f64 dtime);
+void input_cursor(double current_x, double current_y);
 
-#endif
+#endif // _INPUT_H_

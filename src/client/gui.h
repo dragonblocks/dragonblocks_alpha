@@ -1,25 +1,22 @@
 #ifndef _GUI_H_
 #define _GUI_H_
 
-#include <stdbool.h>
+#include <dragonstd/array.h>
 #include <linmath.h/linmath.h>
-#include <dragonstd/bintree.h>
-#include <dragonstd/list.h>
+#include <stdbool.h>
 #include "client/font.h"
 #include "client/texture.h"
 #include "types.h"
 
-typedef enum
-{
-	GST_IMAGE,
-	GST_TEXT,
-	GST_PARENT,
-	GST_CHILDREN,
-	GST_NONE,
+typedef enum {
+	SCALE_IMAGE,
+	SCALE_TEXT,
+	SCALE_PARENT,
+	SCALE_CHILDREN,
+	SCALE_NONE,
 } GUIScaleType;
 
-typedef struct
-{
+typedef struct {
 	v2f32 pos;
 	f32 z_index;
 	v2s32 offset;
@@ -34,8 +31,7 @@ typedef struct
 	v4f32 bg_color;
 } GUIElementDefinition;
 
-typedef struct GUIElement
-{
+typedef struct GUIElement {
 	GUIElementDefinition def;
 	bool visible;
 	v2f32 pos;
@@ -44,17 +40,15 @@ typedef struct GUIElement
 	mat4x4 text_transform;
 	Font *text;
 	struct GUIElement *parent;
-	Bintree children;
+	Array children;
 } GUIElement;
 
 bool gui_init();
 void gui_deinit();
-void gui_on_resize(int width, int height);
+void gui_update_projection();
 void gui_render();
 GUIElement *gui_add(GUIElement *parent, GUIElementDefinition def);
-void gui_set_text(GUIElement *element, char *text);
-void gui_update_transform(GUIElement *element);
+void gui_text(GUIElement *element, char *text);
+void gui_transform(GUIElement *element);
 
-extern GUIElement gui_root;
-
-#endif
+#endif // _GUI_H_

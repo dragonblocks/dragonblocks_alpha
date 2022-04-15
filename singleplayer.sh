@@ -1,2 +1,4 @@
-#! /bin/bash
-./DragonblocksServer "[::1]:4000" & echo "singleplayer" | ./Dragonblocks "[::1]:4000"; killall DragonblocksServer
+#!/bin/bash
+./dragonblocks_server "[::1]:4000" &
+echo "singleplayer" | ./dragonblocks "[::1]:4000"
+pkill -P $$

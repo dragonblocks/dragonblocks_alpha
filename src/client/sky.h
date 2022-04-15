@@ -7,4 +7,4 @@ bool sky_init();
 void sky_deinit();
 void sky_render();
 
-#endif
+#endif // _SKY_H_

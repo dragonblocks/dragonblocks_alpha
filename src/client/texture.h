@@ -4,15 +4,14 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 
-typedef struct
-{
-	GLuint id;
-	int width, height;
+typedef struct {
+	GLuint txo;
+	int width, height, channels;
 } Texture;
 
-Texture *texture_create(unsigned char *data, int width, int height, GLenum format, bool mipmap);
-GLuint texture_create_cubemap(char *path);
-void texture_delete(Texture *texture);
 Texture *texture_load(char *path, bool mipmap);
+Texture *texture_load_cubemap(char *path);
+void texture_upload(Texture *texture, unsigned char *data, GLenum format, bool mipmap);
+void texture_destroy(Texture *texture);
 
-#endif
+#endif // _TEXTURE_H_

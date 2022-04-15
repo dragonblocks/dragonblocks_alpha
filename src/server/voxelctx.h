@@ -1,15 +1,14 @@
 #ifndef _VOXELCTX_H_
 #define _VOXELCTX_H_
 
-#define VOXELCTXSTATE(ctx) (*((VoxelctxState *) (ctx)->statestack.first->key))
+#define VOXELCTXSTATE(ctx) (*((VoxelctxState *) (ctx)->statestack.fst->dat))
 
-#include <linmath.h/linmath.h>
 #include <dragonstd/list.h>
+#include <linmath.h/linmath.h>
+#include "server/server_terrain.h"
 #include "types.h"
-#include "server/server_map.h"
 
-typedef struct
-{
+typedef struct {
 	vec4 pos;
 	vec3 scale;
 	mat4x4 mat;
@@ -17,16 +16,15 @@ typedef struct
 	s32 life;
 } VoxelctxState;
 
-typedef struct
-{
+typedef struct {
 	v3s32 pos;
-	List *changed_blocks;
-	MapgenStage mgs;
+	List *changed_chunks;
+	TerrainGenStage tgs;
 	List statestack;
 	s32 random;
 } Voxelctx;
 
-Voxelctx *voxelctx_create(List *changed_blocks, MapgenStage mgs, v3s32 pos);
+Voxelctx *voxelctx_create(List *changed_chunks, TerrainGenStage tgs, v3s32 pos);
 void voxelctx_delete(Voxelctx *ctx);
 void voxelctx_hue(Voxelctx *ctx, f32 value);
 void voxelctx_sat(Voxelctx *ctx, f32 value);
@@ -45,8 +43,8 @@ void voxelctx_s(Voxelctx *ctx, f32 value);
 void voxelctx_pop(Voxelctx *ctx);
 void voxelctx_push(Voxelctx *ctx);
 bool voxelctx_is_alive(Voxelctx *ctx);
-void voxelctx_cube(Voxelctx *ctx, Node node, bool use_hsl);
-void voxelctx_cylinder(Voxelctx *ctx, Node node, bool use_hsl);
+void voxelctx_cube(Voxelctx *ctx, NodeType node, bool use_color);
+void voxelctx_cylinder(Voxelctx *ctx, NodeType node, bool use_color);
 f32 voxelctx_random(Voxelctx *ctx, f32 base, f32 vary);
 
-#endif
+#endif // _VOXELCTX_H_

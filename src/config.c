@@ -8,14 +8,14 @@ void config_read(char *path, ConfigEntry *entries, size_t num_entries)
 {
 	FILE *f = fopen(path, "r");
 
-	if (! f)
+	if (!f)
 		return;
 
-	printf("Reading config from %s\n", path);
+	printf("[info] reading config from %s\n", path);
 
-	while (! feof(f)) {
+	while (!feof(f)) {
 		char key[BUFSIZ];
-		if (! fscanf(f, "%s", key))
+		if (!fscanf(f, "%s", key))
 			break;
 
 		bool found = false;
@@ -25,38 +25,45 @@ void config_read(char *path, ConfigEntry *entries, size_t num_entries)
 				bool valid = false;
 
 				switch (entry->type) {
-					case CT_STRING: {
+					case CONFIG_STRING: {
 						char value[BUFSIZ];
 
-						if (! fscanf(f, "%s", value))
+						if (!fscanf(f, "%s", value))
 							break;
 
 						valid = true;
-						*(char **) entry->value = strdup(value);
-					} break;
 
-					case CT_INT:
+						char **entry_value = entry->value;
+
+						if (*entry_value)
+							free(*entry_value);
+						*entry_value = strdup(value);
+
+						break;
+					}
+
+					case CONFIG_INT:
 						if (fscanf(f, "%d", (int *) entry->value))
 							valid = true;
 
 						break;
 
-					case CT_UINT:
+					case CONFIG_UINT:
 						if (fscanf(f, "%u", (unsigned int *) entry->value))
 							valid = true;
 
 						break;
 
-					case CT_FLOAT:
+					case CONFIG_FLOAT:
 						if (fscanf(f, "%lf", (double *) entry->value))
 							valid = true;
 
 						break;
 
-					case CT_BOOL: {
+					case CONFIG_BOOL: {
 						char value[BUFSIZ];
 
-						if (! fscanf(f, "%s", value))
+						if (!fscanf(f, "%s", value))
 							break;
 
 						valid = true;
@@ -68,20 +75,35 @@ void config_read(char *path, ConfigEntry *entries, size_t num_entries)
 						else
 							valid = false;
 
-					} break;
+						break;
+					}
 				}
 
-				if (! valid)
-					fprintf(stderr, "Invalid value for setting %s in %s\n", key, path);
+				if (!valid)
+					fprintf(stderr, "[warning] invalid value for setting %s in %s\n", key, path);
 
 				found = true;
 				break;
 			}
 		}
 
-		if (! found)
-			fprintf(stderr, "Unknown setting %s in %s\n", key, path);
+		if (!found)
+			fprintf(stderr, "[warning] unknown setting %s in %s\n", key, path);
 	}
 
 	fclose(f);
+}
+
+void config_free(ConfigEntry *entries, size_t num_entries)
+{
+	for (size_t i = 0; i < num_entries; i++) {
+		ConfigEntry *entry = &entries[i];
+
+		if (entry->type == CONFIG_STRING) {
+			char **entry_value = entry->value;
+
+			if (*entry_value)
+				free(*entry_value);
+		}
+	}
 }

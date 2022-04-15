@@ -2,23 +2,56 @@
 #include "server/server_config.h"
 
 struct ServerConfig server_config = {
-	.simulation_distance = 10,
-	.mapgen_threads = 4,
+	.load_distance = 10,
+	.terrain_gen_threads = 4,
+	.movement = {
+		.speed_normal = 4.317,
+		.speed_flight = 25.0,
+		.gravity = 32.0,
+		.jump = 8.944,
+	}
+};
+
+#define NUM_CONFIG_ENTRIES 6
+static ConfigEntry config_entries[NUM_CONFIG_ENTRIES] = {
+	{
+		.type = CONFIG_UINT,
+		.key = "load_distance",
+		.value = &server_config.load_distance,
+	},
+	{
+		.type = CONFIG_UINT,
+		.key = "terrain_gen_threads",
+		.value = &server_config.terrain_gen_threads,
+	},
+	{
+		.type = CONFIG_FLOAT,
+		.key = "movement.speed_normal",
+		.value = &server_config.movement.speed_normal,
+	},
+	{
+		.type = CONFIG_FLOAT,
+		.key = "movement.speed_flight",
+		.value = &server_config.movement.speed_flight,
+	},
+	{
+		.type = CONFIG_FLOAT,
+		.key = "movement.gravity",
+		.value = &server_config.movement.gravity,
+	},
+	{
+		.type = CONFIG_FLOAT,
+		.key = "movement.jump",
+		.value = &server_config.movement.jump,
+	},
 };
 
 __attribute__((constructor)) static void server_config_init()
 {
-	config_read("server.conf", (ConfigEntry[]) {
-		{
-			.type = CT_UINT,
-			.key = "simulation_distance",
-			.value = &server_config.simulation_distance,
-		},
-		{
-			.type = CT_UINT,
-			.key = "mapgen_threads",
-			.value = &server_config.mapgen_threads,
-		},
-	}, 2);
+	config_read("server.conf", config_entries, NUM_CONFIG_ENTRIES);
 }
 
+__attribute__((destructor)) static void server_config_deinit()
+{
+	config_free(config_entries, NUM_CONFIG_ENTRIES);
+}

@@ -1,0 +1,16 @@
+name player scale 1 1.8 1
+	name head pos 0 0.875 0 scale 0.45 0.25 0.45 cube head
+	name body scale 0.48 0.75 0.36
+		name upper pos 0 1.0 0 scale 1 0.5 1 
+			name chest pos 0 -0.5 0 cube chest
+			name shoulders scale 0.5 1 1
+				name left pos -1.5 0 0
+					name arm pos 0 -0.5 0 cube arm
+				name right pos +1.5 0 0
+					name arm pos 0 -0.5 0 cube arm
+		name lower pos 0 0.5 0 scale 1 0.5 1
+			name hips scale 0.5 1 1
+				name left pos -0.5 0 0
+					name leg pos 0 -0.5 0 cube leg
+				name right pos +0.5 0 0
+					name leg pos 0 -0.5 0 cube leg

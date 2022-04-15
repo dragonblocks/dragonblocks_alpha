@@ -13,15 +13,15 @@
 [submodule "deps/endian.h"]
 	path = deps/endian.h
 	url = https://github.com/dragonblocks/endian.h
-[submodule "deps/dragonport"]
-	path = deps/dragonport
-	url = https://github.com/dragonblocks/dragonport
+[submodule "deps/asprintf"]
+	path = deps/asprintf
+	url = https://github.com/dragonblocks/asprintf
 [submodule "deps/dragonnet"]
 	path = deps/dragonnet
 	url = https://github.com/dragonblocks/dragonnet
 [submodule "deps/linenoise"]
 	path = deps/linenoise
 	url = https://github.com/antirez/linenoise
-[submodule "deps/dragontype"]
-	path = deps/dragontype
-	url = https://github.com/dragonblocks/dragontype
+[submodule "deps/protogen"]
+	path = deps/protogen
+	url = https://github.com/dragonblocks/protogen

@@ -12,10 +12,10 @@ CTestTestfile.cmake
 _deps
 
 # Binaries
-Dragonblocks
-DragonblocksServer
-DragonblocksAlpha-*.zip
-DragonblocksAlpha
+dragonblocks
+dragonblocks_server
+dragonblocks_alpha-*.zip
+dragonblocks_alpha
 
 # Data
 client.conf

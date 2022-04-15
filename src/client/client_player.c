@@ -1,100 +1,204 @@
 #include <stdio.h>
-#include "environment.h"
+#include <stdlib.h>
 #include "client/camera.h"
 #include "client/client.h"
-#include "client/client_map.h"
 #include "client/client_player.h"
+#include "client/client_terrain.h"
 #include "client/cube.h"
 #include "client/debug_menu.h"
 #include "client/texture.h"
+#include "environment.h"
+#include "physics.h"
 
 struct ClientPlayer client_player;
 
-// to be called whenever the player position changes
-// rwlock has to be read or write locked
+static ClientEntity *player_entity;
+static pthread_rwlock_t lock_player_entity;
+
+// updat epos/rot box/eye functions
+
+static void update_eye_pos_camera()
+{
+	v3f64 pos = player_entity->data.pos;
+	v3f32 eye = player_entity->data.eye;
+
+	camera_set_position((v3f32) {pos.x + eye.x, pos.y + eye.y, pos.z + eye.z});
+}
+
 static void update_pos()
 {
-	camera_set_position((v3f32) {client_player.pos.x, client_player.pos.y + client_player.eye_height, client_player.pos.z});
-	dragonnet_peer_send_ToServerPos(client, &(ToServerPos) {
-		.pos = client_player.pos,
+	pthread_rwlock_rdlock(&player_entity->lock_box_eye);
+	update_eye_pos_camera();
+	pthread_rwlock_unlock(&player_entity->lock_box_eye);
+
+	debug_menu_changed(ENTRY_POS);
+	debug_menu_changed(ENTRY_HUMIDITY);
+	debug_menu_changed(ENTRY_TEMPERATURE);
+}
+
+static void update_rot()
+{
+	camera_set_angle(player_entity->data.rot.x, player_entity->data.rot.y);
+	debug_menu_changed(ENTRY_YAW);
+	debug_menu_changed(ENTRY_PITCH);
+}
+
+static void update_transform()
+{
+	client_entity_transform(player_entity);
+}
+
+static void send_pos_rot()
+{
+	dragonnet_peer_send_ToServerPosRot(client, &(ToServerPosRot) {
+		.pos = player_entity->data.pos,
+		.rot = player_entity->data.rot,
 	});
 
-	client_player.obj->pos = (v3f32) {client_player.pos.x, client_player.pos.y, client_player.pos.z};
-	object_transform(client_player.obj);
-
-	debug_menu_update_pos();
-	debug_menu_update_humidity();
-	debug_menu_update_temperature();
+	update_transform();
 }
 
-// get absolute player bounding box
-// rwlock has to be read- or write locked
-static aabb3f64 get_box()
+static void recv_pos_rot()
 {
-	return (aabb3f64) {
-		{client_player.box.min.x + client_player.pos.x, client_player.box.min.y + client_player.pos.y, client_player.box.min.z + client_player.pos.z},
-		{client_player.box.max.x + client_player.pos.x, client_player.box.max.y + client_player.pos.y, client_player.box.max.z + client_player.pos.z},
-	};
+	update_pos();
+	update_rot();
+
+	update_transform();
 }
 
-// get absolute integer box that contains all nodes a float bounding box touches
-static aabb3s32 round_box(aabb3f64 box)
+// entity callbacks
+
+static void on_add(ClientEntity *entity)
 {
-	return (aabb3s32) {
-		{floor(box.min.x + 0.5), floor(box.min.y + 0.5), floor(box.min.z + 0.5)},
-		{ceil(box.max.x - 0.5), ceil(box.max.y - 0.5), ceil(box.max.z - 0.5)},
-	};
+	pthread_rwlock_wrlock(&lock_player_entity);
+
+	if (player_entity) {
+		fprintf(stderr, "[error] attempt to re-add localplayer entity\n");
+		exit(EXIT_FAILURE);
+	} else {
+		player_entity = refcount_grb(&entity->rc);
+		recv_pos_rot();
+
+		entity->type->update_nametag(entity);
+	}
+
+	pthread_rwlock_unlock(&lock_player_entity);
 }
 
-// return true if node at x, y, z is solid (or unloaded)
-static bool is_solid(s32 x, s32 y, s32 z)
+static void on_remove(ClientEntity *entity)
 {
-	Node node = map_get_node(client_map.map, (v3s32) {x, y, z}).type;
-	return node == NODE_UNLOADED || node_definitions[node].solid;
+	pthread_rwlock_wrlock(&lock_player_entity);
+	refcount_drp(&entity->rc);
+	player_entity = NULL;
+	pthread_rwlock_unlock(&lock_player_entity);
 }
 
-// determine if player can jump currently (must be standing on a solid block)
-// rwlock has to be read- or write locked
-static bool can_jump()
+static void on_update_pos_rot(__attribute__((unused)) ClientEntity *entity)
 {
-	if (client_player.velocity.y != 0.0)
-		return false;
-
-	aabb3f64 fbox = get_box();
-	fbox.min.y -= 0.5;
-
-	aabb3s32 box = round_box(fbox);
-
-	if (fbox.min.y - (f64) box.min.y > 0.01)
-		return false;
-
-	for (s32 x = box.min.x; x <= box.max.x; x++)
-		for (s32 z = box.min.z; z <= box.max.z; z++)
-			if (is_solid(x, box.min.y, z))
-				return true;
-
-	return false;
+	recv_pos_rot();
 }
 
-// ClientPlayer singleton constructor
+static void on_update_box_eye(__attribute__((unused)) ClientEntity *entity)
+{
+	pthread_rwlock_rdlock(&lock_player_entity);
+	update_eye_pos_camera();
+	pthread_rwlock_unlock(&lock_player_entity);
+}
+
+static void on_update_nametag(ClientEntity *entity)
+{
+	if (entity->data.nametag) {
+		free(entity->data.nametag);
+		entity->data.nametag = NULL;
+	}
+}
+
+static void on_transform(ClientEntity *entity)
+{
+	entity->model->root->rot.y = entity->model->root->rot.z = 0.0f;
+}
+
+// called on startup
 void client_player_init()
 {
-	client_player.pos = (v3f64) {0.0, 0.0, 0.0};
-	client_player.velocity = (v3f64) {0.0, 0.0, 0.0};
-	client_player.box = (aabb3f64) {{-0.3, 0.0, -0.3}, {0.3, 1.75, 0.3}};
-	client_player.yaw = client_player.pitch = 0.0f;
-	client_player.eye_height = 1.5;
-	client_player.fly = false;
-	client_player.collision = true;
-	pthread_rwlock_init(&client_player.rwlock, NULL);
+	client_player.movement = (ToClientMovement) {
+		.flight = false,
+		.collision = true,
+		.speed = 0.0f,
+		.jump = 0.0f,
+		.gravity = 0.0f,
+	};
+
+	client_entity_types[ENTITY_LOCALPLAYER] = (ClientEntityType) {
+		.add = &on_add,
+		.remove = &on_remove,
+		.free = NULL,
+		.update_pos_rot = &on_update_pos_rot,
+		.update_box_eye = &on_update_box_eye,
+		.update_nametag = &on_update_nametag,
+		.transform = &on_transform,
+	};
+
+	client_entity_types[ENTITY_PLAYER] = (ClientEntityType) {
+		.add = NULL,
+		.remove = NULL,
+		.free = NULL,
+		.update_pos_rot = NULL,
+		.update_box_eye = NULL,
+		.update_nametag = NULL,
+		.transform = &on_transform,
+	};
+
+	pthread_rwlock_init(&client_player.lock_movement, NULL);
+
+	player_entity = NULL;
+	pthread_rwlock_init(&lock_player_entity, NULL);
 }
 
-// ClientPlayer singleton destructor
+// called on shutdown
 void client_player_deinit()
 {
-	pthread_rwlock_destroy(&client_player.rwlock);
+	pthread_rwlock_destroy(&client_player.lock_movement);
+	pthread_rwlock_destroy(&lock_player_entity);
 }
 
+ClientEntity *client_player_entity()
+{
+	ClientEntity *entity = NULL;
+
+	pthread_rwlock_rdlock(&lock_player_entity);
+	if (player_entity)
+		entity = refcount_grb(&player_entity->rc);
+	pthread_rwlock_unlock(&lock_player_entity);
+
+	return entity;
+}
+
+void client_player_update_pos(ClientEntity *entity)
+{
+	pthread_rwlock_rdlock(&lock_player_entity);
+
+	if (entity == player_entity) {
+		update_pos();
+		send_pos_rot();
+	}
+
+	pthread_rwlock_unlock(&lock_player_entity);
+}
+
+void client_player_update_rot(ClientEntity *entity)
+{
+	pthread_rwlock_rdlock(&lock_player_entity);
+
+	if (entity == player_entity) {
+		update_rot();
+		send_pos_rot();
+	}
+
+	pthread_rwlock_unlock(&lock_player_entity);
+}
+
+/*
 // create mesh object and info hud
 void client_player_add_to_scene()
 {
@@ -119,96 +223,62 @@ void client_player_add_to_scene()
 	debug_menu_update_yaw();
 	debug_menu_update_pitch();
 }
+*/
 
 // jump if possible
 void client_player_jump()
 {
-	pthread_rwlock_wrlock(&client_player.rwlock);
-	if (can_jump())
-		client_player.velocity.y += 10.0;
-	pthread_rwlock_unlock(&client_player.rwlock);
-}
+	ClientEntity *entity = client_player_entity();
+	if (!entity)
+		return;
 
-// get position (thread-safe)
-v3f64 client_player_get_position()
-{
-	v3f64 pos;
+	pthread_rwlock_rdlock(&entity->lock_pos_rot);
+	pthread_rwlock_rdlock(&entity->lock_box_eye);
 
-	pthread_rwlock_rdlock(&client_player.rwlock);
-	pos = client_player.pos;
-	pthread_rwlock_unlock(&client_player.rwlock);
+	if (physics_ground(
+		client_terrain,
+		client_player.movement.collision,
+		entity->data.box,
+		&entity->data.pos,
+		&client_player.velocity
+	))
+		client_player.velocity.y += client_player.movement.jump;
 
-	return pos;
-}
+	pthread_rwlock_unlock(&entity->lock_box_eye);
+	pthread_rwlock_unlock(&entity->lock_pos_rot);
 
-// set position (thread-safe)
-void client_player_set_position(v3f64 pos)
-{
-	pthread_rwlock_rdlock(&client_player.rwlock);
-	client_player.pos = pos;
-	pthread_rwlock_unlock(&client_player.rwlock);
+	refcount_drp(&entity->rc);
 }
 
 // to be called every frame
 void client_player_tick(f64 dtime)
 {
-	pthread_rwlock_wrlock(&client_player.rwlock);
+	ClientEntity *entity = client_player_entity();
+	if (!entity)
+		return;
 
-	v3f64 old_pos = client_player.pos;
-	v3f64 old_velocity = client_player.velocity;
+	pthread_rwlock_rdlock(&client_player.lock_movement);
+	pthread_rwlock_wrlock(&entity->lock_pos_rot);
+	pthread_rwlock_rdlock(&entity->lock_box_eye);
 
-	if (! client_player.fly)
-		client_player.velocity.y -= 32.0 * dtime;
+	if (physics_step(
+		client_terrain,
+		client_player.movement.collision,
+		entity->data.box,
+		&entity->data.pos,
+		&client_player.velocity,
+		&(v3f64) {
+			0.0,
+			client_player.movement.flight ? 0.0 : -client_player.movement.gravity,
+			0.0,
+		},
+		dtime
+	))
+		client_player_update_pos(entity);
 
-#define GETS(vec, comp) *(s32 *) ((char *) &vec + offsetof(v3s32, comp))
-#define GETF(vec, comp) *(f64 *) ((char *) &vec + offsetof(v3f64, comp))
-#define PHYSICS(a, b, c) { \
-		f64 v = (GETF(client_player.velocity, a) + GETF(old_velocity, a)) / 2.0f; \
-		if (v == 0.0) \
-			goto a ## _physics_done; \
-		aabb3s32 box = round_box(get_box()); \
-		v3f64 old_pos = client_player.pos; \
-		GETF(client_player.pos, a) += v * dtime; \
-		if (! client_player.collision) \
-			goto a ## _physics_done; \
-		s32 dir; \
-		f64 offset; \
-		if (v > 0.0) { \
-			dir = +1; \
-			offset = GETF(client_player.box.max, a); \
-			GETS(box.min, a) = ceil(GETF(old_pos, a) + offset + 0.5); \
-			GETS(box.max, a) = floor(GETF(client_player.pos, a) + offset + 0.5); \
-		} else { \
-			dir = -1; \
-			offset = GETF(client_player.box.min, a); \
-			GETS(box.min, a) = floor(GETF(old_pos, a) + offset - 0.5); \
-			GETS(box.max, a) = ceil(GETF(client_player.pos, a) + offset - 0.5); \
-		} \
-		GETS(box.max, a) += dir; \
-		for (s32 a = GETS(box.min, a); a != GETS(box.max, a); a += dir) { \
-			for (s32 b = GETS(box.min, b); b <= GETS(box.max, b); b++) { \
-				for (s32 c = GETS(box.min, c); c <= GETS(box.max, c); c++) { \
-					if (is_solid(x, y, z)) { \
-						GETF(client_player.pos, a) = (f64) a - offset - 0.5 * (f64) dir; \
-						GETF(client_player.velocity, a) = 0.0; \
-						goto a ## _physics_done; \
-					} \
-				} \
-			} \
-		} \
-		a ## _physics_done: (void) 0; \
-	}
+	pthread_rwlock_unlock(&entity->lock_box_eye);
+	pthread_rwlock_unlock(&entity->lock_pos_rot);
+	pthread_rwlock_unlock(&client_player.lock_movement);
 
-	PHYSICS(x, y, z)
-	PHYSICS(y, x, z)
-	PHYSICS(z, x, y)
-
-#undef GETS
-#undef GETF
-#undef PHYSICS
-
-	if (! v3f64_equals(old_pos, client_player.pos))
-		update_pos();
-
-	pthread_rwlock_unlock(&client_player.rwlock);
+	refcount_drp(&entity->rc);
 }

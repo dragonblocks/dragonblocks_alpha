@@ -4,23 +4,29 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <stdbool.h>
-#include "client/vertex.h"
 
-typedef struct
-{
-	GLuint VAO, VBO;
-	GLuint *textures;
-	GLuint textures_count;
-	bool free_textures;
-	GLvoid *vertices;
-	GLuint vertices_count;
-	bool free_vertices;
+typedef struct {
+	GLenum type;
+	GLsizei length;
+	GLsizei size;
+} VertexAttribute;
+
+typedef struct {
+	VertexAttribute *attributes;
+	GLuint count;
+	GLsizei size;
+} VertexLayout;
+
+typedef struct {
 	VertexLayout *layout;
+	GLuint vao, vbo;
+	GLvoid *data;
+	GLuint count;
+	bool free_data;
 } Mesh;
 
-Mesh *mesh_create();
-void mesh_delete(Mesh *mesh);
-void mesh_configure(Mesh *mesh);
+void mesh_upload(Mesh *mesh);
 void mesh_render(Mesh *mesh);
+void mesh_destroy(Mesh *mesh);
 
-#endif
+#endif // _MESH_H_

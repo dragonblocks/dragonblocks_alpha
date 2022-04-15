@@ -2,12 +2,12 @@
 #define _NODE_H_
 
 #include <stdbool.h>
+#include <stddef.h>
 #include "types.h"
 
 #define NODE_DEFINITION(type) ((type) < NODE_UNLOADED ? &node_definitions[NODE_UNKNOWN] : &node_definitions[(type)]);
 
-typedef enum
-{
+typedef enum {
 	NODE_UNKNOWN,       // Used for unknown nodes received from server (caused by outdated clients)
 	NODE_AIR,
 	NODE_GRASS,
@@ -24,17 +24,16 @@ typedef enum
 	NODE_WATER,
 	NODE_LAVA,
 	NODE_VULCANO_STONE,
-	NODE_UNLOADED,      // Used for nodes in unloaded blocks
-} Node;
+	NODE_UNLOADED,      // Used for nodes in unloaded chunks
+} NodeType;
 
-struct MapNode;
+struct TerrainNode;
 
-typedef struct
-{
+typedef struct {
 	bool solid;
 	size_t data_size;
-	void (*create)(struct MapNode *node);
-	void (*delete)(struct MapNode *node);
+	void (*create)(struct TerrainNode *node);
+	void (*delete)(struct TerrainNode *node);
 	void (*serialize)(Blob *buffer, void *data);
 	void (*deserialize)(Blob *buffer, void *data);
 } NodeDefinition;

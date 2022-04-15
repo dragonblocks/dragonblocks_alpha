@@ -1,14 +1,14 @@
 #include <math.h>
 #include "server/biomes.h"
-#include "server/mapgen.h"
-#include "server/server_map.h"
-#include "util.h"
+#include "server/server_terrain.h"
+#include "server/terrain_gen.h"
 
 Biome get_biome(v2s32 pos, f64 *factor)
 {
-	for (Biome i = 0; i < BIOME_COUNT; i++) {
+	for (Biome i = 0; i < COUNT_BIOME; i++) {
 		BiomeDef *def = &biomes[i];
-		f64 f = def->probability == 1.0 ? 1.0 : (smooth2d(U32(pos.x) / def->threshold, U32(pos.y) / def->threshold, 0, seed + def->offset) * 0.5 - 0.5 + def->probability) / def->probability;
+		f64 f = def->probability == 1.0 ? 1.0
+			: (smooth2d(U32(pos.x) / def->threshold, U32(pos.y) / def->threshold, 0, seed + def->offset) * 0.5 - 0.5 + def->probability) / def->probability;
 
 		if (f > 0.0) {
 			if (factor)
@@ -17,74 +17,71 @@ Biome get_biome(v2s32 pos, f64 *factor)
 		}
 	}
 
-	return BIOME_COUNT;
+	return COUNT_BIOME;
 }
 
 // mountain biome
 
-static s32 height_mountain(v2s32 pos, f64 factor, f32 height, unused void *row_data, unused void *block_data)
+static s32 height_mountain(BiomeArgsHeight *args)
 {
-	return pow((height + 96) * pow(((smooth2d(U32(pos.x) / 48.0, U32(pos.y) / 48.0, 0, seed + SO_MOUNTAIN_HEIGHT) + 1.0) * 256.0 + 128.0), factor), 1.0 / (factor + 1.0)) - 96;
+	return pow((args->height + 96) * pow(((smooth2d(U32(args->pos.x) / 48.0, U32(args->pos.y) / 48.0, 0, seed + SO_MOUNTAIN_HEIGHT) + 1.0) * 256.0 + 128.0), args->factor), 1.0 / (args->factor + 1.0)) - 96;
 }
 
-static Node generate_mountain(unused v3s32 pos, s32 diff, unused f64 humidity, unused f64 temperature, unused f64 factor, unused MapBlock *block, unused List *changed_blocks, unused void *row_data, unused void *block_data)
+static NodeType generate_mountain(BiomeArgsGenerate *args)
 {
-	return diff <= 0 ? NODE_STONE : NODE_AIR;
+	return args->diff <= 0 ? NODE_STONE : NODE_AIR;
 }
 
 // ocean biome
 
-typedef enum
-{
-	OL_BEACH_EDGE,
-	OL_BEACH,
-	OL_OCEAN,
-	OL_DEEP_OCEAN,
-	OL_COUNT
+typedef enum {
+	OCEAN_EDGE,
+	OCEAN_BEACH,
+	OCEAN_MAIN,
+	OCEAN_DEEP,
+	COUNT_OCEAN
 } OceanLevel;
 
-static f64 ocean_level_start[OL_COUNT] = {
+static f64 ocean_level_start[COUNT_OCEAN] = {
 	0.0,
 	0.1,
 	0.2,
 	0.5,
 };
 
-typedef struct
-{
+typedef struct {
 	bool has_vulcano;
 	v2s32 vulcano_pos;
-} OceanBlockData;
+} OceanChunkData;
 
-typedef struct
-{
+typedef struct {
 	bool vulcano;
 	bool vulcano_crater;
 	s32 vulcano_height;
 	s32 vulcano_crater_top;
-	Node vulcano_stone;
+	NodeType vulcano_stone;
 } OceanRowData;
 
 static const f64 vulcano_radius = 256.0;
-static const f64 vulcano_block_offset = vulcano_radius * 2.0 / MAPBLOCK_SIZE;
+static const f64 vulcano_chunk_offset = vulcano_radius * 2.0 / CHUNK_SIZE;
 
 static OceanLevel get_ocean_level(f64 factor)
 {
-	if (factor >= ocean_level_start[OL_DEEP_OCEAN])
-		return OL_DEEP_OCEAN;
-	else if (factor >= ocean_level_start[OL_OCEAN])
-		return OL_OCEAN;
-	else if (factor >= ocean_level_start[OL_BEACH])
-		return OL_BEACH;
+	if (factor >= ocean_level_start[OCEAN_DEEP])
+		return OCEAN_DEEP;
+	else if (factor >= ocean_level_start[OCEAN_MAIN])
+		return OCEAN_MAIN;
+	else if (factor >= ocean_level_start[OCEAN_BEACH])
+		return OCEAN_BEACH;
 
-	return OL_BEACH_EDGE;
+	return OCEAN_EDGE;
 }
 
 static f64 get_ocean_level_factor(f64 factor, OceanLevel level)
 {
 	f64 start, end;
 	start = ocean_level_start[level];
-	end = ++level == OL_COUNT ? 1.0 : ocean_level_start[level];
+	end = ++level == COUNT_OCEAN ? 1.0 : ocean_level_start[level];
 
 	return (factor - start) / (end - start);
 }
@@ -92,13 +89,16 @@ static f64 get_ocean_level_factor(f64 factor, OceanLevel level)
 static bool is_vulcano(v2s32 pos)
 {
 	f64 factor;
-	return noise2d(pos.x, pos.y, 0, seed + SO_VULCANO) > 0.0 && get_biome((v2s32) {pos.x * MAPBLOCK_SIZE, pos.y * MAPBLOCK_SIZE}, &factor) == BIOME_OCEAN && get_ocean_level(factor) == OL_DEEP_OCEAN;
+
+	return noise2d(pos.x, pos.y, 0, seed + SO_VULCANO) > 0.0
+		&& get_biome((v2s32) {pos.x * CHUNK_SIZE, pos.y * CHUNK_SIZE}, &factor) == BIOME_OCEAN
+		&& get_ocean_level(factor) == OCEAN_DEEP;
 }
 
 static bool find_near_vulcano(v2s32 pos, v2s32 *result)
 {
-	f64 x = pos.x / vulcano_block_offset;
-	f64 z = pos.y / vulcano_block_offset;
+	f64 x = pos.x / vulcano_chunk_offset;
+	f64 z = pos.y / vulcano_chunk_offset;
 
 	s32 lx, lz;
 	lx = floor(x);
@@ -130,17 +130,17 @@ static f64 distance(v2s32 a, v2s32 b)
 static s32 calculate_ocean_floor(f64 factor, s32 height)
 {
 	switch (get_ocean_level(factor)) {
-		case OL_BEACH_EDGE:
-			return f64_mix(height + 1, 0, pow(get_ocean_level_factor(factor, OL_BEACH_EDGE), 0.8));
+		case OCEAN_EDGE:
+			return f64_mix(height + 1, 0, pow(get_ocean_level_factor(factor, OCEAN_EDGE), 0.8));
 
-		case OL_BEACH:
+		case OCEAN_BEACH:
 			return 0;
 
-		case OL_OCEAN:
-			return f64_mix(0, -10, pow(get_ocean_level_factor(factor, OL_OCEAN), 0.5));
+		case OCEAN_MAIN:
+			return f64_mix(0, -10, pow(get_ocean_level_factor(factor, OCEAN_MAIN), 0.5));
 
-		case OL_DEEP_OCEAN:
-			return f64_mix(-10, -50, pow(get_ocean_level_factor(factor, OL_DEEP_OCEAN), 0.5));
+		case OCEAN_DEEP:
+			return f64_mix(-10, -50, pow(get_ocean_level_factor(factor, OCEAN_DEEP), 0.5));
 
 		default:
 			break;
@@ -149,61 +149,66 @@ static s32 calculate_ocean_floor(f64 factor, s32 height)
 	return height;
 }
 
-static void preprocess_block_ocean(MapBlock *block, unused List *changed_blocks, void *block_data)
+static void chunk_ocean(BiomeArgsChunk *args)
 {
-	OceanBlockData *data = block_data;
-
+	OceanChunkData *chunk_data = args->chunk_data;
 	v2s32 vulcano_pos;
-	if ((data->has_vulcano = find_near_vulcano((v2s32) {block->pos.x, block->pos.z}, &vulcano_pos)))
-		data->vulcano_pos = (v2s32) {vulcano_pos.x * MAPBLOCK_SIZE, vulcano_pos.y * MAPBLOCK_SIZE};
+
+	if ((chunk_data->has_vulcano = find_near_vulcano((v2s32) {args->chunk->pos.x, args->chunk->pos.z}, &vulcano_pos)))
+		chunk_data->vulcano_pos = (v2s32) {vulcano_pos.x * CHUNK_SIZE, vulcano_pos.y * CHUNK_SIZE};
 }
 
-static void preprocess_row_ocean(v2s32 pos, unused f64 factor, void *row_data, void *block_data)
+static void row_ocean(BiomeArgsRow *args)
 {
-	OceanRowData *rdata = row_data;
-	OceanBlockData *bdata = block_data;
-	rdata->vulcano = false;
+	OceanChunkData *chunk_data = args->chunk_data;
+	OceanRowData *row_data = args->row_data;
 
-	if (bdata->has_vulcano) {
-		f64 dist = distance(pos, bdata->vulcano_pos);
+	row_data->vulcano = false;
+
+	if (chunk_data->has_vulcano) {
+		f64 dist = distance(args->pos, chunk_data->vulcano_pos);
 
 		if (dist < vulcano_radius) {
 			f64 crater_factor = pow(asin(1.0 - dist / vulcano_radius), 2.0);
-			f64 vulcano_height = (pnoise2d(U32(pos.x) / 100.0, U32(pos.y) / 100.0, 0.2, 2, seed + SO_VULCANO_HEIGHT) * 0.5 + 0.5) * 128.0 * crater_factor + 1.0 - 30.0;
+			f64 vulcano_height = (pnoise2d(U32(args->pos.x) / 100.0, U32(args->pos.y) / 100.0, 0.2, 2, seed + SO_VULCANO_HEIGHT) * 0.5 + 0.5) * 128.0 * crater_factor + 1.0 - 30.0;
 			bool is_crater = vulcano_height > 0;
 
-			if (! is_crater)
+			if (!is_crater)
 				vulcano_height = f64_min(vulcano_height + 5.0, 0.0);
 
 			if (vulcano_height < 0)
 				vulcano_height *= 2.0;
 
-			rdata->vulcano = true;
-			rdata->vulcano_crater = is_crater;
-			rdata->vulcano_height = floor(vulcano_height + 0.5);
-			rdata->vulcano_crater_top = 50 + floor((pnoise2d(U32(pos.x) / 3.0, U32(pos.y) / 3.0, 0.0, 1, seed + SO_VULCANO_CRATER_TOP) * 0.5 + 0.5) * 3.0 + 0.5);
-			rdata->vulcano_stone = is_crater ? ((pnoise2d(U32(pos.x) / 16.0, U32(pos.y) / 16.0, 0.85, 3, seed + SO_VULCANO_STONE) * 0.5 + 0.5) * crater_factor > 0.4 ? NODE_VULCANO_STONE : NODE_STONE) : NODE_SAND;
+			row_data->vulcano = true;
+			row_data->vulcano_crater = is_crater;
+			row_data->vulcano_height = floor(vulcano_height + 0.5);
+			row_data->vulcano_crater_top = 50 + floor((pnoise2d(U32(args->pos.x) / 3.0, U32(args->pos.y) / 3.0, 0.0, 1, seed + SO_VULCANO_CRATER_TOP) * 0.5 + 0.5) * 3.0 + 0.5);
+			row_data->vulcano_stone = is_crater
+				? ((pnoise2d(U32(args->pos.x) / 16.0, U32(args->pos.y) / 16.0, 0.85, 3, seed + SO_VULCANO_STONE) * 0.5 + 0.5) * crater_factor > 0.4
+					? NODE_VULCANO_STONE
+					: NODE_STONE)
+				: NODE_SAND;
 		}
 	}
 }
 
-static s32 height_ocean(unused v2s32 pos, f64 factor, f32 height, void *row_data, unused void *block_data)
+static s32 height_ocean(BiomeArgsHeight *args)
 {
-	OceanRowData *rdata = row_data;
-	s32 ocean_floor = calculate_ocean_floor(factor, height);
+	OceanRowData *row_data = args->row_data;
 
-	return rdata->vulcano ? f64_max(ocean_floor, rdata->vulcano_height) : ocean_floor;
+	s32 ocean_floor = calculate_ocean_floor(args->factor, args->height);
+	return row_data->vulcano ? f64_max(ocean_floor, row_data->vulcano_height) : ocean_floor;
 }
 
-Node ocean_get_node_at(v3s32 pos, s32 diff, void *row_data)
+NodeType ocean_get_node_at(v3s32 pos, s32 diff, void *_row_data)
 {
-	OceanRowData *rdata = row_data;
+	OceanRowData *row_data = _row_data;
 
-	if (rdata->vulcano && rdata->vulcano_crater) {
+	if (row_data->vulcano && row_data->vulcano_crater) {
 		if (diff <= -5)
 			return pos.y <= 45 ? NODE_LAVA : NODE_AIR;
 		else if (diff <= 0)
-			return pos.y <= rdata->vulcano_crater_top ? rdata->vulcano_stone : NODE_AIR;
+			return pos.y <= row_data->vulcano_crater_top ? row_data->vulcano_stone : NODE_AIR;
 		else
 			return NODE_AIR;
 	} else {
@@ -218,9 +223,9 @@ Node ocean_get_node_at(v3s32 pos, s32 diff, void *row_data)
 	return NODE_AIR;
 }
 
-static Node generate_ocean(v3s32 pos, s32 diff, unused f64 humidity, unused f64 temperature, unused f64 factor, unused MapBlock *block, unused List *changed_blocks, void *row_data, unused void *block_data)
+static NodeType generate_ocean(BiomeArgsGenerate *args)
 {
-	return ocean_get_node_at(pos, diff, row_data);
+	return ocean_get_node_at(args->pos, args->diff, args->row_data);
 }
 
 // hills biome
@@ -235,27 +240,27 @@ static bool boulder_touching_ground(v3s32 pos, s32 diff)
 	return true;
 }
 
-static s32 height_hills(unused v2s32 pos, unused f64 factor, f32 height, unused void *row_data, unused void *block_data)
+static s32 height_hills(BiomeArgsHeight *args)
 {
-	return height;
+	return args->height;
 }
 
-static Node generate_hills(v3s32 pos, s32 diff, unused f64 humidity, unused f64 temperature, unused f64 factor, unused MapBlock *block, unused List *changed_blocks, unused void *row_data, unused void *block_data)
+static NodeType generate_hills(BiomeArgsGenerate *args)
 {
-	if (boulder_touching_ground(pos, diff))
+	if (boulder_touching_ground(args->pos, args->diff))
 		return NODE_STONE;
 
-	if (diff <= -5)
+	if (args->diff <= -5)
 		return NODE_STONE;
-	else if (diff <= -1)
+	else if (args->diff <= -1)
 		return NODE_DIRT;
-	else if (diff <= 0)
+	else if (args->diff <= 0)
 		return NODE_GRASS;
 
 	return NODE_AIR;
 }
 
-BiomeDef biomes[BIOME_COUNT] = {
+BiomeDef biomes[COUNT_BIOME] = {
 	{
 		.probability = 0.2,
 		.offset = SO_MOUNTAIN,
@@ -263,10 +268,10 @@ BiomeDef biomes[BIOME_COUNT] = {
 		.snow = true,
 		.height = &height_mountain,
 		.generate = &generate_mountain,
-		.block_data_size = 0,
-		.preprocess_block = NULL,
+		.chunk_data_size = 0,
+		.chunk = NULL,
 		.row_data_size = 0,
-		.preprocess_row = NULL,
+		.row = NULL,
 	},
 	{
 		.probability = 0.2,
@@ -275,10 +280,10 @@ BiomeDef biomes[BIOME_COUNT] = {
 		.snow = false,
 		.height = &height_ocean,
 		.generate = &generate_ocean,
-		.block_data_size = sizeof(OceanBlockData),
-		.preprocess_block = &preprocess_block_ocean,
+		.chunk_data_size = sizeof(OceanChunkData),
+		.chunk = &chunk_ocean,
 		.row_data_size = sizeof(OceanRowData),
-		.preprocess_row = &preprocess_row_ocean,
+		.row = &row_ocean,
 	},
 	{
 		.probability = 1.0,
@@ -287,9 +292,9 @@ BiomeDef biomes[BIOME_COUNT] = {
 		.snow = true,
 		.height = &height_hills,
 		.generate = &generate_hills,
-		.block_data_size = 0,
-		.preprocess_block = NULL,
+		.chunk_data_size = 0,
+		.chunk = NULL,
 		.row_data_size = 0,
-		.preprocess_row = NULL,
+		.row = NULL,
 	},
 };

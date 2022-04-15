@@ -1,8 +1,6 @@
-#include "types.h"
-#include "map.h"
 #include "node.h"
-#include "util.h"
-#include <stdio.h>
+#include "terrain.h"
+#include "types.h"
 
 NodeDefinition node_definitions[NODE_UNLOADED] = {
 	// unknown
@@ -62,56 +60,56 @@ NodeDefinition node_definitions[NODE_UNLOADED] = {
 	// oak wood
 	{
 		.solid = true,
-		.data_size = sizeof(HSLData),
+		.data_size = sizeof(ColorData),
 		.create = NULL,
 		.delete = NULL,
-		.serialize = (void *) &HSLData_write,
-		.deserialize = (void *) &HSLData_read,
+		.serialize = (void *) &ColorData_write,
+		.deserialize = (void *) &ColorData_read,
 	},
 	// oak leaves
 	{
 		.solid = true,
-		.data_size = sizeof(HSLData),
+		.data_size = sizeof(ColorData),
 		.create = NULL,
 		.delete = NULL,
-		.serialize = (void *) &HSLData_write,
-		.deserialize = (void *) &HSLData_read,
+		.serialize = (void *) &ColorData_write,
+		.deserialize = (void *) &ColorData_read,
 	},
 	// pine wood
 	{
 		.solid = true,
-		.data_size = sizeof(HSLData),
+		.data_size = sizeof(ColorData),
 		.create = NULL,
 		.delete = NULL,
-		.serialize = (void *) &HSLData_write,
-		.deserialize = (void *) &HSLData_read,
+		.serialize = (void *) &ColorData_write,
+		.deserialize = (void *) &ColorData_read,
 	},
 	// pine leaves
 	{
 		.solid = true,
-		.data_size = sizeof(HSLData),
+		.data_size = sizeof(ColorData),
 		.create = NULL,
 		.delete = NULL,
-		.serialize = (void *) &HSLData_write,
-		.deserialize = (void *) &HSLData_read,
+		.serialize = (void *) &ColorData_write,
+		.deserialize = (void *) &ColorData_read,
 	},
 	// palm wood
 	{
 		.solid = true,
-		.data_size = sizeof(HSLData),
+		.data_size = sizeof(ColorData),
 		.create = NULL,
 		.delete = NULL,
-		.serialize = (void *) &HSLData_write,
-		.deserialize = (void *) &HSLData_read,
+		.serialize = (void *) &ColorData_write,
+		.deserialize = (void *) &ColorData_read,
 	},
 	// palm leaves
 	{
 		.solid = true,
-		.data_size = sizeof(HSLData),
+		.data_size = sizeof(ColorData),
 		.create = NULL,
 		.delete = NULL,
-		.serialize = (void *) &HSLData_write,
-		.deserialize = (void *) &HSLData_read,
+		.serialize = (void *) &ColorData_write,
+		.deserialize = (void *) &ColorData_read,
 	},
 	// sand
 	{

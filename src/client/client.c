@@ -1,115 +1,181 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
+#define _GNU_SOURCE // don't worry, GNU extensions are only used when available
 #include <dragonstd/flag.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
+#include <unistd.h>
 #include "client/client.h"
 #include "client/client_auth.h"
-#include "client/client_map.h"
 #include "client/client_player.h"
+#include "client/client_terrain.h"
+#include "client/debug_menu.h"
 #include "client/game.h"
 #include "client/input.h"
 #include "day.h"
 #include "interrupt.h"
 #include "perlin.h"
 #include "types.h"
-#include "util.h"
 
 DragonnetPeer *client;
-static Flag *finish;
 
-static bool on_recv(unused DragonnetPeer *peer, DragonnetTypeId type, unused void *pkt)
+static Flag finish;
+static Flag gfx_init;
+
+static bool on_recv(__attribute__((unused)) DragonnetPeer *peer, DragonnetTypeId type, __attribute__((unused)) void *pkt)
 {
-	return (client_auth.state == AUTH_WAIT) == (type == DRAGONNET_TYPE_ToClientAuth);
+	bool allowed = false;
+	pthread_mutex_lock(&client_auth.mtx);
+
+	// this code exists to stop malicious or malfunctioning packets
+	switch (client_auth.state) {
+		// the server shouldn't send anything during auth preparation, drop it
+		case AUTH_INIT:
+			allowed = false;
+			break;
+
+		// only the auth packet is allowed before auth is finished
+		case AUTH_WAIT:
+			allowed = type == DRAGONNET_TYPE_ToClientAuth;
+			break;
+
+		// don't process auth packets when auth is already finished
+		case AUTH_SUCCESS:
+			allowed = type != DRAGONNET_TYPE_ToClientAuth;
+			break;
+	}
+
+	/*
+		It is important that the auth state does not change to until the packet is
+			processed.
+
+		However, the only state change done by other threads is AUTH_INIT -> AUTH_WAIT,
+			which is not problematic since packets that are received during AUTH_INIT
+			are not processed, they are always dropped.
+
+		Therefore the mutex can be unlocked at this point.
+	*/
+	pthread_mutex_unlock(&client_auth.mtx);
+	return allowed;
 }
 
-static void on_disconnect(unused DragonnetPeer *peer)
+static void on_disconnect(__attribute__((unused)) DragonnetPeer *peer)
 {
-	flag_set(interrupt);
-	flag_wait(finish);
+	flag_set(&interrupt);
+	// don't free the connection before all other client components have shut down
+	flag_slp(&finish);
 }
 
-static void on_ToClientAuth(unused DragonnetPeer *peer, ToClientAuth *pkt)
+static void on_ToClientAuth(__attribute__((unused)) DragonnetPeer *peer, ToClientAuth *pkt)
 {
+	pthread_mutex_lock(&client_auth.mtx);
 	if (pkt->success) {
 		client_auth.state = AUTH_SUCCESS;
-		printf("Authenticated successfully\n");
+		printf("[access] authenticated successfully\n");
 	} else {
 		client_auth.state = AUTH_INIT;
-		printf("Authentication failed, please try again\n");
+		printf("[access] authentication failed, please try again\n");
 	}
+	pthread_cond_signal(&client_auth.cv);
+	pthread_mutex_unlock(&client_auth.mtx);
+
+	// yield the connection until the game is fully initialized
+	if (pkt->success)
+		flag_slp(&gfx_init);
 }
 
-static void on_ToClientBlock(unused DragonnetPeer *peer, ToClientBlock *pkt)
+static void on_ToClientChunk(__attribute__((unused)) DragonnetPeer *peer, ToClientChunk *pkt)
 {
-	MapBlock *block = map_get_block(client_map.map, pkt->pos, true);
+	TerrainChunk *chunk = terrain_get_chunk(client_terrain, pkt->pos, true);
 
-	map_deserialize_block(block, pkt->data);
-	((MapBlockExtraData *) block->extra)->all_air = (pkt->data.siz == 0);
-	client_map_block_received(block);
+	terrain_deserialize_chunk(chunk, pkt->data);
+	((TerrainChunkMeta *) chunk->extra)->empty = (pkt->data.siz == 0);
+	client_terrain_chunk_received(chunk);
 }
 
-static void on_ToClientInfo(unused DragonnetPeer *peer, ToClientInfo *pkt)
+static void on_ToClientInfo(__attribute__((unused)) DragonnetPeer *peer, ToClientInfo *pkt)
 {
-	client_map_set_simulation_distance(pkt->simulation_distance);
+	client_terrain_set_load_distance(pkt->load_distance);
 	seed = pkt->seed;
 }
 
-static void on_ToClientPos(unused DragonnetPeer *peer, ToClientPos *pkt)
-{
-	client_player_set_position(pkt->pos);
-}
-
-static void on_ToClientTimeOfDay(unused DragonnetPeer *peer, ToClientTimeOfDay *pkt)
+static void on_ToClientTimeOfDay(__attribute__((unused)) DragonnetPeer *peer, ToClientTimeOfDay *pkt)
 {
 	set_time_of_day(pkt->time_of_day);
 }
 
+static void on_ToClientMovement(__attribute__((unused)) DragonnetPeer *peer, ToClientMovement *pkt)
+{
+	pthread_rwlock_wrlock(&client_player.lock_movement);
+	client_player.movement = *pkt;
+	pthread_rwlock_unlock(&client_player.lock_movement);
+
+	debug_menu_changed(ENTRY_FLIGHT);
+	debug_menu_changed(ENTRY_COLLISION);
+}
+
 int main(int argc, char **argv)
 {
+#ifdef __GLIBC__ // check whether bloat is enabled
+	pthread_setname_np(pthread_self(), "main");
+#endif // __GLIBC__
+
 	if (argc < 2) {
-		fprintf(stderr, "Missing address\n");
+		fprintf(stderr, "[error] missing address\n");
 		return EXIT_FAILURE;
 	}
 
-	if (! (client = dragonnet_connect(argv[1]))) {
-		fprintf(stderr, "Failed to connect to server\n");
+	if (!(client = dragonnet_connect(argv[1]))) {
+		fprintf(stderr, "[error] failed to connect to server\n");
 		return EXIT_FAILURE;
 	}
+
+	char *address = dragonnet_addr_str(client->raddr);
+	printf("[access] connected to %s\n", address);
+	free(address);
 
 	client->on_disconnect = &on_disconnect;
-	client->on_recv = &on_recv;
-	client->on_recv_type[DRAGONNET_TYPE_ToClientAuth     ] = (void *) &on_ToClientAuth;
-	client->on_recv_type[DRAGONNET_TYPE_ToClientBlock    ] = (void *) &on_ToClientBlock;
-	client->on_recv_type[DRAGONNET_TYPE_ToClientInfo     ] = (void *) &on_ToClientInfo;
-	client->on_recv_type[DRAGONNET_TYPE_ToClientPos      ] = (void *) &on_ToClientPos;
-	client->on_recv_type[DRAGONNET_TYPE_ToClientTimeOfDay] = (void *) &on_ToClientTimeOfDay;
+	client->on_recv                                                  = (void *) &on_recv;
+	client->on_recv_type[DRAGONNET_TYPE_ToClientAuth               ] = (void *) &on_ToClientAuth;
+	client->on_recv_type[DRAGONNET_TYPE_ToClientChunk              ] = (void *) &on_ToClientChunk;
+	client->on_recv_type[DRAGONNET_TYPE_ToClientInfo               ] = (void *) &on_ToClientInfo;
+	client->on_recv_type[DRAGONNET_TYPE_ToClientTimeOfDay          ] = (void *) &on_ToClientTimeOfDay;
+	client->on_recv_type[DRAGONNET_TYPE_ToClientMovement           ] = (void *) &on_ToClientMovement;
+	client->on_recv_type[DRAGONNET_TYPE_ToClientEntityAdd          ] = (void *) &client_entity_add;
+	client->on_recv_type[DRAGONNET_TYPE_ToClientEntityRemove       ] = (void *) &client_entity_remove;
+	client->on_recv_type[DRAGONNET_TYPE_ToClientEntityUpdatePosRot ] = (void *) &client_entity_update_pos_rot;
+	client->on_recv_type[DRAGONNET_TYPE_ToClientEntityUpdateBoxEye ] = (void *) &client_entity_update_box_eye;
+	client->on_recv_type[DRAGONNET_TYPE_ToClientEntityUpdateNametag] = (void *) &client_entity_update_nametag;
 
-	finish = flag_create();
+	flag_ini(&finish);
+	flag_ini(&gfx_init);
 
 	interrupt_init();
-	client_map_init();
+	client_terrain_init();
 	client_player_init();
+	client_entity_init();
 	dragonnet_peer_run(client);
 
-	if (! client_auth_init())
+	if (!client_auth_init())
 		return EXIT_FAILURE;
 
-	if (! game())
+	if (!game(&gfx_init))
 		return EXIT_FAILURE;
 
 	dragonnet_peer_shutdown(client);
 	client_auth_deinit();
+	client_entity_deinit();
 	client_player_deinit();
-	client_map_deinit();
+	client_terrain_deinit();
 	interrupt_deinit();
 
 	pthread_t recv_thread = client->recv_thread;
 
-	flag_set(finish);
+	flag_set(&finish);
 	pthread_join(recv_thread, NULL);
 
-	flag_delete(finish);
+	flag_dst(&finish);
+	flag_dst(&gfx_init);
 
 	return EXIT_SUCCESS;
 }

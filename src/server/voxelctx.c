@@ -1,13 +1,13 @@
 #include <stdlib.h>
 #include <pthread.h>
-#include "server/mapgen.h"
-#include "server/voxelctx.h"
+#include "color.h"
 #include "perlin.h"
-#include "util.h"
+#include "server/terrain_gen.h"
+#include "server/voxelctx.h"
 
 static VoxelctxState *create_state(VoxelctxState *old)
 {
-	VoxelctxState *state = malloc(sizeof(VoxelctxState));
+	VoxelctxState *state = malloc(sizeof *state);
 
 	if (old) {
 		*state = *old;
@@ -29,29 +29,24 @@ static VoxelctxState *create_state(VoxelctxState *old)
 	return state;
 }
 
-Voxelctx *voxelctx_create(List *changed_blocks, MapgenStage mgs, v3s32 pos)
+Voxelctx *voxelctx_create(List *changed_chunks, TerrainGenStage tgs, v3s32 pos)
 {
 	Voxelctx *ctx = malloc(sizeof(Voxelctx));
 
-	ctx->changed_blocks = changed_blocks;
-	ctx->mgs = mgs;
+	ctx->changed_chunks = changed_chunks;
+	ctx->tgs = tgs;
 	ctx->pos = pos;
-	ctx->statestack = list_create(NULL);
+	list_ini(&ctx->statestack);
 	ctx->random = 0;
 
-	list_put(&ctx->statestack, create_state(NULL), NULL);
+	list_apd(&ctx->statestack, create_state(NULL));
 
 	return ctx;
 }
 
-static void list_delete_state(void *key, unused void *value, unused void *arg)
-{
-	free(key);
-}
-
 void voxelctx_delete(Voxelctx *ctx)
 {
-	list_clear_func(&ctx->statestack, &list_delete_state, NULL);
+	list_clr(&ctx->statestack, (void *) &free, NULL, NULL);
 	free(ctx);
 }
 
@@ -150,20 +145,13 @@ void voxelctx_s(Voxelctx *ctx, f32 value)
 
 void voxelctx_pop(Voxelctx *ctx)
 {
-	ListPair *next = ctx->statestack.first->next;
-	free(ctx->statestack.first->key);
-	free(ctx->statestack.first);
-	ctx->statestack.first = next;
+	free(ctx->statestack.fst->dat);
+	list_nrm(&ctx->statestack, &ctx->statestack.fst);
 }
 
 void voxelctx_push(Voxelctx *ctx)
 {
-	ListPair *pair = malloc(sizeof(ListPair));
-	pair->key = create_state(&VOXELCTXSTATE(ctx));
-	pair->value = NULL;
-	pair->next = ctx->statestack.first;
-
-	ctx->statestack.first = pair;
+	list_ppd(&ctx->statestack, create_state(&VOXELCTXSTATE(ctx)));
 }
 
 bool voxelctx_is_alive(Voxelctx *ctx)
@@ -177,9 +165,9 @@ bool voxelctx_is_alive(Voxelctx *ctx)
 	return VOXELCTXSTATE(ctx).scale[0] >= 1.0f && VOXELCTXSTATE(ctx).scale[1] >= 1.0f && VOXELCTXSTATE(ctx).scale[2] >= 1.0f;
 }
 
-void voxelctx_cube(Voxelctx *ctx, Node node, bool use_color)
+void voxelctx_cube(Voxelctx *ctx, NodeType node, bool use_color)
 {
-	if (! voxelctx_is_alive(ctx))
+	if (!voxelctx_is_alive(ctx))
 		return;
 
 	vec4 base_corners[8] = {
@@ -230,23 +218,25 @@ void voxelctx_cube(Voxelctx *ctx, Node node, bool use_color)
 		Blob buffer = {0, NULL};
 
 		if (use_color)
-			HSLData_write(&buffer, &(HSLData) {{
+			ColorData_write(&buffer, &(ColorData) {hsl_to_rgb((v3f32) {
 				VOXELCTXSTATE(ctx).h / 360.0,
 				VOXELCTXSTATE(ctx).s,
 				VOXELCTXSTATE(ctx).l,
-			}});
+			})});
 
-		mapgen_set_node(
+		server_terrain_gen_node(
 			v3s32_add(ctx->pos, (v3s32) {v[0], v[2], v[1]}),
-			map_node_create(node, buffer),
-			ctx->mgs,
-			ctx->changed_blocks
+			terrain_node_create(node, buffer),
+			ctx->tgs,
+			ctx->changed_chunks
 		);
+
+		Blob_free(&buffer);
 	}
 }
 
 
-void voxelctx_cylinder(Voxelctx *ctx, Node node, bool use_color)
+void voxelctx_cylinder(Voxelctx *ctx, NodeType node, bool use_color)
 {
 	voxelctx_cube(ctx, node, use_color);
 }
@@ -254,7 +244,7 @@ void voxelctx_cylinder(Voxelctx *ctx, Node node, bool use_color)
 /*
 void voxelctx_cylinder(Voxelctx *ctx, Node node, bool use_color)
 {
-	if (! voxelctx_is_alive(ctx))
+	if (!voxelctx_is_alive(ctx))
 		return;
 
 	return;
@@ -269,7 +259,7 @@ void voxelctx_cylinder(Voxelctx *ctx, Node node, bool use_color)
 					ctx->pos.x + round(VOXELCTXSTATE(ctx).pos[0] + x),
 					ctx->pos.y + round(VOXELCTXSTATE(ctx).pos[2] + z),
 					ctx->pos.z + round(VOXELCTXSTATE(ctx).pos[1] + y),
-				}, CREATE_NODE, ctx->mgs, ctx->changed_blocks);
+				}, CREATE_NODE, ctx->tgs, ctx->changed_chunks);
 			}
 		}
 	}

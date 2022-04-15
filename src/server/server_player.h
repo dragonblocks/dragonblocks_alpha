@@ -1,23 +1,26 @@
 #ifndef _SERVER_PLAYER_H_
 #define _SERVER_PLAYER_H_
 
+#include <dragonnet/peer.h>
+#include <dragonstd/refcount.h>
 #include <pthread.h>
 #include <stdbool.h>
-#include <dragonnet/peer.h>
 #include "types.h"
 
-typedef struct
-{
-	u64 id;                     // unique identifier
-	DragonnetPeer *peer;
-	pthread_rwlock_t ref;       // programming socks make you 100% cuter
+typedef struct {
+	u64 id;                        // unique identifier
+	Refcount rc;                   // delete yourself if no one cares about you
 
-	bool auth;
-	char *name;                 // player name
-	pthread_rwlock_t auth_lock; // why
+	DragonnetPeer *peer;           // not to be confused with beer
+	pthread_rwlock_t lock_peer;    // programming socks make you 100% cuter
 
-	v3f64 pos;                  // player position
-	pthread_rwlock_t pos_lock;  // i want to commit die
+	bool auth;                     // YES OR NO I DEMAND AN ANSWER
+	char *name;                    // player name
+	pthread_rwlock_t lock_auth;    // poggers based cringe
+
+	v3f64 pos;                     // player position
+	v3f32 rot;                     // you wont guess what this is
+	pthread_rwlock_t lock_pos;     // git commit crime
 } ServerPlayer;
 
 void server_player_init();
@@ -26,14 +29,11 @@ void server_player_deinit();
 void server_player_add(DragonnetPeer *peer);
 void server_player_remove(DragonnetPeer *peer);
 
-u64 server_player_find(char *name);
-
 ServerPlayer *server_player_grab(u64 id);
-void server_player_drop(ServerPlayer *player);
+ServerPlayer *server_player_grab_named(char *name);
 
 bool server_player_auth(ServerPlayer *player, char *name);
 void server_player_disconnect(ServerPlayer *player);
-void server_player_send_pos(ServerPlayer *player);
-void server_player_iterate(void (cb)(ServerPlayer *, void *), void *arg);
+void server_player_iterate(void *func, void *arg);
 
-#endif
+#endif // _SERVER_PLAYER_H_

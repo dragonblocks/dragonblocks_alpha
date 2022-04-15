@@ -4,8 +4,9 @@
 #include <perlin/perlin.h>
 #include "types.h"
 
-typedef enum
-{
+#define U32(x) (((u32) 1 << 31) + (x))
+
+typedef enum {
 	SO_NONE,
 	SO_HEIGHT,
 	SO_MOUNTAIN,
@@ -35,4 +36,4 @@ typedef enum
 
 extern s32 seed;
 
-#endif
+#endif // _PERLIN_H_

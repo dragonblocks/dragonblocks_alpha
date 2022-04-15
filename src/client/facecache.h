@@ -4,7 +4,7 @@
 #include <pthread.h>
 #include "types.h"
 
-v3s32 facecache_face(size_t i, v3s32 *base);
+v3s32 facecache_get(size_t i);
 size_t facecache_count(u32 size);
 
-#endif
+#endif // _FACECACHE_H_

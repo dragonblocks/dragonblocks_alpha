@@ -1,16 +1,16 @@
-#include <string.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include "client/shader.h"
 
-static GLuint compile_and_attach_shader(GLenum type, const char *path, const char *name, GLuint program, const char *definitions)
+static GLuint compile_shader(GLenum type, const char *path, const char *name, GLuint program, const char *definitions)
 {
 	char full_path[strlen(path) + 1 + strlen(name) + 1 + 4 + 1];
 	sprintf(full_path, "%s/%s.glsl", path, name);
 
 	FILE *file = fopen(full_path, "r");
-	if (! file) {
+	if (!file) {
 		perror("fopen");
 		return 0;
 	}
@@ -47,7 +47,8 @@ static GLuint compile_and_attach_shader(GLenum type, const char *path, const cha
 
 	GLuint id = glCreateShader(type);
 
-	const char *version = "#version 420 core\n";
+	// Minimum OpenGL version is 4.2.0 (idk some shader feature from that version is required)
+	const char *version = "#version 420 core\n"; // 420 blaze it
 
 	const char *code_list[3] = {
 		version,
@@ -67,10 +68,10 @@ static GLuint compile_and_attach_shader(GLenum type, const char *path, const cha
 
 	GLint success;
 	glGetShaderiv(id, GL_COMPILE_STATUS, &success);
-	if (! success) {
+	if (!success) {
 		char errbuf[BUFSIZ];
 		glGetShaderInfoLog(id, BUFSIZ, NULL, errbuf);
-		fprintf(stderr, "Failed to compile %s shader: %s", name, errbuf);
+		fprintf(stderr, "[error] failed to compile %s shader: %s", name, errbuf);
 		glDeleteShader(id);
 		return 0;
 	}
@@ -84,17 +85,17 @@ bool shader_program_create(const char *path, GLuint *idptr, const char *definiti
 {
 	GLuint id = glCreateProgram();
 
-	if (! definitions)
+	if (!definitions)
 		definitions = "";
 
 	GLuint vert, frag;
 
-	if (! (vert = compile_and_attach_shader(GL_VERTEX_SHADER, path, "vertex", id, definitions))) {
+	if (!(vert = compile_shader(GL_VERTEX_SHADER, path, "vertex", id, definitions))) {
 		glDeleteProgram(id);
 		return false;
 	}
 
-	if (! (frag = compile_and_attach_shader(GL_FRAGMENT_SHADER, path, "fragment", id, definitions))) {
+	if (!(frag = compile_shader(GL_FRAGMENT_SHADER, path, "fragment", id, definitions))) {
 		glDeleteShader(vert);
 		glDeleteProgram(id);
 		return false;
@@ -106,10 +107,10 @@ bool shader_program_create(const char *path, GLuint *idptr, const char *definiti
 
 	GLint success;
 	glGetProgramiv(id, GL_LINK_STATUS, &success);
-	if (! success) {
+	if (!success) {
 		char errbuf[BUFSIZ];
 		glGetProgramInfoLog(id, BUFSIZ, NULL, errbuf);
-		fprintf(stderr, "Failed to link shader program: %s\n", errbuf);
+		fprintf(stderr, "[error] failed to link shader program: %s\n", errbuf);
 		glDeleteProgram(id);
 		return false;
 	}

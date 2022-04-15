@@ -1,16 +1,15 @@
-#include <stdio.h>
 #include <endian.h/endian.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sqlite3.h>
 #include <time.h>
 #include "day.h"
 #include "server/database.h"
-#include "server/server_map.h"
+#include "server/server_terrain.h"
 #include "perlin.h"
-#include "util.h"
 
-static sqlite3 *map_database;
+static sqlite3 *terrain_database;
 static sqlite3 *meta_database;
 static sqlite3 *players_database;
 
@@ -23,24 +22,24 @@ static inline sqlite3_stmt *prepare_statement(sqlite3 *database, const char *sql
 	return sqlite3_prepare_v2(database, sql, -1, &stmt, NULL) == SQLITE_OK ? stmt : NULL;
 }
 
-// print SQLite3 error message for failed block SQL statement
-static inline void print_block_error(MapBlock *block, const char *action)
+// print SQLite3 error message for failed chunk SQL statement
+static inline void print_chunk_error(TerrainChunk *chunk, const char *action)
 {
-	fprintf(stderr, "Database error with %s block at (%d, %d, %d): %s\n", action, block->pos.x, block->pos.y, block->pos.z, sqlite3_errmsg(map_database));
+	fprintf(stderr, "[warning] failed %s chunk at (%d, %d, %d): %s\n", action, chunk->pos.x, chunk->pos.y, chunk->pos.z, sqlite3_errmsg(terrain_database));
 }
 
-// prepare a SQLite3 block statement and bind the position
-static sqlite3_stmt *prepare_block_statement(MapBlock *block, const char *action, const char *sql)
+// prepare a SQLite3 chunk statement and bind the position
+static sqlite3_stmt *prepare_chunk_statement(TerrainChunk *chunk, const char *action, const char *sql)
 {
-	sqlite3_stmt *stmt;
+	sqlite3_stmt *stmt = prepare_statement(terrain_database, sql);
 
-	if (! (stmt = prepare_statement(map_database, sql))) {
-		print_block_error(block, action);
+	if (!stmt) {
+		print_chunk_error(chunk, action);
 		return NULL;
 	}
 
 	Blob buffer = {0, NULL};
-	v3s32_write(&buffer, &block->pos);
+	v3s32_write(&buffer, &chunk->pos);
 
 	sqlite3_bind_blob(stmt, 1, buffer.data, buffer.siz, &free);
 
@@ -56,6 +55,15 @@ static inline void bind_v3f64(sqlite3_stmt *stmt, int idx, v3f64 pos)
 	sqlite3_bind_blob(stmt, idx, buffer.data, buffer.siz, &free);
 }
 
+// bind v3f32 to sqlite3 statement
+static inline void bind_v3f32(sqlite3_stmt *stmt, int idx, v3f32 pos)
+{
+	Blob buffer = {0, NULL};
+	v3f32_write(&buffer, &pos);
+
+	sqlite3_bind_blob(stmt, idx, buffer.data, buffer.siz, &free);
+}
+
 // public functions
 
 // open and initialize SQLite3 databases
@@ -66,20 +74,20 @@ bool database_init()
 		const char *path;
 		const char *init;
 	} databases[3] = {
-		{&map_database,     "map.sqlite",     "CREATE TABLE IF NOT EXISTS map     (pos  BLOB PRIMARY KEY, generated INTEGER, data BLOB, mgsb BLOB);"},
+		{&terrain_database, "terrain.sqlite", "CREATE TABLE IF NOT EXISTS terrain (pos  BLOB PRIMARY KEY, generated INTEGER, data BLOB, tgsb BLOB);"},
 		{&meta_database,    "meta.sqlite",    "CREATE TABLE IF NOT EXISTS meta    (key  TEXT PRIMARY KEY, value INTEGER                          );"},
-		{&players_database, "players.sqlite", "CREATE TABLE IF NOT EXISTS players (name TEXT PRIMARY KEY, pos BLOB                               );"},
+		{&players_database, "players.sqlite", "CREATE TABLE IF NOT EXISTS players (name TEXT PRIMARY KEY, pos BLOB, rot BLOB                     );"},
 	};
 
 	for (int i = 0; i < 3; i++) {
 		if (sqlite3_open_v2(databases[i].path, databases[i].handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, NULL) != SQLITE_OK) {
-			fprintf(stderr, "Failed to open %s: %s\n", databases[i].path, sqlite3_errmsg(*databases[i].handle));
+			fprintf(stderr, "[error] failed to open %s: %s\n", databases[i].path, sqlite3_errmsg(*databases[i].handle));
 			return false;
 		}
 
 		char *err;
 		if (sqlite3_exec(*databases[i].handle, databases[i].init, NULL, NULL, &err) != SQLITE_OK) {
-			fprintf(stderr, "Failed to initialize %s: %s\n", databases[i].path, err);
+			fprintf(stderr, "[error] failed initializing %s: %s\n", databases[i].path, err);
 			sqlite3_free(err);
 			return false;
 		}
@@ -105,68 +113,68 @@ bool database_init()
 	return true;
 }
 
-// close database
+// close databases
 void database_deinit()
 {
 	database_save_meta("time_of_day", (s64) get_time_of_day());
 
-	sqlite3_close(map_database);
+	sqlite3_close(terrain_database);
 	sqlite3_close(meta_database);
 	sqlite3_close(players_database);
 }
 
-// load a block from map database (initializes state, mgs buffer and data), returns false on failure
-bool database_load_block(MapBlock *block)
+// load a chunk from terrain database (initializes state, tgs buffer and data), returns false on failure
+bool database_load_chunk(TerrainChunk *chunk)
 {
-	sqlite3_stmt *stmt;
+	sqlite3_stmt *stmt = prepare_chunk_statement(chunk, "loading", "SELECT generated, data, tgsb FROM terrain WHERE pos=?");
 
-	if (! (stmt = prepare_block_statement(block, "loading", "SELECT generated, data, mgsb FROM map WHERE pos=?")))
+	if (!stmt)
 		return false;
 
 	int rc = sqlite3_step(stmt);
 	bool found = rc == SQLITE_ROW;
 
 	if (found) {
-		MapBlockExtraData *extra = block->extra;
+		TerrainChunkMeta *meta = chunk->extra;
 
-		extra->state = sqlite3_column_int(stmt, 0) ? MBS_READY : MBS_CREATED;
-		Blob_read(             &(Blob) {sqlite3_column_bytes(stmt, 1), (void *) sqlite3_column_blob(stmt, 1)}, &extra->data);
-		MapgenStageBuffer_read(&(Blob) {sqlite3_column_bytes(stmt, 2), (void *) sqlite3_column_blob(stmt, 2)}, &extra->mgsb);
+		meta->state = sqlite3_column_int(stmt, 0) ? CHUNK_READY : CHUNK_CREATED;
+		Blob_read(                 &(Blob) {sqlite3_column_bytes(stmt, 1), (void *) sqlite3_column_blob(stmt, 1)}, &meta->data);
+		TerrainGenStageBuffer_read(&(Blob) {sqlite3_column_bytes(stmt, 2), (void *) sqlite3_column_blob(stmt, 2)}, &meta->tgsb);
 
-		if (! map_deserialize_block(block, extra->data)) {
-			fprintf(stderr, "Failed to load block at (%d, %d, %d)\n", block->pos.x, block->pos.y, block->pos.z);
+		if (!terrain_deserialize_chunk(chunk, meta->data)) {
+			fprintf(stderr, "[error] failed deserializing chunk at (%d, %d, %d)\n", chunk->pos.x, chunk->pos.y, chunk->pos.z);
 			exit(EXIT_FAILURE);
 		}
 	} else if (rc != SQLITE_DONE) {
-		print_block_error(block, "loading");
+		print_chunk_error(chunk, "loading");
 	}
 
 	sqlite3_finalize(stmt);
 	return found;
 }
 
-// save a block to database
-void database_save_block(MapBlock *block)
+// save a chunk to terrain database
+void database_save_chunk(TerrainChunk *chunk)
 {
-	sqlite3_stmt *stmt;
+	sqlite3_stmt *stmt = prepare_chunk_statement(chunk, "saving", "REPLACE INTO terrain (pos, generated, data, tgsb) VALUES(?1, ?2, ?3, ?4)");
 
-	if (! (stmt = prepare_block_statement(block, "saving", "REPLACE INTO map (pos, generated, data, mgsb) VALUES(?1, ?2, ?3, ?4)")))
+	if (!stmt)
 		return;
 
-	MapBlockExtraData *extra = block->extra;
+	TerrainChunkMeta *meta = chunk->extra;
 
 	Blob data = {0, NULL};
-	Blob_write(&data, &extra->data);
+	Blob_write(&data, &meta->data);
 
-	Blob mgsb = {0, NULL};
-	MapgenStageBuffer_write(&mgsb, &extra->mgsb);
+	Blob tgsb = {0, NULL};
+	TerrainGenStageBuffer_write(&tgsb, &meta->tgsb);
 
-	sqlite3_bind_int(stmt, 2, extra->state > MBS_CREATED);
+	sqlite3_bind_int(stmt, 2, meta->state > CHUNK_CREATED);
 	sqlite3_bind_blob(stmt, 3, data.data, data.siz, &free);
-	sqlite3_bind_blob(stmt, 4, mgsb.data, mgsb.siz, &free);
+	sqlite3_bind_blob(stmt, 4, tgsb.data, tgsb.siz, &free);
 
 	if (sqlite3_step(stmt) != SQLITE_DONE)
-		print_block_error(block, "saving");
+		print_chunk_error(chunk, "saving");
 
 	sqlite3_finalize(stmt);
 }
@@ -174,10 +182,10 @@ void database_save_block(MapBlock *block)
 // load a meta entry
 bool database_load_meta(const char *key, s64 *value_ptr)
 {
-	sqlite3_stmt *stmt;
+	sqlite3_stmt *stmt = prepare_statement(meta_database, "SELECT value FROM meta WHERE key=?");
 
-	if (! (stmt = prepare_statement(meta_database, "SELECT value FROM meta WHERE key=?"))) {
-		fprintf(stderr, "Database error with loading meta %s: %s\n", key, sqlite3_errmsg(meta_database));
+	if (!stmt) {
+		fprintf(stderr, "[warning] failed loading meta %s: %s\n", key, sqlite3_errmsg(meta_database));
 		return false;
 	}
 
@@ -189,7 +197,7 @@ bool database_load_meta(const char *key, s64 *value_ptr)
 	if (found)
 		*value_ptr = sqlite3_column_int64(stmt, 0);
 	else if (rc != SQLITE_DONE)
-		fprintf(stderr, "Database error with loading meta %s: %s\n", key, sqlite3_errmsg(meta_database));
+		fprintf(stderr, "[warning] failed loading meta %s: %s\n", key, sqlite3_errmsg(meta_database));
 
 	sqlite3_finalize(stmt);
 	return found;
@@ -198,10 +206,10 @@ bool database_load_meta(const char *key, s64 *value_ptr)
 // save / update a meta entry
 void database_save_meta(const char *key, s64 value)
 {
-	sqlite3_stmt *stmt;
+	sqlite3_stmt *stmt = prepare_statement(meta_database, "REPLACE INTO meta (key, value) VALUES(?1, ?2)");
 
-	if (! (stmt = prepare_statement(meta_database, "REPLACE INTO meta (key, value) VALUES(?1, ?2)"))) {
-		fprintf(stderr, "Database error with saving meta %s: %s\n", key, sqlite3_errmsg(meta_database));
+	if (!stmt) {
+		fprintf(stderr, "[warning] failed saving meta %s: %s\n", key, sqlite3_errmsg(meta_database));
 		return;
 	}
 
@@ -209,18 +217,18 @@ void database_save_meta(const char *key, s64 value)
 	sqlite3_bind_int64(stmt, 2, value);
 
 	if (sqlite3_step(stmt) != SQLITE_DONE)
-		fprintf(stderr, "Database error with saving meta %s: %s\n", key, sqlite3_errmsg(meta_database));
+		fprintf(stderr, "[warning] failed saving meta %s: %s\n", key, sqlite3_errmsg(meta_database));
 
 	sqlite3_finalize(stmt);
 }
 
 // load player data from database
-bool database_load_player(char *name, v3f64 *pos_ptr)
+bool database_load_player(char *name, v3f64 *pos, v3f32 *rot)
 {
-	sqlite3_stmt *stmt;
+	sqlite3_stmt *stmt = prepare_statement(players_database, "SELECT pos, rot FROM players WHERE name=?");
 
-	if (! (stmt = prepare_statement(players_database, "SELECT pos FROM players WHERE name=?"))) {
-		fprintf(stderr, "Database error with loading player %s: %s\n", name, sqlite3_errmsg(players_database));
+	if (!stmt) {
+		fprintf(stderr, "[warning] failed loading player %s: %s\n", name, sqlite3_errmsg(players_database));
 		return false;
 	}
 
@@ -229,49 +237,53 @@ bool database_load_player(char *name, v3f64 *pos_ptr)
 	int rc = sqlite3_step(stmt);
 	bool found = rc == SQLITE_ROW;
 
-	if (found)
-		v3f64_read(&(Blob) {sqlite3_column_bytes(stmt, 0), (void *) sqlite3_column_blob(stmt, 0)}, pos_ptr);
-	else if (rc != SQLITE_DONE)
-		fprintf(stderr, "Database error with loading player %s: %s\n", name, sqlite3_errmsg(players_database));
+	if (found) {
+		v3f64_read(&(Blob) {sqlite3_column_bytes(stmt, 0), (void *) sqlite3_column_blob(stmt, 0)}, pos);
+		v3f32_read(&(Blob) {sqlite3_column_bytes(stmt, 1), (void *) sqlite3_column_blob(stmt, 1)}, rot);
+	} else if (rc != SQLITE_DONE) {
+		fprintf(stderr, "[warning] failed loading player %s: %s\n", name, sqlite3_errmsg(players_database));
+	}
 
 	sqlite3_finalize(stmt);
 	return found;
 }
 
 // insert new player into database
-void database_create_player(char *name, v3f64 pos)
+void database_create_player(char *name, v3f64 pos, v3f32 rot)
 {
-	sqlite3_stmt *stmt;
+	sqlite3_stmt *stmt = prepare_statement(players_database, "INSERT INTO players (name, pos, rot) VALUES(?1, ?2, ?3)");
 
-	if (! (stmt = prepare_statement(players_database, "INSERT INTO players (name, pos) VALUES(?1, ?2)"))) {
-		fprintf(stderr, "Database error with creating player %s: %s\n", name, sqlite3_errmsg(players_database));
+	if (!stmt) {
+		fprintf(stderr, "[warning] failed creating player %s: %s\n", name, sqlite3_errmsg(players_database));
 		return;
 	}
 
 	sqlite3_bind_text(stmt, 1, name, strlen(name), SQLITE_TRANSIENT);
 	bind_v3f64(stmt, 2, pos);
+	bind_v3f32(stmt, 3, rot);
 
 	if (sqlite3_step(stmt) != SQLITE_DONE)
-		fprintf(stderr, "Database error with creating player %s: %s\n", name, sqlite3_errmsg(players_database));
+		fprintf(stderr, "[warning] failed creating player %s: %s\n", name, sqlite3_errmsg(players_database));
 
 	sqlite3_finalize(stmt);
 }
 
 // update player position
-void database_update_player_pos(char *name, v3f64 pos)
+void database_update_player_pos_rot(char *name, v3f64 pos, v3f32 rot)
 {
-	sqlite3_stmt *stmt;
+	sqlite3_stmt *stmt = prepare_statement(players_database, "UPDATE players SET pos=?1, rot=?2 WHERE name=?3");
 
-	if (! (stmt = prepare_statement(players_database, "UPDATE players SET pos=?1 WHERE name=?2"))) {
-		fprintf(stderr, "Database error with updating position of player %s: %s\n", name, sqlite3_errmsg(players_database));
+	if (!stmt) {
+		fprintf(stderr, "[warning] failed updating player %s: %s\n", name, sqlite3_errmsg(players_database));
 		return;
 	}
 
 	bind_v3f64(stmt, 1, pos);
-	sqlite3_bind_text(stmt, 2, name, strlen(name), SQLITE_TRANSIENT);
+	bind_v3f32(stmt, 2, rot);
+	sqlite3_bind_text(stmt, 3, name, strlen(name), SQLITE_TRANSIENT);
 
 	if (sqlite3_step(stmt) != SQLITE_DONE)
-		fprintf(stderr, "Database error with updating player %s position: %s\n", name, sqlite3_errmsg(players_database));
+		fprintf(stderr, "[warning] failed updating player %s: %s\n", name, sqlite3_errmsg(players_database));
 
 	sqlite3_finalize(stmt);
 }

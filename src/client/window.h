@@ -3,19 +3,16 @@
 
 #include <GLFW/glfw3.h>
 
-extern struct Window
-{
+extern struct Window {
+	int width, height;
 	GLFWwindow *handle;
 	bool fullscreen;
-	struct
-	{
-		int x, y;
-		int width, height;
-	} small_bounds;
+	f32 fov;
+	mat4x4 projection;
 } window;
 
-bool window_init(int width, int height);
+bool window_init();
 void window_enter_fullscreen();
 void window_exit_fullscreen();
 
-#endif
+#endif // _WINDOW_H_

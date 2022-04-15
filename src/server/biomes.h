@@ -1,35 +1,66 @@
 #ifndef _BIOMES_H_
 #define _BIOMES_H_
 
-#include "map.h"
 #include "perlin.h"
+#include "terrain.h"
 #include "types.h"
 
-typedef enum
-{
+typedef enum {
 	BIOME_MOUNTAIN,
 	BIOME_OCEAN,
 	BIOME_HILLS,
-	BIOME_COUNT,
+	COUNT_BIOME,
 } Biome;
 
-typedef struct
-{
+typedef struct {
+	TerrainChunk *chunk;
+	List *changed_chunks;
+	void *chunk_data;
+} BiomeArgsChunk;
+
+typedef struct {
+	v2s32 pos;
+	f64 factor;
+	void *row_data;
+	void *chunk_data;
+} BiomeArgsRow;
+
+typedef struct {
+	v2s32 pos;
+	f64 factor;
+	f32 height;
+	void *row_data;
+	void *chunk_data;
+} BiomeArgsHeight;
+
+typedef struct {
+	v3s32 pos;
+	s32 diff;
+	f64 humidity;
+	f64 temperature;
+	f64 factor;
+	TerrainChunk *chunk;
+	List *changed_chunks;
+	void *row_data;
+	void *chunk_data;
+} BiomeArgsGenerate;
+
+typedef struct {
 	f64 probability;
 	SeedOffset offset;
 	f64 threshold;
 	bool snow;
-	s32 (*height)(v2s32 pos, f64 factor, f32 height, void *row_data, void *block_data);
-	Node (*generate)(v3s32 pos, s32 diff, f64 humidity, f64 temperature, f64 factor, MapBlock *block, List *changed_blocks, void *row_data, void *block_data);
-	size_t block_data_size;
-	void (*preprocess_block)(MapBlock *block, List *changed_blocks, void *block_data);
+	s32 (*height)(BiomeArgsHeight *args);
+	NodeType (*generate)(BiomeArgsGenerate *args);
+	size_t chunk_data_size;
+	void (*chunk)(BiomeArgsChunk *args);
 	size_t row_data_size;
-	void (*preprocess_row)(v2s32 pos, f64 factor, void *row_data, void *block_data);
+	void (*row)(BiomeArgsRow *args);
 } BiomeDef;
 
 extern BiomeDef biomes[];
 
 Biome get_biome(v2s32 pos, f64 *factor);
-Node ocean_get_node_at(v3s32 pos, s32 diff, void *row_data);
+NodeType ocean_get_node_at(v3s32 pos, s32 diff, void *_row_data);
 
-#endif
+#endif // _BIOMES_H_

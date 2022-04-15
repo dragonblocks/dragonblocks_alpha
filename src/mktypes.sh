@@ -1,3 +1,3 @@
-#! /bin/sh
-LUA_PATH="../deps/dragontype/?.lua;../deps/dragontype/?/init.lua" "../deps/dragontype/typegen.lua"
+#!/bin/sh
+LUA_PATH="../deps/protogen/?.lua;../deps/protogen/?/init.lua" "../deps/protogen/protogen.lua"
 

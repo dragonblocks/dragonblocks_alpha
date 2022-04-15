@@ -5,4 +5,4 @@
 
 DragonnetListener *server;
 
-#endif
+#endif // _SERVER_H_

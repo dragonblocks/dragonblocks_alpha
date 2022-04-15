@@ -3,9 +3,9 @@
 
 #include <dragonstd/flag.h>
 
-extern Flag *interrupt;
-
 void interrupt_init();
 void interrupt_deinit();
 
-#endif
+extern Flag interrupt;
+
+#endif // _INTERRUPT_H_

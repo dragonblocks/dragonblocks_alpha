@@ -7,169 +7,138 @@
 
 #define NUM_CHARS 128
 
-typedef struct
-{
-	Texture *texture;
+typedef struct {
+	Texture texture;
 	v2s32 bearing;
 	u32 advance;
 } Character;
 
-static struct
-{
-	FT_Library library;
-	FT_Face face;
-	Character chars[NUM_CHARS];
-	GLfloat height;
-} font;
+static FT_Library font_library;
+static FT_Face font_face;
+static Character font_chars[NUM_CHARS];
+static GLfloat font_height;
 
-typedef struct
-{
-	GLfloat x, y;
-} __attribute__((packed)) VertexFontPosition;
-
-typedef struct
-{
-	GLfloat s, t;
-} __attribute__((packed)) VertexFontTextureCoordinates;
-
-typedef struct
-{
-	VertexFontPosition position;
-	VertexFontTextureCoordinates textureCoordinates;
-} __attribute__((packed)) VertexFont;
-
-static VertexAttribute vertex_attributes[2] = {
-	// position
-	{
-		.type = GL_FLOAT,
-		.length = 2,
-		.size = sizeof(VertexFontPosition),
+typedef struct {
+	v2f32 position;
+	v2f32 textureCoordinates;
+} __attribute__((packed)) FontVertex;
+static VertexLayout font_vertex_layout = {
+	.attributes = (VertexAttribute[]) {
+		{GL_FLOAT, 2, sizeof(v2f32)}, // position
+		{GL_FLOAT, 2, sizeof(v2f32)}, // textureCoordinates
 	},
-	// textureCoordinates
-	{
-		.type = GL_FLOAT,
-		.length = 2,
-		.size = sizeof(VertexFontTextureCoordinates),
-	},
-};
-
-static VertexLayout vertex_layout = {
-	.attributes = vertex_attributes,
 	.count = 2,
-	.size = sizeof(VertexFont),
+	.size = sizeof(FontVertex),
 };
 
 bool font_init()
 {
-	if (FT_Init_FreeType(&font.library)) {
-		fprintf(stderr, "Failed to initialize Freetype\n");
+	if (FT_Init_FreeType(&font_library)) {
+		fprintf(stderr, "[error] failed to initialize Freetype\n");
 		return false;
 	}
 
-	if (FT_New_Face(font.library, RESSOURCE_PATH "fonts/Minecraftia.ttf", 0, &font.face)) {
-		fprintf(stderr, "Failed to load Minecraftia.ttf\n");
+	if (FT_New_Face(font_library, RESSOURCE_PATH "fonts/Minecraftia.ttf", 0, &font_face)) {
+		fprintf(stderr, "[error] failed to load Minecraftia.ttf\n");
 		return false;
 	}
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	FT_Set_Pixel_Sizes(font.face, 0, 16);
+	FT_Set_Pixel_Sizes(font_face, 0, 16);
 
 	for (unsigned char c = 0; c < NUM_CHARS; c++) {
-		if (FT_Load_Char(font.face, c, FT_LOAD_RENDER)) {
-			fprintf(stderr, "Failed to load glyph %c\n", c);
-
-			font.chars[c] = (Character) {
-				.texture = NULL,
-				.bearing = {0, 0},
-				.advance = 0,
-			};
-		} else {
-			font.chars[c] = (Character) {
-				.texture = texture_create(font.face->glyph->bitmap.buffer, font.face->glyph->bitmap.width, font.face->glyph->bitmap.rows, GL_RED, false),
-				.bearing = {font.face->glyph->bitmap_left, font.face->glyph->bitmap_top},
-				.advance = font.face->glyph->advance.x,
-			};
+		if (FT_Load_Char(font_face, c, FT_LOAD_RENDER)) {
+			fprintf(stderr, "[warning] failed to load glyph %c\n", c);
+			font_chars[c].texture.txo = 0;
+			continue;
 		}
+
+		font_chars[c].texture.width = font_face->glyph->bitmap.width;
+		font_chars[c].texture.height = font_face->glyph->bitmap.rows;
+		texture_upload(&font_chars[c].texture, font_face->glyph->bitmap.buffer, GL_RED, false);
+
+		font_chars[c].bearing = (v2s32) {font_face->glyph->bitmap_left, font_face->glyph->bitmap_top};
+		font_chars[c].advance = font_face->glyph->advance.x;
 	}
 
-	font.height = font.chars['|'].texture->height;
+	font_height = font_chars['|'].texture.height;
 
-	FT_Done_Face(font.face);
-	FT_Done_FreeType(font.library);
+	FT_Done_Face(font_face);
+	FT_Done_FreeType(font_library);
 
 	return true;
 }
 
 void font_deinit()
 {
-	for (unsigned char c = 0; c < NUM_CHARS; c++) {
-		if (font.chars[c].texture)
-			texture_delete(font.chars[c].texture);
-	}
+	for (unsigned char c = 0; c < NUM_CHARS; c++)
+		texture_destroy(&font_chars[c].texture);
 }
 
 Font *font_create(const char *text)
 {
-	Font *fnt = malloc(sizeof *fnt);
+	Font *font = malloc(sizeof *font);
 
-	size_t len = strlen(text);
-
-	fnt->meshes = malloc(sizeof(Mesh *) * len);
-	fnt->meshes_count = len;
+	font->count = strlen(text);
+	font->meshes = malloc(font->count * sizeof *font->meshes);
+	font->textures = malloc(font->count * sizeof *font->textures);
 
 	GLfloat offset = 0.0f;
 
-	for (size_t i = 0; i < len; i++) {
+	for (size_t i = 0; i < font->count; i++) {
 		unsigned char c = text[i];
 
-		if (c >= NUM_CHARS || ! font.chars[c].texture)
+		if (c >= NUM_CHARS || !font_chars[c].texture.txo)
 			c = '?';
 
-		Character *ch = &font.chars[c];
+		Character *ch = &font_chars[c];
 
-		GLfloat width = ch->texture->width;
-        GLfloat height = ch->texture->height;
+		GLfloat width = ch->texture.width;
+		GLfloat height = ch->texture.height;
 
 		GLfloat x = ch->bearing.x + offset;
-        GLfloat y = font.height - ch->bearing.y;
+		GLfloat y = font_height - ch->bearing.y;
 
-        VertexFont vertices[6] = {
-            {{x,         y         }, {0.0f, 0.0f}},
-            {{x,         y + height}, {0.0f, 1.0f}},
-            {{x + width, y + height}, {1.0f, 1.0f}},
-            {{x,         y         }, {0.0f, 0.0f}},
-            {{x + width, y + height}, {1.0f, 1.0f}},
-            {{x + width, y         }, {1.0f, 0.0f}},
-        };
+		// this is art
+		// selling this as NFT starting price is 10 BTC
+		font->meshes[i].data = (FontVertex[]) {
+			{{x,         y         }, {0.0f, 0.0f}},
+			{{x,         y + height}, {0.0f, 1.0f}},
+			{{x + width, y + height}, {1.0f, 1.0f}},
+			{{x,         y         }, {0.0f, 0.0f}},
+			{{x + width, y + height}, {1.0f, 1.0f}},
+			{{x + width, y         }, {1.0f, 0.0f}},
+		};
+		font->meshes[i].count = 6;
+		font->meshes[i].layout = &font_vertex_layout;
+		font->meshes[i].vao = font->meshes[i].vbo = 0;
+		font->meshes[i].free_data = false;
+		mesh_upload(&font->meshes[i]);
 
-		Mesh *mesh = fnt->meshes[i] = mesh_create();
-		mesh->textures = &ch->texture->id;
-		mesh->textures_count = 1;
-		mesh->free_textures = false;
-		mesh->vertices = vertices;
-		mesh->vertices_count = 6;
-		mesh->free_vertices = false;
-		mesh->layout = &vertex_layout;
-		mesh_configure(mesh);
+		font->textures[i] = ch->texture.txo;
 
 		offset += ch->advance >> 6;
 	}
 
-	fnt->size = (v2f32) {offset, font.height};
+	font->size = (v2f32) {offset, font_height};
 
-	return fnt;
+	return font;
 }
 
-void font_delete(Font *fnt)
+void font_delete(Font *font)
 {
-	for (size_t i = 0; i < fnt->meshes_count; i++)
-		mesh_delete(fnt->meshes[i]);
+	for (size_t i = 0; i < font->count; i++)
+		mesh_destroy(&font->meshes[i]);
 
-	free(fnt);
+	free(font->meshes);
+	free(font->textures);
+	free(font);
 }
 
-void font_render(Font *fnt)
+void font_render(Font *font)
 {
-	for (size_t i = 0; i < fnt->meshes_count; i++)
-		mesh_render(fnt->meshes[i]);
+	for (size_t i = 0; i < font->count; i++) {
+		glBindTextureUnit(0, font->textures[i]);
+		mesh_render(&font->meshes[i]);
+	}
 }

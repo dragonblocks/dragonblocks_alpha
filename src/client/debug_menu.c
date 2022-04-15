@@ -1,62 +1,117 @@
-#include <stdio.h>
+#include <asprintf/asprintf.h>
 #include <GL/glew.h>
 #include <GL/gl.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <pthread.h>
 #include "client/client_config.h"
-#include "client/client_map.h"
 #include "client/client_player.h"
+#include "client/client_terrain.h"
 #include "client/debug_menu.h"
+#include "client/game.h"
 #include "client/gui.h"
 #include "client/window.h"
 #include "day.h"
 #include "environment.h"
 #include "perlin.h"
-#include "util.h"
 #include "version.h"
 
-typedef enum
-{
-	DME_VERSION,
-	DME_FPS,
-	DME_POS,
-	DME_YAW,
-	DME_PITCH,
-	DME_TIME,
-	DME_DAYLIGHT,
-	DME_SUN_ANGLE,
-	DME_HUMIDITY,
-	DME_TEMPERATURE,
-	DME_SEED,
-	DME_FLIGHT,
-	DME_COLLISION,
-	DME_TIMELAPSE,
-	DME_FULLSCREEN,
-	DME_OPENGL,
-	DME_GPU,
-	DME_ANTIALIASING,
-	DME_MIPMAP,
-	DME_RENDER_DISTANCE,
-	DME_SIMULATION_DISTANCE,
-	DME_COUNT,
-} DebugMenuEntry;
-
-static GUIElement *gui_elements[DME_COUNT] = {NULL};
+static GUIElement *gui_elements[COUNT_ENTRY] = {NULL};
+static bool changed_elements[COUNT_ENTRY] = {false};
+static pthread_mutex_t changed_elements_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 static bool debug_menu_enabled = true;
-static DebugMenuEntry last_always_visible = DME_POS;
+static DebugMenuEntry last_always_visible = ENTRY_POS;
+
+static char *get_entry_text(DebugMenuEntry entry)
+{
+	bool flight = false;
+	bool collision = false;
+	int hours = 0;
+	int minutes = 0;
+	v3f64 pos = {0.0f, 0.0f, 0.0f};
+	v3f32 rot = {0.0f, 0.0f, 0.0f};
+
+	switch (entry) {
+		case ENTRY_POS:
+		case ENTRY_YAW:
+		case ENTRY_PITCH:
+		case ENTRY_HUMIDITY:
+		case ENTRY_TEMPERATURE: {
+			ClientEntity *entity = client_player_entity();
+			if (!entity)
+				return strdup("");
+
+			pthread_rwlock_rdlock(&entity->lock_pos_rot);
+			pos = entity->data.pos;
+			rot = entity->data.rot;
+			pthread_rwlock_unlock(&entity->lock_pos_rot);
+			refcount_drp(&entity->rc);
+			break;
+		}
+
+		case ENTRY_FLIGHT:
+		case ENTRY_COLLISION:
+			pthread_rwlock_rdlock(&client_player.lock_movement);
+			flight = client_player.movement.flight;
+			collision = client_player.movement.collision;
+			pthread_rwlock_unlock(&client_player.lock_movement);
+			break;
+
+		case ENTRY_ANTIALIASING:
+			if (!client_config.antialiasing)
+				return strdup("antialiasing: disabled");
+			break;
+
+		case ENTRY_TIME:
+			split_time_of_day(&hours, &minutes);
+			break;
+
+		default:
+			break;
+	}
+
+	char *str;
+	switch (entry) {
+		case ENTRY_VERSION:       asprintf(&str, "Dragonblocks Alpha %s", VERSION                                    ); break;
+		case ENTRY_FPS:           asprintf(&str, "%d FPS", game_fps                                                  ); break;
+		case ENTRY_POS:           asprintf(&str, "(%.1f %.1f %.1f)", pos.x, pos.y, pos.z                             ); break;
+		case ENTRY_YAW:           asprintf(&str, "yaw = %.1f", rot.x / M_PI * 180.0                                  ); break;
+		case ENTRY_PITCH:         asprintf(&str, "pitch = %.1f", rot.y / M_PI * 180.0                                ); break;
+		case ENTRY_TIME:          asprintf(&str, "%02d:%02d", hours, minutes                                         ); break;
+		case ENTRY_DAYLIGHT:      asprintf(&str, "daylight = %.2f", get_daylight()                                   ); break;
+		case ENTRY_SUN_ANGLE:     asprintf(&str, "sun angle = %.1f", fmod(get_sun_angle() / M_PI * 180.0, 360.0)     ); break;
+		case ENTRY_HUMIDITY:      asprintf(&str, "humidity = %.2f", get_humidity((v3s32) {pos.x, pos.y, pos.z})      ); break;
+		case ENTRY_TEMPERATURE:   asprintf(&str, "temperature = %.2f", get_temperature((v3s32) {pos.x, pos.y, pos.z})); break;
+		case ENTRY_SEED:          asprintf(&str, "seed = %d", seed                                                   ); break;
+		case ENTRY_FLIGHT:        asprintf(&str, "flight: %s", flight ? "enabled" : "disabled"                       ); break;
+		case ENTRY_COLLISION:     asprintf(&str, "collision: %s", collision ? "enabled" : "disabled"                 ); break;
+		case ENTRY_TIMELAPSE:     asprintf(&str, "timelapse: %s", timelapse ? "enabled" : "disabled"                 ); break;
+		case ENTRY_FULLSCREEN:    asprintf(&str, "fullscreen: %s", window.fullscreen ? "enabled" : "disabled"        ); break;
+		case ENTRY_OPENGL:        asprintf(&str, "OpenGL %s", glGetString(GL_VERSION)                                ); break;
+		case ENTRY_GPU:           asprintf(&str, "%s", glGetString(GL_RENDERER)                                      ); break;
+		case ENTRY_ANTIALIASING:  asprintf(&str, "antialiasing: %u samples", client_config.antialiasing              ); break;
+		case ENTRY_MIPMAP:        asprintf(&str, "mipmap: %s", client_config.mipmap ? "enabled" : "disabled"         ); break;
+		case ENTRY_VIEW_DISTANCE: asprintf(&str, "view distance: %.1lf", client_config.view_distance                 ); break;
+		case ENTRY_LOAD_DISTANCE: asprintf(&str, "load distance: %u", client_terrain_get_load_distance()             ); break;
+		default: break;
+	}
+	return str;
+}
 
 void debug_menu_init()
 {
 	s32 offset = -16;
 
-	for (DebugMenuEntry i = 0; i < DME_COUNT; i++) {
-		gui_elements[i] = gui_add(&gui_root, (GUIElementDefinition) {
+	for (DebugMenuEntry i = 0; i < COUNT_ENTRY; i++) {
+		gui_elements[i] = gui_add(NULL, (GUIElementDefinition) {
 			.pos = {0.0f, 0.0f},
 			.z_index = 0.1f,
 			.offset = {2, offset += 18},
 			.margin = {2, 2},
 			.align = {0.0f, 0.0f},
 			.scale = {1.0f, 1.0f},
-			.scale_type = GST_TEXT,
+			.scale_type = SCALE_TEXT,
 			.affect_parent_scale = false,
 			.text = strdup(""),
 			.image = NULL,
@@ -64,124 +119,47 @@ void debug_menu_init()
 			.bg_color = (v4f32) {0.0f, 0.0f, 0.0f, 0.0f},
 		});
 	}
+
+	debug_menu_toggle();
+
+	debug_menu_changed(ENTRY_VERSION);
+	debug_menu_changed(ENTRY_SEED);
+	debug_menu_changed(ENTRY_TIMELAPSE);
+	debug_menu_changed(ENTRY_FULLSCREEN);
+	debug_menu_changed(ENTRY_OPENGL);
+	debug_menu_changed(ENTRY_GPU);
+	debug_menu_changed(ENTRY_ANTIALIASING);
+	debug_menu_changed(ENTRY_MIPMAP);
+	debug_menu_changed(ENTRY_VIEW_DISTANCE);
 }
 
 void debug_menu_toggle()
 {
-	debug_menu_enabled = ! debug_menu_enabled;
+	debug_menu_enabled = !debug_menu_enabled;
 
-	for (DebugMenuEntry i = 0; i < DME_COUNT; i++) {
+	for (DebugMenuEntry i = 0; i < COUNT_ENTRY; i++) {
 		gui_elements[i]->visible = debug_menu_enabled || i <= last_always_visible;
 		gui_elements[i]->def.bg_color.w = debug_menu_enabled ? 0.5f : 0.0f;
 	}
 }
 
-void debug_menu_update_version()
+void debug_menu_update()
 {
-	gui_set_text(gui_elements[DME_VERSION], format_string("Dragonblocks Alpha %s", VERSION));
+	bool changed_elements_cpy[COUNT_ENTRY];
+
+	pthread_mutex_lock(&changed_elements_mtx);
+	memcpy(changed_elements_cpy, changed_elements, COUNT_ENTRY * sizeof(bool));
+	memset(changed_elements, 0,                    COUNT_ENTRY * sizeof(bool));
+	pthread_mutex_unlock(&changed_elements_mtx);
+
+	for (DebugMenuEntry i = 0; i < COUNT_ENTRY; i++)
+		if (changed_elements_cpy[i])
+			gui_text(gui_elements[i], get_entry_text(i));
 }
 
-void debug_menu_update_fps(int fps)
+void debug_menu_changed(DebugMenuEntry entry)
 {
-	gui_set_text(gui_elements[DME_FPS], format_string("%d FPS", fps));
-}
-
-void debug_menu_update_pos()
-{
-	gui_set_text(gui_elements[DME_POS], format_string("(%.1f %.1f %.1f)", client_player.pos.x, client_player.pos.y, client_player.pos.z));
-}
-
-void debug_menu_update_yaw()
-{
-	gui_set_text(gui_elements[DME_YAW], format_string("yaw = %.1f", client_player.yaw / M_PI * 180.0));
-}
-
-void debug_menu_update_pitch()
-{
-	gui_set_text(gui_elements[DME_PITCH], format_string("pitch = %.1f", client_player.pitch / M_PI * 180.0));
-}
-
-void debug_menu_update_time()
-{
-	int hours, minutes;
-	split_time_of_day(&hours, &minutes);
-	gui_set_text(gui_elements[DME_TIME], format_string("%02d:%02d", hours, minutes));
-}
-
-void debug_menu_update_daylight()
-{
-	gui_set_text(gui_elements[DME_DAYLIGHT], format_string("daylight = %.2f", get_daylight()));
-}
-
-void debug_menu_update_sun_angle()
-{
-	gui_set_text(gui_elements[DME_SUN_ANGLE], format_string("sun angle = %.1f", fmod(get_sun_angle() / M_PI * 180.0, 360.0)));
-}
-
-void debug_menu_update_humidity()
-{
-	gui_set_text(gui_elements[DME_HUMIDITY], format_string("humidity = %.2f", get_humidity((v3s32) {client_player.pos.x, client_player.pos.y, client_player.pos.z})));
-}
-
-void debug_menu_update_temperature()
-{
-	gui_set_text(gui_elements[DME_TEMPERATURE], format_string("temperature = %.2f", get_temperature((v3s32) {client_player.pos.x, client_player.pos.y, client_player.pos.z})));
-}
-
-void debug_menu_update_seed()
-{
-	gui_set_text(gui_elements[DME_SEED], format_string("seed = %d", seed));
-}
-
-void debug_menu_update_flight()
-{
-	gui_set_text(gui_elements[DME_FLIGHT], format_string("flight: %s", client_player.fly ? "enabled" : "disabled"));
-}
-
-void debug_menu_update_collision()
-{
-	gui_set_text(gui_elements[DME_COLLISION], format_string("collision: %s", client_player.collision ? "enabled" : "disabled"));
-}
-
-void debug_menu_update_timelapse()
-{
-	gui_set_text(gui_elements[DME_TIMELAPSE], format_string("timelapse: %s", timelapse ? "enabled" : "disabled"));
-}
-
-void debug_menu_update_fullscreen()
-{
-	gui_set_text(gui_elements[DME_FULLSCREEN], format_string("fullscreen: %s", window.fullscreen ? "enabled" : "disabled"));
-}
-
-void debug_menu_update_opengl()
-{
-	gui_set_text(gui_elements[DME_OPENGL], format_string("OpenGL %s", glGetString(GL_VERSION)));
-}
-
-void debug_menu_update_gpu()
-{
-	gui_set_text(gui_elements[DME_GPU], format_string("%s", glGetString(GL_RENDERER)));
-}
-
-void debug_menu_update_antialiasing()
-{
-	gui_set_text(gui_elements[DME_ANTIALIASING], client_config.antialiasing > 1
-		? format_string("antialiasing: %u samples", client_config.antialiasing)
-		: format_string("antialiasing: disabled")
-	);
-}
-
-void debug_menu_update_mipmap()
-{
-	gui_set_text(gui_elements[DME_MIPMAP], format_string("mipmap: %s", client_config.mipmap ? "enabled" : "disabled"));
-}
-
-void debug_menu_update_render_distance()
-{
-	gui_set_text(gui_elements[DME_RENDER_DISTANCE], format_string("render distance: %.1lf", client_config.render_distance));
-}
-
-void debug_menu_update_simulation_distance()
-{
-	gui_set_text(gui_elements[DME_SIMULATION_DISTANCE], format_string("simulation distance: %u", client_map.simulation_distance));
+	pthread_mutex_lock(&changed_elements_mtx);
+	changed_elements[entry] = true;
+	pthread_mutex_unlock(&changed_elements_mtx);
 }

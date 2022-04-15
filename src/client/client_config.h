@@ -6,7 +6,7 @@
 extern struct ClientConfig {
 	unsigned int antialiasing;
 	bool mipmap;
-	double render_distance;
+	double view_distance;
 	bool vsync;
 	unsigned int meshgen_threads;
 } client_config;

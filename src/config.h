@@ -3,22 +3,21 @@
 
 #include <stddef.h>
 
-typedef enum
-{
-	CT_STRING,
-	CT_INT,
-	CT_UINT,
-	CT_FLOAT,
-	CT_BOOL,
+typedef enum {
+	CONFIG_STRING,
+	CONFIG_INT,
+	CONFIG_UINT,
+	CONFIG_FLOAT,
+	CONFIG_BOOL,
 } ConfigType;
 
-typedef struct
-{
+typedef struct {
 	ConfigType type;
 	char *key;
 	void *value;
 } ConfigEntry;
 
 void config_read(char *path, ConfigEntry *entries, size_t num_entries);
+void config_free(ConfigEntry *entries, size_t num_entires);
 
-#endif
+#endif // _CONFIG_H_

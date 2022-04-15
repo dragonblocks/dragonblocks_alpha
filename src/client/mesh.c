@@ -1,63 +1,59 @@
-#include <stdlib.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include "client/mesh.h"
 
-Mesh *mesh_create()
+// upload data to GPU (only done once)
+void mesh_upload(Mesh *mesh)
 {
-	Mesh *mesh = malloc(sizeof(Mesh));
-	mesh->VAO = mesh->VBO = 0;
-	mesh->free_textures = false;
-	mesh->free_vertices = false;
+	glGenVertexArrays(1, &mesh->vao);
+	glGenBuffers(1, &mesh->vbo);
 
-	return mesh;
-}
+	glBindVertexArray(mesh->vao);
+	glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
 
-void mesh_delete(Mesh *mesh)
-{
-	if (mesh->textures && mesh->free_textures)
-		free(mesh->textures);
+	glBufferData(GL_ARRAY_BUFFER, mesh->count * mesh->layout->size,
+		mesh->data, GL_STATIC_DRAW);
 
-	if (mesh->vertices && mesh->free_vertices)
-		free(mesh->vertices);
+	size_t offset = 0;
+	for (GLuint i = 0; i < mesh->layout->count; i++) {
+		VertexAttribute *attrib = &mesh->layout->attributes[i];
 
-	if (mesh->VAO)
-		glDeleteVertexArrays(1, &mesh->VAO);
+		glVertexAttribPointer(i, attrib->length, attrib->type, GL_FALSE,
+			mesh->layout->size, (GLvoid *) offset);
+		glEnableVertexAttribArray(i);
 
-	if (mesh->VBO)
-		glDeleteBuffers(1, &mesh->VAO);
-
-	free(mesh);
-}
-
-void mesh_configure(Mesh *mesh)
-{
-	glGenVertexArrays(1, &mesh->VAO);
-	glGenBuffers(1, &mesh->VBO);
-
-	glBindVertexArray(mesh->VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, mesh->VBO);
-
-	glBufferData(GL_ARRAY_BUFFER, mesh->vertices_count * mesh->layout->size, mesh->vertices, GL_STATIC_DRAW);
-
-	vertex_layout_configure(mesh->layout);
+		offset += attrib->size;
+	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
-	if (mesh->free_vertices)
-		free(mesh->vertices);
+	if (mesh->free_data)
+		free(mesh->data);
 
-	mesh->vertices = NULL;
+	mesh->data = NULL;
 }
 
 void mesh_render(Mesh *mesh)
 {
-	if (mesh->vertices)
-		mesh_configure(mesh);
+	if (mesh->data)
+		mesh_upload(mesh);
 
-	for (GLuint i = 0; i < mesh->textures_count; i++)
-		glBindTextureUnit(i, mesh->textures[i]);
+	// render
+	glBindVertexArray(mesh->vao);
+	glDrawArrays(GL_TRIANGLES, 0, mesh->count);
+}
 
-	glBindVertexArray(mesh->VAO);
-	glDrawArrays(GL_TRIANGLES, 0, mesh->vertices_count);
+void mesh_destroy(Mesh *mesh)
+{
+	if (mesh->data && mesh->free_data)
+		free(mesh->data);
+
+	if (mesh->vao)
+		glDeleteVertexArrays(1, &mesh->vao);
+
+	if (mesh->vbo)
+		glDeleteBuffers(1, &mesh->vbo);
+
+	mesh->vao = mesh->vbo = 0;
 }

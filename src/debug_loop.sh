@@ -1,8 +1,8 @@
-#! /bin/bash
+#!/bin/bash
 COMMAND="./debug.sh"
 
-if [[ $1 == "mapgen" ]]; then
-	COMMAND="./debug_mapgen.sh"
+if [[ $1 == "terrain" ]]; then
+	COMMAND="./debug_terrain.sh"
 fi
 
 while true; do
