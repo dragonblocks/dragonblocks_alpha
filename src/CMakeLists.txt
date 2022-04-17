@@ -3,7 +3,7 @@ project(Dragonblocks)
 
 # Variables
 
-set(DEPS_DIR "${CMAKE_SOURCE_DIR}/../deps/")
+set(DEPS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../deps/")
 
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Debug)
@@ -38,7 +38,8 @@ link_libraries(
 )
 
 include_directories(SYSTEM ${DEPS_DIR})
-include_directories(BEFORE ${CMAKE_SOURCE_DIR})
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
 
 # System specific options
 
@@ -55,6 +56,7 @@ endif()
 # Common sources
 
 set(COMMON_SOURCES
+	"${CMAKE_CURRENT_BINARY_DIR}/types.c"
 	"${DEPS_DIR}/asprintf/asprintf.c"
 	"${DEPS_DIR}/dragonnet/addr.c"
 	"${DEPS_DIR}/dragonnet/listen.c"
@@ -81,7 +83,6 @@ set(COMMON_SOURCES
 	perlin.c
 	physics.c
 	terrain.c
-	types.c
 )
 
 # Client
@@ -149,7 +150,8 @@ target_link_libraries(dragonblocks_server
 # Version
 
 add_custom_target(version
-	COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${CMAKE_SOURCE_DIR} -P ${CMAKE_SOURCE_DIR}/version.cmake
+	COMMAND ${CMAKE_COMMAND} -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}  -P ${CMAKE_CURRENT_SOURCE_DIR}/version.cmake
+	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
 add_dependencies(dragonblocks version)
@@ -158,14 +160,15 @@ add_dependencies(dragonblocks_server version)
 # Types
 
 add_custom_command(
-	OUTPUT "${CMAKE_SOURCE_DIR}/types.c" "${CMAKE_SOURCE_DIR}/types.h"
-	COMMAND "${CMAKE_SOURCE_DIR}/mktypes.sh"
-	MAIN_DEPENDENCY "${CMAKE_SOURCE_DIR}/types.def"
-	WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+	OUTPUT types.c types.h
+	MAIN_DEPENDENCY types.def
+	DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../deps/protogen/protogen.lua"
+	COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/mktypes.sh" "${CMAKE_CURRENT_SOURCE_DIR}"
+	WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
 add_custom_target(types
-	DEPENDS "${CMAKE_SOURCE_DIR}/types.c" "${CMAKE_SOURCE_DIR}/types.h"
+	DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/types.c" "${CMAKE_CURRENT_BINARY_DIR}/types.h"
 )
 
 add_dependencies(dragonblocks types)

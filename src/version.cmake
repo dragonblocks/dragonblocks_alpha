@@ -10,9 +10,7 @@ if("${GIT_VERSION}" STREQUAL "")
 	)
 endif()
 
-set(VERSION_DEF "const char *version = \"${GIT_VERSION}\";")
-
 configure_file(
-	${SOURCE_DIR}/version.h.in
-	${SOURCE_DIR}/version.h
+	version.h.in
+	${BINARY_DIR}/version.h
 )

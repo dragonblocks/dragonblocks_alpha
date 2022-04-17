@@ -25,6 +25,6 @@ server.conf
 screenshot-*.png
 
 # Generated code
-src/version.h
-src/types.c
-src/types.h
+version.h
+types.c
+types.h
