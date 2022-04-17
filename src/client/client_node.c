@@ -29,8 +29,8 @@ static void render_grass(NodeArgsRender *args)
 
 static void render_stone(NodeArgsRender *args)
 {
-	args->vertex.cube.textureCoordinates.x += noise2d(args->pos.x, args->pos.z, 0, seed + SO_TEXTURE_OFFSET_S);
-	args->vertex.cube.textureCoordinates.y += noise2d(args->pos.x, args->pos.z, 0, seed + SO_TEXTURE_OFFSET_T);
+	args->vertex.cube.textureCoordinates.x += noise2d(args->pos.x, args->pos.z, 0, seed + OFFSET_TEXTURE_OFFSET_S);
+	args->vertex.cube.textureCoordinates.y += noise2d(args->pos.x, args->pos.z, 0, seed + OFFSET_TEXTURE_OFFSET_T);
 }
 
 static void render_color(NodeArgsRender *args)

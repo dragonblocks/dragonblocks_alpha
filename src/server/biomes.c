@@ -1,7 +1,10 @@
 #include <math.h>
+#include <stdlib.h>
+#include <string.h>
 #include "server/biomes.h"
 #include "server/server_terrain.h"
 #include "server/terrain_gen.h"
+#include "server/voxel_depth_search.h"
 
 Biome get_biome(v2s32 pos, f64 *factor)
 {
@@ -24,7 +27,7 @@ Biome get_biome(v2s32 pos, f64 *factor)
 
 static s32 height_mountain(BiomeArgsHeight *args)
 {
-	return pow((args->height + 96) * pow(((smooth2d(U32(args->pos.x) / 48.0, U32(args->pos.y) / 48.0, 0, seed + SO_MOUNTAIN_HEIGHT) + 1.0) * 256.0 + 128.0), args->factor), 1.0 / (args->factor + 1.0)) - 96;
+	return pow((args->height + 96) * pow(((smooth2d(U32(args->pos.x) / 48.0, U32(args->pos.y) / 48.0, 0, seed + OFFSET_MOUNTAIN_HEIGHT) + 1.0) * 256.0 + 128.0), args->factor), 1.0 / (args->factor + 1.0)) - 96;
 }
 
 static NodeType generate_mountain(BiomeArgsGenerate *args)
@@ -113,7 +116,7 @@ static s32 calculate_ocean_floor(f64 factor, s32 height)
 	return height;
 }
 
-static void chunk_ocean(BiomeArgsChunk *args)
+static void before_chunk_ocean(BiomeArgsChunk *args)
 {
 	OceanChunkData *chunk_data = args->chunk_data;
 
@@ -123,12 +126,12 @@ static void chunk_ocean(BiomeArgsChunk *args)
 	};
 
 	f64 factor;
-	chunk_data->has_vulcano = noise2d(chunk_data->vulcano_pos.x, chunk_data->vulcano_pos.y, 0, seed + SO_VULCANO) > 0.0
+	chunk_data->has_vulcano = noise2d(chunk_data->vulcano_pos.x, chunk_data->vulcano_pos.y, 0, seed + OFFSET_VULCANO) > 0.0
 		&& get_biome((v2s32) {chunk_data->vulcano_pos.x, chunk_data->vulcano_pos.y}, &factor) == BIOME_OCEAN
 		&& get_ocean_level(factor) == OCEAN_DEEP;
 }
 
-static void row_ocean(BiomeArgsRow *args)
+static void before_row_ocean(BiomeArgsRow *args)
 {
 	OceanChunkData *chunk_data = args->chunk_data;
 	OceanRowData *row_data = args->row_data;
@@ -140,7 +143,7 @@ static void row_ocean(BiomeArgsRow *args)
 
 		if (dist < vulcano_radius) {
 			f64 crater_factor = pow(asin(1.0 - dist / vulcano_radius), 2.0);
-			f64 vulcano_height = (pnoise2d(U32(args->pos.x) / 100.0, U32(args->pos.y) / 100.0, 0.2, 2, seed + SO_VULCANO_HEIGHT) * 0.5 + 0.5) * 128.0 * crater_factor + 1.0 - 30.0;
+			f64 vulcano_height = (pnoise2d(U32(args->pos.x) / 100.0, U32(args->pos.y) / 100.0, 0.2, 2, seed + OFFSET_VULCANO_HEIGHT) * 0.5 + 0.5) * 128.0 * crater_factor + 1.0 - 30.0;
 			bool is_crater = vulcano_height > 0;
 
 			if (!is_crater)
@@ -152,9 +155,9 @@ static void row_ocean(BiomeArgsRow *args)
 			row_data->vulcano = true;
 			row_data->vulcano_crater = is_crater;
 			row_data->vulcano_height = floor(vulcano_height + 0.5);
-			row_data->vulcano_crater_top = 50 + floor((pnoise2d(U32(args->pos.x) / 3.0, U32(args->pos.y) / 3.0, 0.0, 1, seed + SO_VULCANO_CRATER_TOP) * 0.5 + 0.5) * 3.0 + 0.5);
+			row_data->vulcano_crater_top = 50 + floor((pnoise2d(U32(args->pos.x) / 3.0, U32(args->pos.y) / 3.0, 0.0, 1, seed + OFFSET_VULCANO_CRATER_TOP) * 0.5 + 0.5) * 3.0 + 0.5);
 			row_data->vulcano_stone = is_crater
-				? ((pnoise2d(U32(args->pos.x) / 16.0, U32(args->pos.y) / 16.0, 0.85, 3, seed + SO_VULCANO_STONE) * 0.5 + 0.5) * crater_factor > 0.4
+				? ((pnoise2d(U32(args->pos.x) / 16.0, U32(args->pos.y) / 16.0, 0.85, 3, seed + OFFSET_VULCANO_STONE) * 0.5 + 0.5) * crater_factor > 0.4
 					? NODE_VULCANO_STONE
 					: NODE_STONE)
 				: NODE_SAND;
@@ -200,14 +203,27 @@ static NodeType generate_ocean(BiomeArgsGenerate *args)
 
 // hills biome
 
-static bool boulder_touching_ground(v3s32 pos, s32 diff)
-{
-	for (s32 dir = diff > 0 ? -1 : +1; dir > 0 ? diff <= 0 : diff >= 0; pos.y += dir, diff += dir) {
-		if (smooth3d(U32(pos.x) / 12.0, U32(pos.y) / 6.0, U32(pos.z) / 12.0, 0, seed + SO_BOULDER) < 0.8)
-			return false;
-	}
+typedef struct {
+	Tree boulder_visit;
+	bool boulder_success[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
+} HillsChunkData;
 
-	return true;
+static void before_chunk_hills(BiomeArgsChunk *args)
+{
+	HillsChunkData *chunk_data = args->chunk_data;
+	tree_ini(&chunk_data->boulder_visit);
+	memset(chunk_data->boulder_success, 0, sizeof chunk_data->boulder_success);
+}
+
+static void wrap_free(void *ptr)
+{
+	free(ptr);
+}
+
+static void after_chunk_hills(BiomeArgsChunk *args)
+{
+	HillsChunkData *chunk_data = args->chunk_data;
+	tree_clr(&chunk_data->boulder_visit, &wrap_free, NULL, NULL, 0);
 }
 
 static s32 height_hills(BiomeArgsHeight *args)
@@ -215,9 +231,30 @@ static s32 height_hills(BiomeArgsHeight *args)
 	return args->height;
 }
 
+static bool is_boulder(s32 diff, v3s32 pos)
+{
+	return diff < 16 &&
+		smooth3d(U32(pos.x) / 16.0, U32(pos.y) / 12.0, U32(pos.z) / 16.0, 0, seed + OFFSET_BOULDER) > 0.8;
+}
+
+static DepthSearchNodeType boulder_get_node_type(v3s32 pos)
+{
+	s32 diff = pos.y - terrain_gen_get_base_height((v2s32) {pos.x, pos.z});
+
+	if (diff <= 0)
+		return DEPTH_SEARCH_TARGET;
+
+	return is_boulder(diff, pos) ? DEPTH_SEARCH_PATH : DEPTH_SEARCH_BLOCK;
+}
+
 static NodeType generate_hills(BiomeArgsGenerate *args)
 {
-	if (boulder_touching_ground(args->pos, args->diff))
+	HillsChunkData *chunk_data = args->chunk_data;
+
+	if (is_boulder(args->diff, args->pos) && (args->diff <= 0 || voxel_depth_search(args->pos,
+			&boulder_get_node_type,
+			&chunk_data->boulder_success[args->offset.x][args->offset.y][args->offset.z],
+			&chunk_data->boulder_visit)))
 		return NODE_STONE;
 
 	if (args->diff <= -5)
@@ -233,38 +270,44 @@ static NodeType generate_hills(BiomeArgsGenerate *args)
 BiomeDef biomes[COUNT_BIOME] = {
 	{
 		.probability = 0.2,
-		.offset = SO_MOUNTAIN,
+		.offset = OFFSET_MOUNTAIN,
 		.threshold = 1024.0,
 		.snow = true,
 		.height = &height_mountain,
 		.generate = &generate_mountain,
 		.chunk_data_size = 0,
-		.chunk = NULL,
+		.before_chunk = NULL,
+		.after_chunk = NULL,
 		.row_data_size = 0,
-		.row = NULL,
+		.before_row = NULL,
+		.after_row = NULL,
 	},
 	{
 		.probability = 0.2,
-		.offset = SO_OCEAN,
+		.offset = OFFSET_OCEAN,
 		.threshold = 2048.0,
 		.snow = false,
 		.height = &height_ocean,
 		.generate = &generate_ocean,
 		.chunk_data_size = sizeof(OceanChunkData),
-		.chunk = &chunk_ocean,
+		.before_chunk = &before_chunk_ocean,
+		.after_chunk = NULL,
 		.row_data_size = sizeof(OceanRowData),
-		.row = &row_ocean,
+		.before_row = &before_row_ocean,
+		.after_row = NULL,
 	},
 	{
 		.probability = 1.0,
-		.offset = SO_NONE,
+		.offset = OFFSET_NONE,
 		.threshold = 0.0,
 		.snow = true,
 		.height = &height_hills,
 		.generate = &generate_hills,
-		.chunk_data_size = 0,
-		.chunk = NULL,
+		.chunk_data_size = sizeof(HillsChunkData),
+		.before_chunk = &before_chunk_hills,
+		.after_chunk = &after_chunk_hills,
 		.row_data_size = 0,
-		.row = NULL,
+		.before_row = NULL,
+		.after_row = NULL,
 	},
 };

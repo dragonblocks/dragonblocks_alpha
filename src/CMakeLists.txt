@@ -140,7 +140,8 @@ add_executable(dragonblocks_server
 	server/server_terrain.c
 	server/terrain_gen.c
 	server/trees.c
-	server/voxelctx.c
+	server/voxel_depth_search.c
+	server/voxel_procedural.c
 )
 
 target_link_libraries(dragonblocks_server

@@ -9,9 +9,9 @@
 #include "types.h"
 
 #define CHUNK_ITERATE \
-	for (u8 x = 0; x < CHUNK_SIZE; x++) \
-	for (u8 y = 0; y < CHUNK_SIZE; y++) \
-	for (u8 z = 0; z < CHUNK_SIZE; z++)
+	for (s32 x = 0; x < CHUNK_SIZE; x++) \
+	for (s32 y = 0; y < CHUNK_SIZE; y++) \
+	for (s32 z = 0; z < CHUNK_SIZE; z++)
 
 typedef struct TerrainNode {
 	NodeType type;

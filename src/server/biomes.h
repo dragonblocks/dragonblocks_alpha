@@ -34,6 +34,7 @@ typedef struct {
 } BiomeArgsHeight;
 
 typedef struct {
+	v3s32 offset;
 	v3s32 pos;
 	s32 diff;
 	f64 humidity;
@@ -53,9 +54,11 @@ typedef struct {
 	s32 (*height)(BiomeArgsHeight *args);
 	NodeType (*generate)(BiomeArgsGenerate *args);
 	size_t chunk_data_size;
-	void (*chunk)(BiomeArgsChunk *args);
+	void (*before_chunk)(BiomeArgsChunk *args);
+	void (*after_chunk)(BiomeArgsChunk *args);
 	size_t row_data_size;
-	void (*row)(BiomeArgsRow *args);
+	void (*before_row)(BiomeArgsRow *args);
+	void (*after_row)(BiomeArgsRow *args);
 } BiomeDef;
 
 extern BiomeDef biomes[];

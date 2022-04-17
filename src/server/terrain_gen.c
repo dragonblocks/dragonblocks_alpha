@@ -7,6 +7,14 @@
 #include "server/terrain_gen.h"
 #include "server/trees.h"
 
+s32 terrain_gen_get_base_height(v2s32 pos)
+{
+	return 1.0
+		* (pnoise2d(U32(pos.x) /  32.0, U32(pos.y) /  32.0, 0.45, 5, seed + OFFSET_HEIGHT)    * 16.0 + 0.0)
+		* (pnoise2d(U32(pos.x) / 256.0, U32(pos.y) / 256.0, 0.45, 5, seed + OFFSET_HILLYNESS) *  0.5 + 0.5)
+		+ 32.0;
+}
+
 // generate a chunk (does not manage chunk state or threading)
 void terrain_gen_chunk(TerrainChunk *chunk, List *changed_chunks)
 {
@@ -28,12 +36,12 @@ void terrain_gen_chunk(TerrainChunk *chunk, List *changed_chunks)
 	};
 
 	unsigned char *chunk_data[COUNT_BIOME] = {NULL};
-	bool chunk_called[COUNT_BIOME] = {false};
+	bool has_biome[COUNT_BIOME] = {false};
 
-	for (u8 x = 0; x < CHUNK_SIZE; x++) {
+	for (s32 x = 0; x < CHUNK_SIZE; x++) {
 		s32 pos_x = chunkp.x + x;
 
-		for (u8 z = 0; z < CHUNK_SIZE; z++) {
+		for (s32 z = 0; z < CHUNK_SIZE; z++) {
 			row_args.pos = height_args.pos = (v2s32) {pos_x, chunkp.z + z};
 
 			condition_args.biome = get_biome(row_args.pos, &condition_args.factor);
@@ -43,32 +51,32 @@ void terrain_gen_chunk(TerrainChunk *chunk, List *changed_chunks)
 				= condition_args.factor;
 
 			if (biome_def->chunk_data_size && !chunk_data[condition_args.biome])
-				chunk_data[condition_args.biome] =	malloc(biome_def->chunk_data_size);
+				chunk_data[condition_args.biome] = malloc(biome_def->chunk_data_size);
 
 			chunk_args.chunk_data = row_args.chunk_data = height_args.chunk_data =
 				generate_args.chunk_data = condition_args.chunk_data =
 				chunk_data[condition_args.biome];
 
-			if (biome_def->chunk && !chunk_called[condition_args.biome]) {
-				biome_def->chunk(&chunk_args);
-				chunk_called[condition_args.biome] = true;
+			if (!has_biome[condition_args.biome]) {
+				if (biome_def->before_chunk)
+					biome_def->before_chunk(&chunk_args);
+
+				has_biome[condition_args.biome] = true;
 			}
 
 			unsigned char row_data[biome_def->row_data_size];
 			row_args.row_data = height_args.row_data = generate_args.row_data =
 				condition_args.row_data = row_data;
 
-			if (biome_def->row)
-				biome_def->row(&row_args);
+			if (biome_def->before_row)
+				biome_def->before_row(&row_args);
 
-			height_args.height = 1.0
-				* (pnoise2d(U32(height_args.pos.x) /  32.0, U32(height_args.pos.y) /  32.0, 0.45, 5, seed + SO_HEIGHT)    * 16.0 + 0.0)
-				* (pnoise2d(U32(height_args.pos.x) / 256.0, U32(height_args.pos.y) / 256.0, 0.45, 5, seed + SO_HILLYNESS) *  0.5 + 0.5)
-				+ 32.0;
-
+			height_args.height = terrain_gen_get_base_height(height_args.pos);
 			s32 height = biome_def->height(&height_args);
 
-			for (u8 y = 0; y < CHUNK_SIZE; y++) {
+			for (s32 y = 0; y < CHUNK_SIZE; y++) {
+				generate_args.offset = (v3s32) {x, y, z};
+
 				generate_args.pos = condition_args.pos = (v3s32)
 					{row_args.pos.x, chunkp.y + y, row_args.pos.y};
 				generate_args.diff = generate_args.pos.y - height;
@@ -104,10 +112,21 @@ void terrain_gen_chunk(TerrainChunk *chunk, List *changed_chunks)
 				}
 				pthread_mutex_unlock(&chunk->mtx);
 			}
+
+			if (biome_def->after_row)
+				biome_def->after_row(&row_args);
 		}
 	}
 
-	for (Biome i = 0; i < COUNT_BIOME; i++)
-		if (chunk_data[i])
-			free(chunk_data[i]);
+	for (Biome i = 0; i < COUNT_BIOME; i++) {
+		if (has_biome[i]) {
+			chunk_args.chunk_data = chunk_data[i];
+
+			if (biomes[i].after_chunk)
+				biomes[i].after_chunk(&chunk_args);
+
+			if (chunk_args.chunk_data)
+				free(chunk_args.chunk_data);
+		}
+	}
 }
