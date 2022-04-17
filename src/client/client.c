@@ -130,9 +130,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	char *address = dragonnet_addr_str(client->raddr);
-	printf("[access] connected to %s\n", address);
-	free(address);
+	printf("[access] connected to %s\n", client->address);
 
 	client->on_disconnect = &on_disconnect;
 	client->on_recv                                                  = (void *) &on_recv;

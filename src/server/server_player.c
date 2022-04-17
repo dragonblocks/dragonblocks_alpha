@@ -163,7 +163,7 @@ void server_player_add(DragonnetPeer *peer)
 
 	player->auth = false;
 	// use address as name until auth is done
-	player->name = dragonnet_addr_str(peer->raddr);
+	player->name = strdup(peer->address);
 	pthread_rwlock_init(&player->lock_auth, NULL);
 
 	player->pos = (v3f64) {0.0f, 0.0f, 0.0f};

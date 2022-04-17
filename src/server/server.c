@@ -60,9 +60,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	char *address = dragonnet_addr_str(server->laddr);
-	printf("[info] listening on %s\n", address);
-	free(address);
+	printf("[info] listening on %s\n", server->address);
 
 	server->on_connect = &server_player_add;
 	server->on_disconnect = &server_player_remove;
