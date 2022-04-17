@@ -3,6 +3,7 @@
 #include FT_FREETYPE_H
 #include "client/client.h"
 #include "client/font.h"
+#include "client/gl_debug.h"
 #include "client/texture.h"
 
 #define NUM_CHARS 128
@@ -43,7 +44,7 @@ bool font_init()
 		return false;
 	}
 
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1); GL_DEBUG
 	FT_Set_Pixel_Sizes(font_face, 0, 16);
 
 	for (unsigned char c = 0; c < NUM_CHARS; c++) {
@@ -138,7 +139,7 @@ void font_delete(Font *font)
 void font_render(Font *font)
 {
 	for (size_t i = 0; i < font->count; i++) {
-		glBindTextureUnit(0, font->textures[i]);
+		glBindTextureUnit(0, font->textures[i]); GL_DEBUG
 		mesh_render(&font->meshes[i]);
 	}
 }

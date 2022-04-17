@@ -144,7 +144,6 @@ int main(int argc, char **argv)
 	client->on_recv_type[DRAGONNET_TYPE_ToClientEntityAdd          ] = (void *) &client_entity_add;
 	client->on_recv_type[DRAGONNET_TYPE_ToClientEntityRemove       ] = (void *) &client_entity_remove;
 	client->on_recv_type[DRAGONNET_TYPE_ToClientEntityUpdatePosRot ] = (void *) &client_entity_update_pos_rot;
-	client->on_recv_type[DRAGONNET_TYPE_ToClientEntityUpdateBoxEye ] = (void *) &client_entity_update_box_eye;
 	client->on_recv_type[DRAGONNET_TYPE_ToClientEntityUpdateNametag] = (void *) &client_entity_update_nametag;
 
 	flag_ini(&finish);

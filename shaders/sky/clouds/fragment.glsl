@@ -1,4 +1,4 @@
-in vec3 fragmentTextureCoords;
+in vec3 fragmentTextureCoordinates;
 
 out vec4 outColor;
 
@@ -17,13 +17,13 @@ float strengthen(float value, float exponent, float max)
 
 void main()
 {
-	float height = normalize(fragmentTextureCoords).y;
+	float height = normalize(fragmentTextureCoordinates).y;
 
 	vec4 topColor = texture(texture0, vec3(0.0, 1.0, 0.0));
 	vec4 bottomColor = texture(texture0, vec3(1.0, 0.11, 0.5));
 	vec4 expectedColor = mix(bottomColor, topColor, height);
 
-	vec4 dayColor = texture(texture0, fragmentTextureCoords);
+	vec4 dayColor = texture(texture0, fragmentTextureCoordinates);
 
 	float cloudFactor = reverseMix(length(dayColor.rg - expectedColor.rg), 0.15, length(vec2(1.0)));
 

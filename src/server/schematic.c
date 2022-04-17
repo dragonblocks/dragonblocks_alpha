@@ -90,5 +90,5 @@ static void delete_schematic_node(SchematicNode *node)
 
 void schematic_delete(List *schematic)
 {
-	list_clr(schematic, (void *) &delete_schematic_node, NULL, NULL);
+	list_clr(schematic, &delete_schematic_node, NULL, NULL);
 }

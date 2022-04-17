@@ -3,12 +3,14 @@
 #include <GL/gl.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <pthread.h>
 #include "client/client_config.h"
 #include "client/client_player.h"
 #include "client/client_terrain.h"
 #include "client/debug_menu.h"
 #include "client/game.h"
+#include "client/gl_debug.h"
 #include "client/gui.h"
 #include "client/window.h"
 #include "day.h"
@@ -73,27 +75,27 @@ static char *get_entry_text(DebugMenuEntry entry)
 
 	char *str;
 	switch (entry) {
-		case ENTRY_VERSION:       asprintf(&str, "Dragonblocks Alpha %s", VERSION                                    ); break;
-		case ENTRY_FPS:           asprintf(&str, "%d FPS", game_fps                                                  ); break;
-		case ENTRY_POS:           asprintf(&str, "(%.1f %.1f %.1f)", pos.x, pos.y, pos.z                             ); break;
-		case ENTRY_YAW:           asprintf(&str, "yaw = %.1f", rot.x / M_PI * 180.0                                  ); break;
-		case ENTRY_PITCH:         asprintf(&str, "pitch = %.1f", rot.y / M_PI * 180.0                                ); break;
-		case ENTRY_TIME:          asprintf(&str, "%02d:%02d", hours, minutes                                         ); break;
-		case ENTRY_DAYLIGHT:      asprintf(&str, "daylight = %.2f", get_daylight()                                   ); break;
-		case ENTRY_SUN_ANGLE:     asprintf(&str, "sun angle = %.1f", fmod(get_sun_angle() / M_PI * 180.0, 360.0)     ); break;
-		case ENTRY_HUMIDITY:      asprintf(&str, "humidity = %.2f", get_humidity((v3s32) {pos.x, pos.y, pos.z})      ); break;
-		case ENTRY_TEMPERATURE:   asprintf(&str, "temperature = %.2f", get_temperature((v3s32) {pos.x, pos.y, pos.z})); break;
-		case ENTRY_SEED:          asprintf(&str, "seed = %d", seed                                                   ); break;
-		case ENTRY_FLIGHT:        asprintf(&str, "flight: %s", flight ? "enabled" : "disabled"                       ); break;
-		case ENTRY_COLLISION:     asprintf(&str, "collision: %s", collision ? "enabled" : "disabled"                 ); break;
-		case ENTRY_TIMELAPSE:     asprintf(&str, "timelapse: %s", timelapse ? "enabled" : "disabled"                 ); break;
-		case ENTRY_FULLSCREEN:    asprintf(&str, "fullscreen: %s", window.fullscreen ? "enabled" : "disabled"        ); break;
-		case ENTRY_OPENGL:        asprintf(&str, "OpenGL %s", glGetString(GL_VERSION)                                ); break;
-		case ENTRY_GPU:           asprintf(&str, "%s", glGetString(GL_RENDERER)                                      ); break;
-		case ENTRY_ANTIALIASING:  asprintf(&str, "antialiasing: %u samples", client_config.antialiasing              ); break;
-		case ENTRY_MIPMAP:        asprintf(&str, "mipmap: %s", client_config.mipmap ? "enabled" : "disabled"         ); break;
-		case ENTRY_VIEW_DISTANCE: asprintf(&str, "view distance: %.1lf", client_config.view_distance                 ); break;
-		case ENTRY_LOAD_DISTANCE: asprintf(&str, "load distance: %u", client_terrain_get_load_distance()             ); break;
+		case ENTRY_VERSION:       asprintf(&str, "Dragonblocks Alpha %s", VERSION                                    );          break;
+		case ENTRY_FPS:           asprintf(&str, "%d FPS", game_fps                                                  );          break;
+		case ENTRY_POS:           asprintf(&str, "(%.1f %.1f %.1f)", pos.x, pos.y, pos.z                             );          break;
+		case ENTRY_YAW:           asprintf(&str, "yaw = %.1f", 360.0 - rot.y / M_PI * 180.0                          );          break;
+		case ENTRY_PITCH:         asprintf(&str, "pitch = %.1f", -rot.x / M_PI * 180.0                               );          break;
+		case ENTRY_TIME:          asprintf(&str, "%02d:%02d", hours, minutes                                         );          break;
+		case ENTRY_DAYLIGHT:      asprintf(&str, "daylight = %.2f", get_daylight()                                   );          break;
+		case ENTRY_SUN_ANGLE:     asprintf(&str, "sun angle = %.1f", fmod(get_sun_angle() / M_PI * 180.0, 360.0)     );          break;
+		case ENTRY_HUMIDITY:      asprintf(&str, "humidity = %.2f", get_humidity((v3s32) {pos.x, pos.y, pos.z})      );          break;
+		case ENTRY_TEMPERATURE:   asprintf(&str, "temperature = %.2f", get_temperature((v3s32) {pos.x, pos.y, pos.z}));          break;
+		case ENTRY_SEED:          asprintf(&str, "seed = %d", seed                                                   );          break;
+		case ENTRY_FLIGHT:        asprintf(&str, "flight: %s", flight ? "enabled" : "disabled"                       );          break;
+		case ENTRY_COLLISION:     asprintf(&str, "collision: %s", collision ? "enabled" : "disabled"                 );          break;
+		case ENTRY_TIMELAPSE:     asprintf(&str, "timelapse: %s", timelapse ? "enabled" : "disabled"                 );          break;
+		case ENTRY_FULLSCREEN:    asprintf(&str, "fullscreen: %s", window.fullscreen ? "enabled" : "disabled"        );          break;
+		case ENTRY_OPENGL:        asprintf(&str, "OpenGL %s", glGetString(GL_VERSION)                                ); GL_DEBUG break;
+		case ENTRY_GPU:           asprintf(&str, "%s", glGetString(GL_RENDERER)                                      ); GL_DEBUG break;
+		case ENTRY_ANTIALIASING:  asprintf(&str, "antialiasing: %u samples", client_config.antialiasing              );          break;
+		case ENTRY_MIPMAP:        asprintf(&str, "mipmap: %s", client_config.mipmap ? "enabled" : "disabled"         );          break;
+		case ENTRY_VIEW_DISTANCE: asprintf(&str, "view distance: %.1lf", client_config.view_distance                 );          break;
+		case ENTRY_LOAD_DISTANCE: asprintf(&str, "load distance: %u", client_terrain_get_load_distance()             );          break;
 		default: break;
 	}
 	return str;
@@ -113,7 +115,7 @@ void debug_menu_init()
 			.scale = {1.0f, 1.0f},
 			.scale_type = SCALE_TEXT,
 			.affect_parent_scale = false,
-			.text = strdup(""),
+			.text = "",
 			.image = NULL,
 			.text_color = (v4f32) {1.0f, 1.0f, 1.0f, 1.0f},
 			.bg_color = (v4f32) {0.0f, 0.0f, 0.0f, 0.0f},
@@ -153,8 +155,11 @@ void debug_menu_update()
 	pthread_mutex_unlock(&changed_elements_mtx);
 
 	for (DebugMenuEntry i = 0; i < COUNT_ENTRY; i++)
-		if (changed_elements_cpy[i])
-			gui_text(gui_elements[i], get_entry_text(i));
+		if (changed_elements_cpy[i]) {
+			char *str = get_entry_text(i);
+			gui_text(gui_elements[i], str);
+			free(str);
+		}
 }
 
 void debug_menu_changed(DebugMenuEntry entry)

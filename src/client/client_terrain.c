@@ -39,7 +39,7 @@ static TerrainChunk *set_dequeued(TerrainChunk *chunk)
 // mesh generator step
 static void meshgen_step()
 {
-	TerrainChunk *chunk = queue_deq(&meshgen_tasks, (void *) &set_dequeued);
+	TerrainChunk *chunk = queue_deq(&meshgen_tasks, &set_dequeued);
 
 	if (chunk)
 		terrain_gfx_make_chunk_model(chunk);

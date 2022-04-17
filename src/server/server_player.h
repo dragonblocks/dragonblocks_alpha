@@ -34,6 +34,7 @@ ServerPlayer *server_player_grab_named(char *name);
 
 bool server_player_auth(ServerPlayer *player, char *name);
 void server_player_disconnect(ServerPlayer *player);
+void server_player_move(ServerPlayer *player, v3f64 pos, v3f32 rot);
 void server_player_iterate(void *func, void *arg);
 
 #endif // _SERVER_PLAYER_H_

@@ -19,6 +19,7 @@ define hook-stop
         quit
     end
 end
+break gl_error
 "
 
 echo "$COMMON

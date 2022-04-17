@@ -14,6 +14,9 @@ extern struct ClientPlayer {
 void client_player_init();                           // called on startup
 void client_player_deinit();                         // called on shutdown
 
+void client_player_gfx_init();
+void client_player_gfx_deinit();
+
 ClientEntity *client_player_entity();                // grab and return client entity
 
 void client_player_jump();                           // jump if possible

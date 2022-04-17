@@ -14,6 +14,45 @@
 static Map players;
 static Map players_named;
 
+static void send_entity_add(ServerPlayer *player, ServerPlayer *entity)
+{
+	dragonnet_peer_send_ToClientEntityAdd(player->peer, &(ToClientEntityAdd) {
+		.type = player == entity ? ENTITY_LOCALPLAYER : ENTITY_PLAYER,
+		.data = {
+			.id = entity->id,
+			.pos = entity->pos,
+			.rot = entity->rot,
+			.nametag = entity->name,
+		},
+	});
+}
+
+static void send_entity_remove(ServerPlayer *player, ServerPlayer *entity)
+{
+	dragonnet_peer_send_ToClientEntityRemove(player->peer, &(ToClientEntityRemove) {
+		.id = entity->id,
+	});
+}
+
+static void send_entity_update_pos_rot(ServerPlayer *player, ServerPlayer *entity)
+{
+	if (player != entity)
+		dragonnet_peer_send_ToClientEntityUpdatePosRot(player->peer, &(ToClientEntityUpdatePosRot) {
+			.id = entity->id,
+			.pos = entity->pos,
+			.rot = entity->rot,
+		});
+}
+
+static void send_entity_add_existing(ServerPlayer *entity, ServerPlayer *player)
+{
+	if (player != entity) {
+		pthread_rwlock_rdlock(&entity->lock_pos);
+		send_entity_add(player, entity);
+		pthread_rwlock_unlock(&entity->lock_pos);
+	}
+}
+
 // main thread
 // called on server shutdown
 static void player_drop(ServerPlayer *player)
@@ -71,17 +110,9 @@ static void player_spawn(ServerPlayer *player)
 		.gravity = server_config.movement.gravity,
 		.jump = server_config.movement.jump,
 	});
-	dragonnet_peer_send_ToClientEntityAdd(player->peer, &(ToClientEntityAdd) {
-		.type = ENTITY_LOCALPLAYER,
-		.data = {
-			.id = player->id,
-			.pos = player->pos,
-			.rot = player->rot,
-			.box = {{-0.3f, 0.0f, -0.3f}, {0.3f, 1.75f, 0.3f}},
-			.eye = {0.0f, 1.75f, 0.0f},
-			.nametag = NULL,
-		},
-	});
+
+	server_player_iterate(&send_entity_add, player);
+	server_player_iterate(&send_entity_add_existing, player);
 }
 
 // any thread
@@ -169,8 +200,12 @@ void server_player_remove(DragonnetPeer *peer)
 	// (we don't want disconnect messages for every player on server shutdown)
 	if (map_del(&players, &player->id, &cmp_player_id, &refcount_drp, NULL, NULL))
 		printf("[access] disconnected %s\n", player->name);
-	if (player->auth)
-		map_del(&players_named, player->name, &cmp_player_name, &refcount_drp, NULL, NULL);
+
+	if (player->auth && map_del(&players_named, player->name, &cmp_player_name, &refcount_drp, NULL, NULL)) {
+		pthread_rwlock_rdlock(&player->lock_pos);
+		server_player_iterate(&send_entity_remove, player);
+		pthread_rwlock_unlock(&player->lock_pos);
+	}
 
 	// peer no longer has a reference to player
 	refcount_drp(&player->rc);
@@ -222,6 +257,16 @@ bool server_player_auth(ServerPlayer *player, char *name)
 	pthread_rwlock_unlock(&player->lock_pos);
 	pthread_rwlock_unlock(&player->lock_auth);
 	return success;
+}
+
+// recv thread
+void server_player_move(ServerPlayer *player, v3f64 pos, v3f32 rot)
+{
+	pthread_rwlock_wrlock(&player->lock_pos);
+	// this is recv thread, no lock_auth needed
+	database_update_player_pos_rot(player->name, player->pos = pos, player->rot = rot);
+	server_player_iterate(&send_entity_update_pos_rot, player);
+	pthread_rwlock_unlock(&player->lock_pos);
 }
 
 // any thread

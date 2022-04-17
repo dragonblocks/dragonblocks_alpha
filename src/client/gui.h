@@ -48,7 +48,7 @@ void gui_deinit();
 void gui_update_projection();
 void gui_render();
 GUIElement *gui_add(GUIElement *parent, GUIElementDefinition def);
-void gui_text(GUIElement *element, char *text);
+void gui_text(GUIElement *element, const char *text);
 void gui_transform(GUIElement *element);
 
 #endif // _GUI_H_

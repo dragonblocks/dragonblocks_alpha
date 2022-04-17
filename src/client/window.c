@@ -4,6 +4,7 @@
 #include "client/client_config.h"
 #include "client/debug_menu.h"
 #include "client/game.h"
+#include "client/gl_debug.h"
 #include "client/gui.h"
 #include "client/input.h"
 #include "client/window.h"
@@ -22,7 +23,7 @@ static void update_projection()
 
 static void framebuffer_size_callback(__attribute__((unused)) GLFWwindow *handle, int width, int height)
 {
-	glViewport(0, 0, width, height);
+	glViewport(0, 0, width, height); GL_DEBUG
 	window.width = width;
 	window.height = height;
 

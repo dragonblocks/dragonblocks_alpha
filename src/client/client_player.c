@@ -10,27 +10,41 @@
 #include "environment.h"
 #include "physics.h"
 
+typedef struct {
+	ModelNode *nametag;
+	ModelNode *neck;
+	ModelNode *eyes;
+	ModelNode *shoulder_left;
+	ModelNode *shoulder_right;
+	ModelNode *hip_left;
+	ModelNode *hip_right;
+} PlayerModelBones;
+
 struct ClientPlayer client_player;
 
 static ClientEntity *player_entity;
 static pthread_rwlock_t lock_player_entity;
 
+static Model *player_model;
+
 // updat epos/rot box/eye functions
 
-static void update_eye_pos_camera()
+static void update_camera()
 {
-	v3f64 pos = player_entity->data.pos;
-	v3f32 eye = player_entity->data.eye;
+	vec4 dst, src = {0.0f, 0.0f, 0.0f, 1.0f};
 
-	camera_set_position((v3f32) {pos.x + eye.x, pos.y + eye.y, pos.z + eye.z});
+	PlayerModelBones *bones = player_entity->extra;
+
+	if (bones->eyes)
+		mat4x4_mul_vec4(dst, bones->eyes->abs, src);
+	else
+		vec4_dup(dst, src);
+
+	camera_set_position((v3f32) {dst[0], dst[1], dst[2]});
 }
 
 static void update_pos()
 {
-	pthread_rwlock_rdlock(&player_entity->lock_box_eye);
-	update_eye_pos_camera();
-	pthread_rwlock_unlock(&player_entity->lock_box_eye);
-
 	debug_menu_changed(ENTRY_POS);
 	debug_menu_changed(ENTRY_HUMIDITY);
 	debug_menu_changed(ENTRY_TEMPERATURE);
@@ -38,7 +52,7 @@ static void update_pos()
 
 static void update_rot()
 {
-	camera_set_angle(player_entity->data.rot.x, player_entity->data.rot.y);
+	camera_set_angle(M_PI / 2 - player_entity->data.rot.y, -player_entity->data.rot.x);
 	debug_menu_changed(ENTRY_YAW);
 	debug_menu_changed(ENTRY_PITCH);
 }
@@ -46,66 +60,111 @@ static void update_rot()
 static void update_transform()
 {
 	client_entity_transform(player_entity);
+	update_camera();
 }
 
 static void send_pos_rot()
 {
+	update_transform();
+
 	dragonnet_peer_send_ToServerPosRot(client, &(ToServerPosRot) {
 		.pos = player_entity->data.pos,
 		.rot = player_entity->data.rot,
 	});
-
-	update_transform();
 }
 
 static void recv_pos_rot()
 {
+	update_transform();
+
 	update_pos();
 	update_rot();
-
-	update_transform();
 }
 
 // entity callbacks
 
 static void on_add(ClientEntity *entity)
 {
+	entity->model = model_clone(player_model);
+	entity->model->extra = refcount_grb(&entity->rc);
+
+	PlayerModelBones *bones = entity->extra = malloc(sizeof *bones);
+	*bones = (PlayerModelBones) {NULL};
+	model_get_bones(entity->model, (ModelBoneMapping[]) {
+		{"player.nametag",                    &bones->nametag       },
+		{"player.neck",                       &bones->neck          },
+		{"player.neck.head.eyes",             &bones->eyes          },
+		{"player.body.upper.shoulders.left",  &bones->shoulder_left },
+		{"player.body.upper.shoulders.right", &bones->shoulder_right},
+		{"player.body.lower.hips.left",       &bones->hip_left      },
+		{"player.body.lower.hips.right",      &bones->hip_right     },
+	}, 7);
+
+	entity->nametag_offset = bones->nametag ? &bones->nametag->abs : NULL;
+	entity->box_collision = (aabb3f32) {{-0.3f, 0.0f, -0.3f}, {0.3f, 1.8f, 0.3f}};
+
+	model_scene_add(entity->model);
+	client_entity_transform(entity);
+}
+
+static void on_remove(ClientEntity *entity)
+{
+	entity->model->flags.delete = 1;
+	entity->model = NULL;
+}
+
+static void on_free(ClientEntity *entity)
+{
+	free(entity->extra);
+}
+
+static void on_transform(ClientEntity *entity)
+{
+	PlayerModelBones *bones = entity->extra;
+
+	entity->model->root->rot.x = entity->model->root->rot.z = 0.0f;
+
+	if (bones->neck) {
+		bones->neck->rot.x = entity->data.rot.x;
+		model_node_transform(bones->neck);
+	}
+}
+
+static void local_on_add(ClientEntity *entity)
+{
 	pthread_rwlock_wrlock(&lock_player_entity);
 
 	if (player_entity) {
 		fprintf(stderr, "[error] attempt to re-add localplayer entity\n");
 		exit(EXIT_FAILURE);
-	} else {
-		player_entity = refcount_grb(&entity->rc);
-		recv_pos_rot();
-
-		entity->type->update_nametag(entity);
 	}
+
+	on_add(entity);
+
+	player_entity = refcount_grb(&entity->rc);
+	recv_pos_rot();
+
+	entity->type->update_nametag(entity);
 
 	pthread_rwlock_unlock(&lock_player_entity);
 }
 
-static void on_remove(ClientEntity *entity)
+static void local_on_remove(ClientEntity *entity)
 {
 	pthread_rwlock_wrlock(&lock_player_entity);
 	refcount_drp(&entity->rc);
 	player_entity = NULL;
 	pthread_rwlock_unlock(&lock_player_entity);
+
+	on_remove(entity);
 }
 
-static void on_update_pos_rot(__attribute__((unused)) ClientEntity *entity)
+static void local_on_update_pos_rot(__attribute__((unused)) ClientEntity *entity)
 {
 	recv_pos_rot();
 }
 
-static void on_update_box_eye(__attribute__((unused)) ClientEntity *entity)
-{
-	pthread_rwlock_rdlock(&lock_player_entity);
-	update_eye_pos_camera();
-	pthread_rwlock_unlock(&lock_player_entity);
-}
-
-static void on_update_nametag(ClientEntity *entity)
+static void local_on_update_nametag(ClientEntity *entity)
 {
 	if (entity->data.nametag) {
 		free(entity->data.nametag);
@@ -113,9 +172,16 @@ static void on_update_nametag(ClientEntity *entity)
 	}
 }
 
-static void on_transform(ClientEntity *entity)
+static void __attribute__((unused)) on_model_step(Model *model, __attribute__((unused)) f64 dtime)
 {
-	entity->model->root->rot.y = entity->model->root->rot.z = 0.0f;
+	PlayerModelBones *bones = ((ClientEntity *) model->extra)->extra;
+	(void) bones;
+}
+
+static void on_model_delete(Model *model)
+{
+	if (model->extra)
+		refcount_drp(&((ClientEntity *) model->extra)->rc);
 }
 
 // called on startup
@@ -129,23 +195,21 @@ void client_player_init()
 		.gravity = 0.0f,
 	};
 
-	client_entity_types[ENTITY_LOCALPLAYER] = (ClientEntityType) {
+	client_entity_types[ENTITY_PLAYER] = (ClientEntityType) {
 		.add = &on_add,
 		.remove = &on_remove,
-		.free = NULL,
-		.update_pos_rot = &on_update_pos_rot,
-		.update_box_eye = &on_update_box_eye,
-		.update_nametag = &on_update_nametag,
+		.free = &on_free,
+		.update_pos_rot = NULL,
+		.update_nametag = NULL,
 		.transform = &on_transform,
 	};
 
-	client_entity_types[ENTITY_PLAYER] = (ClientEntityType) {
-		.add = NULL,
-		.remove = NULL,
-		.free = NULL,
-		.update_pos_rot = NULL,
-		.update_box_eye = NULL,
-		.update_nametag = NULL,
+	client_entity_types[ENTITY_LOCALPLAYER] = (ClientEntityType) {
+		.add = &local_on_add,
+		.remove = &local_on_remove,
+		.free = &on_free,
+		.update_pos_rot = &local_on_update_pos_rot,
+		.update_nametag = &local_on_update_nametag,
 		.transform = &on_transform,
 	};
 
@@ -160,6 +224,21 @@ void client_player_deinit()
 {
 	pthread_rwlock_destroy(&client_player.lock_movement);
 	pthread_rwlock_destroy(&lock_player_entity);
+}
+
+void client_player_gfx_init()
+{
+	player_model = model_load(
+		RESSOURCE_PATH "models/player.txt", RESSOURCE_PATH "textures/models/player",
+		&client_entity_cube, &client_entity_shader);
+
+	player_model->callbacks.step = &on_model_step;
+	player_model->callbacks.delete = &on_model_delete;
+}
+
+void client_player_gfx_deinit()
+{
+	model_delete(player_model);
 }
 
 ClientEntity *client_player_entity()
@@ -198,33 +277,6 @@ void client_player_update_rot(ClientEntity *entity)
 	pthread_rwlock_unlock(&lock_player_entity);
 }
 
-/*
-// create mesh object and info hud
-void client_player_add_to_scene()
-{
-	client_player.obj = object_create();
-	client_player.obj->scale = (v3f32) {0.6, 1.75, 0.6};
-	client_player.obj->visible = false;
-
-	object_set_texture(client_player.obj, texture_load(RESSOURCE_PATH "textures/player.png", true));
-
-	for (int f = 0; f < 6; f++) {
-		for (int v = 0; v < 6; v++) {
-			Vertex3D vertex = cube_vertices[f][v];
-			vertex.position.y += 0.5;
-			object_add_vertex(client_player.obj, &vertex);
-		}
-	}
-
-	pthread_rwlock_rdlock(&client_player.rwlock);
-	update_pos();
-	pthread_rwlock_unlock(&client_player.rwlock);
-
-	debug_menu_update_yaw();
-	debug_menu_update_pitch();
-}
-*/
-
 // jump if possible
 void client_player_jump()
 {
@@ -233,18 +285,18 @@ void client_player_jump()
 		return;
 
 	pthread_rwlock_rdlock(&entity->lock_pos_rot);
-	pthread_rwlock_rdlock(&entity->lock_box_eye);
+	pthread_rwlock_rdlock(&entity->lock_box_off);
 
 	if (physics_ground(
 		client_terrain,
 		client_player.movement.collision,
-		entity->data.box,
+		entity->box_collision,
 		&entity->data.pos,
 		&client_player.velocity
 	))
 		client_player.velocity.y += client_player.movement.jump;
 
-	pthread_rwlock_unlock(&entity->lock_box_eye);
+	pthread_rwlock_unlock(&entity->lock_box_off);
 	pthread_rwlock_unlock(&entity->lock_pos_rot);
 
 	refcount_drp(&entity->rc);
@@ -259,12 +311,12 @@ void client_player_tick(f64 dtime)
 
 	pthread_rwlock_rdlock(&client_player.lock_movement);
 	pthread_rwlock_wrlock(&entity->lock_pos_rot);
-	pthread_rwlock_rdlock(&entity->lock_box_eye);
+	pthread_rwlock_rdlock(&entity->lock_box_off);
 
 	if (physics_step(
 		client_terrain,
 		client_player.movement.collision,
-		entity->data.box,
+		entity->box_collision,
 		&entity->data.pos,
 		&client_player.velocity,
 		&(v3f64) {
@@ -276,7 +328,7 @@ void client_player_tick(f64 dtime)
 	))
 		client_player_update_pos(entity);
 
-	pthread_rwlock_unlock(&entity->lock_box_eye);
+	pthread_rwlock_unlock(&entity->lock_box_off);
 	pthread_rwlock_unlock(&entity->lock_pos_rot);
 	pthread_rwlock_unlock(&client_player.lock_movement);
 

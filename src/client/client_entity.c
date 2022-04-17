@@ -1,12 +1,46 @@
+#include <asprintf/asprintf.h>
 #include <dragonstd/map.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "client/cube.h"
+#include "client/client_config.h"
 #include "client/client_entity.h"
 #include "client/client_player.h"
+#include "client/frustum.h"
+#include "client/gl_debug.h"
+#include "client/light.h"
+#include "client/shader.h"
+#include "client/window.h"
 
 ClientEntityType client_entity_types[COUNT_ENTITY];
 
+ModelShader client_entity_shader;
+typedef struct {
+	v3f32 position;
+	v3f32 normal;
+} __attribute__((packed)) EntityVertex;
+Mesh client_entity_cube = {
+	.layout = &(VertexLayout) {
+		.attributes = (VertexAttribute[]) {
+			{GL_FLOAT, 3, sizeof(v3f32)}, // position
+			{GL_FLOAT, 3, sizeof(v3f32)}, // normal
+		},
+		.count = 2,
+		.size = sizeof(EntityVertex),
+	},
+	.vao = 0,
+	.vbo = 0,
+	.data = NULL,
+	.count = 36,
+	.free_data = false,
+};
+
+static GLuint shader_prog;
+static GLint loc_VP;
+static LightShader light_shader;
 static Map entities;
+static List nametagged;
+static pthread_mutex_t mtx_nametagged;
 
 // any thread
 // called when adding, getting or removing an entity from the map
@@ -21,6 +55,14 @@ static void entity_drop(ClientEntity *entity)
 {
 	if (entity->type->remove)
 		entity->type->remove(entity);
+
+	if (entity->nametag) {
+		pthread_mutex_lock(&mtx_nametagged);
+		list_del(&nametagged, &entity->rc, &cmp_ref, &refcount_drp, NULL, NULL);
+		pthread_mutex_unlock(&mtx_nametagged);
+
+		entity->nametag->visible = false;
+	}
 
 	refcount_drp(&entity->rc);
 }
@@ -38,10 +80,69 @@ static void entity_delete(ClientEntity *entity)
 		free(entity->data.nametag);
 
 	pthread_rwlock_init(&entity->lock_pos_rot, NULL);
-	pthread_rwlock_init(&entity->lock_box_eye, NULL);
 	pthread_rwlock_init(&entity->lock_nametag, NULL);
+	pthread_rwlock_init(&entity->lock_box_off, NULL);
 
 	free(entity);
+}
+
+static void update_nametag(ClientEntity *entity)
+{
+	if (entity->nametag) {
+		gui_text(entity->nametag, entity->data.nametag);
+
+		if (!entity->data.nametag)
+			entity->nametag->visible = false;
+	} else if (entity->data.nametag) {
+		entity->nametag = gui_add(NULL, (GUIElementDefinition) {
+			.pos = {-1.0f, -1.0f},
+			.z_index = 0.1f,
+			.offset = {0, 0},
+			.margin = {4, 4},
+			.align = {0.5f, 0.5f},
+			.scale = {1.0f, 1.0f},
+			.scale_type = SCALE_TEXT,
+			.affect_parent_scale = false,
+			.text = entity->data.nametag,
+			.image = NULL,
+			.text_color = (v4f32) {1.0f, 1.0f, 1.0f, 1.0f},
+			.bg_color = (v4f32) {0.0f, 0.0f, 0.0f, 0.5f},
+		});
+
+		pthread_mutex_lock(&mtx_nametagged);
+		list_apd(&nametagged, refcount_inc(&entity->rc));
+		pthread_mutex_unlock(&mtx_nametagged);
+	}
+}
+
+static void update_nametag_pos(ClientEntity *entity)
+{
+	if (!entity->data.nametag)
+		return;
+
+	pthread_rwlock_rdlock(&entity->lock_pos_rot);
+	pthread_rwlock_rdlock(&entity->lock_box_off);
+
+	mat4x4 mvp;
+	if (entity->nametag_offset)
+		mat4x4_mul(mvp, frustum, *entity->nametag_offset);
+	else
+		mat4x4_dup(mvp, frustum);
+
+	vec4 dst, src = {0.0f, 0.0f, 0.0f, 1.0f};
+	mat4x4_mul_vec4(dst, mvp, src);
+
+	dst[0] /= dst[3];
+	dst[1] /= dst[3];
+	dst[2] /= dst[3];
+
+	if ((entity->nametag->visible = dst[2] >= -1.0f && dst[2] <= 1.0f)) {
+		entity->nametag->def.pos = (v2f32) {dst[0] * 0.5f + 0.5f, 1.0f - (dst[1] * 0.5f + 0.5f)};
+		gui_transform(entity->nametag);
+	}
+
+	pthread_rwlock_unlock(&entity->lock_box_off);
+	pthread_rwlock_unlock(&entity->lock_pos_rot);
 }
 
 // main thread
@@ -49,6 +150,8 @@ static void entity_delete(ClientEntity *entity)
 void client_entity_init()
 {
 	map_ini(&entities);
+	list_ini(&nametagged);
+	pthread_mutex_init(&mtx_nametagged, NULL);
 }
 
 // main thead
@@ -57,6 +160,58 @@ void client_entity_deinit()
 {
 	// forget all entities
 	map_cnl(&entities, &refcount_drp, NULL, NULL, 0);
+	list_clr(&nametagged, &refcount_drp, NULL, NULL);
+	pthread_mutex_destroy(&mtx_nametagged);
+}
+
+bool client_entity_gfx_init()
+{
+	char *shader_defs;
+	asprintf(&shader_defs, "#define VIEW_DISTANCE %lf\n", client_config.view_distance);
+
+	if (!shader_program_create(RESSOURCE_PATH "shaders/3d/entity", &shader_prog, shader_defs)) {
+		fprintf(stderr, "[error] failed to create entity shader program\n");
+		return false;
+	}
+
+	free(shader_defs);
+
+	loc_VP = glGetUniformLocation(shader_prog, "VP"); GL_DEBUG
+
+	EntityVertex vertices[6][6];
+	for (int f = 0; f < 6; f++) {
+		for (int v = 0; v < 6; v++) {
+			vertices[f][v].position = cube_vertices[f][v].position;
+			vertices[f][v].normal = cube_vertices[f][v].normal;
+		}
+	}
+
+	client_entity_cube.data = vertices;
+	mesh_upload(&client_entity_cube);
+
+	client_entity_shader.prog = shader_prog;
+	client_entity_shader.loc_transform = glGetUniformLocation(shader_prog, "model"); GL_DEBUG
+
+	light_shader.prog = shader_prog;
+	light_shader_locate(&light_shader);
+
+	return true;
+}
+
+void client_entity_gfx_deinit()
+{
+	glDeleteProgram(shader_prog); GL_DEBUG
+	mesh_destroy(&client_entity_cube);
+}
+
+void client_entity_gfx_update()
+{
+	glProgramUniformMatrix4fv(shader_prog, loc_VP, 1, GL_FALSE, frustum[0]); GL_DEBUG
+	light_shader_update(&light_shader);
+
+	pthread_mutex_lock(&mtx_nametagged);
+	list_itr(&nametagged, &update_nametag_pos, NULL, &refcount_obj);
+	pthread_mutex_unlock(&mtx_nametagged);
 }
 
 ClientEntity *client_entity_grab(u64 id)
@@ -69,8 +224,8 @@ void client_entity_transform(ClientEntity *entity)
 	if (!entity->model)
 		return;
 
-	entity->model->root->pos = (v3f32) {entity->data.pos.x, entity->data.pos.y, entity->data.pos.z};
-	entity->model->root->rot = (v3f32) {entity->data.rot.x, entity->data.rot.y, entity->data.rot.z};
+	entity->model->root->pos = v3f64_to_f32(entity->data.pos); // ToDo: the render pipeline needs to be updated to handle 64-bit positions
+	entity->model->root->rot = entity->data.rot;
 
 	if (entity->type->transform)
 		entity->type->transform(entity);
@@ -92,13 +247,16 @@ void client_entity_add(__attribute__((unused)) DragonnetPeer *peer, ToClientEnti
 	pkt->data.nametag = NULL;
 
 	entity->model = NULL;
-
-	pthread_rwlock_init(&entity->lock_pos_rot, NULL);
-	pthread_rwlock_init(&entity->lock_box_eye, NULL);
-	pthread_rwlock_init(&entity->lock_nametag, NULL);
+	entity->nametag = NULL;
 
 	if (entity->type->add)
 		entity->type->add(entity);
+
+	update_nametag(entity);
+
+	pthread_rwlock_init(&entity->lock_pos_rot, NULL);
+	pthread_rwlock_init(&entity->lock_nametag, NULL);
+	pthread_rwlock_init(&entity->lock_box_off, NULL);
 
 	if (!map_add(&entities, &entity->data.id, &entity->rc, &cmp_entity, &refcount_inc))
 		fprintf(stderr, "[warning] failed to add entity %lu\n", entity->data.id);
@@ -126,27 +284,9 @@ void client_entity_update_pos_rot(__attribute__((unused)) DragonnetPeer *peer, T
 	if (entity->type->update_pos_rot)
 		entity->type->update_pos_rot(entity);
 
+	client_entity_transform(entity);
+
 	pthread_rwlock_unlock(&entity->lock_pos_rot);
-
-	refcount_drp(&entity->rc);
-}
-
-void client_entity_update_box_eye(__attribute__((unused)) DragonnetPeer *peer, ToClientEntityUpdateBoxEye *pkt)
-{
-	ClientEntity *entity = client_entity_grab(pkt->id);
-
-	if (!entity)
-		return;
-
-	pthread_rwlock_wrlock(&entity->lock_box_eye);
-
-	entity->data.box = pkt->box;
-	entity->data.eye = pkt->eye;
-
-	if (entity->type->update_box_eye)
-		entity->type->update_box_eye(entity);
-
-	pthread_rwlock_unlock(&entity->lock_box_eye);
 
 	refcount_drp(&entity->rc);
 }
@@ -169,6 +309,7 @@ void client_entity_update_nametag(__attribute__((unused)) DragonnetPeer *peer, T
 	if (entity->type->update_nametag)
 		entity->type->update_nametag(entity);
 
+	update_nametag(entity);
 	pthread_rwlock_unlock(&entity->lock_nametag);
 
 	refcount_drp(&entity->rc);

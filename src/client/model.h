@@ -28,7 +28,6 @@ typedef struct ModelNode {
 	char *name;
 	bool visible;
 	v3f32 pos, rot, scale;
-	f32 angle;
 	mat4x4 abs, rel;
 	Array meshes;
 	struct ModelNode *parent;
@@ -52,6 +51,7 @@ typedef struct Model {
 	void *extra;
 	aabb3f32 box;
 	f32 distance;
+	struct Model *replace;
 	struct {
 		void (*step)(struct Model *model, f64 dtime);
 		void (*delete)(struct Model *model);

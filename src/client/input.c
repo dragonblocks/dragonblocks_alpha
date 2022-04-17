@@ -12,6 +12,11 @@
 #include "client/window.h"
 #include "day.h"
 
+#define SET_STATUS_MESSAGE(args...) { \
+	char *msg; asprintf(&msg, args); \
+	gui_text(status_message, msg); free(msg); \
+	status_message->def.text_color.w = 1.01f; }
+
 typedef struct {
 	int key;
 	bool state;
@@ -65,12 +70,6 @@ static bool key_listener(KeyListener *listener)
 	return !(listener->state = (glfwGetKey(window.handle, listener->key) == GLFW_PRESS)) && was;
 }
 
-static void set_status_message(char *message)
-{
-	gui_text(status_message, message);
-	status_message->def.text_color.w = 1.01f;
-}
-
 void input_init()
 {
 	pause_menu = gui_add(NULL, (GUIElementDefinition) {
@@ -97,7 +96,7 @@ void input_init()
 		.scale = {1.0f, 1.0f},
 		.scale_type = SCALE_TEXT,
 		.affect_parent_scale = false,
-		.text = strdup(""),
+		.text = "",
 		.image = NULL,
 		.text_color = {1.0f, 0.91f, 0.13f, 0.0f},
 		.bg_color = {0.0f, 0.0f, 0.0f, 0.0f},
@@ -137,9 +136,7 @@ void input_tick(f64 dtime)
 			pthread_rwlock_wrlock(&client_player.lock_movement);
 			client_player.movement.flight = !client_player.movement.flight;
 
-			char *msg;
-			asprintf(&msg, "Flight %s", client_player.movement.flight ? "Enabled" : "Disabled");
-			set_status_message(msg);
+			SET_STATUS_MESSAGE("Flight %s", client_player.movement.flight ? "Enabled" : "Disabled")
 			debug_menu_changed(ENTRY_FLIGHT);
 
 			pthread_rwlock_unlock(&client_player.lock_movement);
@@ -149,9 +146,7 @@ void input_tick(f64 dtime)
 			pthread_rwlock_wrlock(&client_player.lock_movement);
 			client_player.movement.collision = !client_player.movement.collision;
 
-			char *msg;
-			asprintf(&msg, "Collision %s", client_player.movement.collision ? "Enabled" : "Disabled");
-			set_status_message(msg);
+			SET_STATUS_MESSAGE("Collision %s", client_player.movement.collision ? "Enabled" : "Disabled")
 			debug_menu_changed(ENTRY_COLLISION);
 
 			pthread_rwlock_unlock(&client_player.lock_movement);
@@ -162,9 +157,7 @@ void input_tick(f64 dtime)
 			timelapse = !timelapse;
 			set_time_of_day(current_time);
 
-			char *msg;
-			asprintf(&msg, "Timelapse %s", timelapse ? "Enabled" : "Disabled");
-			set_status_message(msg);
+			SET_STATUS_MESSAGE("Timelapse %s", timelapse ? "Enabled" : "Disabled")
 			debug_menu_changed(ENTRY_TIMELAPSE);
 		}
 
@@ -173,9 +166,7 @@ void input_tick(f64 dtime)
 
 		if (key_listener(&listener_screenshot)) {
 			char *screenshot_filename = game_take_screenshot();
-			char *msg;
-			asprintf(&msg, "Screenshot saved to %s", screenshot_filename);
-			set_status_message(msg);
+			SET_STATUS_MESSAGE("Screenshot saved to %s", screenshot_filename)
 			free(screenshot_filename);
 		}
 	}
@@ -217,11 +208,11 @@ void input_cursor(double current_x, double current_y)
 
 	pthread_rwlock_wrlock(&entity->lock_pos_rot);
 
-	entity->data.rot.x += (f32) delta_x * M_PI / 180.0f / 8.0f;
-	entity->data.rot.y -= (f32) delta_y * M_PI / 180.0f / 8.0f;
+	entity->data.rot.y -= (f32) delta_x * M_PI / 180.0f / 8.0f;
+	entity->data.rot.x += (f32) delta_y * M_PI / 180.0f / 8.0f;
 
-	entity->data.rot.x = fmod(entity->data.rot.x + M_PI * 2.0f, M_PI * 2.0f);
-	entity->data.rot.y = f32_clamp(entity->data.rot.y, -M_PI / 2.0f + 0.01f, M_PI / 2.0f - 0.01f);
+	entity->data.rot.y = fmod(entity->data.rot.y + M_PI * 2.0f, M_PI * 2.0f);
+	entity->data.rot.x = f32_clamp(entity->data.rot.x, -M_PI / 2.0f + 0.01f, M_PI / 2.0f - 0.01f);
 
 	client_player_update_rot(entity);
 	pthread_rwlock_unlock(&entity->lock_pos_rot);

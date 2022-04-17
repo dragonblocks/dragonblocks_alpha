@@ -15,7 +15,7 @@ static void delete_chunk(TerrainChunk *chunk, Terrain *terrain)
 
 static void delete_sector(TerrainSector *sector, Terrain *terrain)
 {
-	tree_clr(&sector->chunks, (void *) &delete_chunk, terrain, NULL, 0);
+	tree_clr(&sector->chunks, &delete_chunk, terrain, NULL, 0);
 	pthread_rwlock_destroy(&sector->lock);
 	free(sector);
 }
@@ -32,7 +32,7 @@ Terrain *terrain_create()
 
 void terrain_delete(Terrain *terrain)
 {
-	tree_clr(&terrain->sectors, (void *) &delete_sector, terrain, NULL, 0);
+	tree_clr(&terrain->sectors, &delete_sector, terrain, NULL, 0);
 	pthread_rwlock_destroy(&terrain->lock);
 	pthread_rwlock_destroy(&terrain->cache_lock);
 	free(terrain);

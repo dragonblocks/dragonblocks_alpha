@@ -23,8 +23,6 @@ EntityData
 	u64 id
 	v3f64 pos
 	v3f32 rot
-	aabb3f32 box
-	v3f32 eye
 	String nametag
 
 ; server packets
@@ -81,11 +79,6 @@ pkt ToClientEntityUpdatePosRot
 	u64 id
 	v3f64 pos
 	v3f32 rot
-
-pkt ToClientEntityUpdateBoxEye
-	u64 id
-	aabb3f32 box
-	v3f32 eye
 
 pkt ToClientEntityUpdateNametag
 	u64 id

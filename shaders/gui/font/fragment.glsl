@@ -1,4 +1,4 @@
-in vec2 fragmentTextureCoords;
+in vec2 fragmentTextureCoordinates;
 
 out vec4 outColor;
 
@@ -7,5 +7,5 @@ uniform vec4 color;
 
 void main()
 {
-	outColor = vec4(1.0, 1.0, 1.0, texture(texture0, fragmentTextureCoords).r) * color;
+	outColor = vec4(1.0, 1.0, 1.0, texture(texture0, fragmentTextureCoordinates).r) * color;
 }

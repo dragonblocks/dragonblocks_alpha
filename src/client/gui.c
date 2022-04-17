@@ -5,6 +5,7 @@
 #include <string.h>
 #include "client/client.h"
 #include "client/cube.h"
+#include "client/gl_debug.h"
 #include "client/gui.h"
 #include "client/mesh.h"
 #include "client/shader.h"
@@ -120,23 +121,28 @@ static void render_element(GUIElement *element)
 {
 	if (element->visible) {
 		if (element->def.bg_color.w > 0.0f) {
-			glUseProgram(background_prog);
-			glUniformMatrix4fv(background_loc_model, 1, GL_FALSE, element->transform[0]);
-			glUniform4f(background_loc_color, element->def.bg_color.x, element->def.bg_color.y, element->def.bg_color.z, element->def.bg_color.w);
+			glUseProgram(background_prog); GL_DEBUG
+			glUniformMatrix4fv(background_loc_model, 1, GL_FALSE, element->transform[0]); GL_DEBUG
+			glUniform4f(background_loc_color, element->def.bg_color.x, element->def.bg_color.y, element->def.bg_color.z, element->def.bg_color.w); GL_DEBUG
 			mesh_render(&background_mesh);
 		}
 
 		if (element->def.image) {
-			glUseProgram(image_prog);
-			glUniformMatrix4fv(image_loc_model, 1, GL_FALSE, element->transform[0]);
-			glBindTextureUnit(0, element->def.image->txo);
+			glUseProgram(image_prog); GL_DEBUG
+			glUniformMatrix4fv(image_loc_model, 1, GL_FALSE, element->transform[0]); GL_DEBUG
+			glBindTextureUnit(0, element->def.image->txo); GL_DEBUG
 			mesh_render(&image_mesh);
 		}
 
-		if (element->text && element->def.text_color.w > 0.0f) {
-			glUseProgram(font_prog);
-			glUniformMatrix4fv(font_loc_model, 1, GL_FALSE, element->text_transform[0]);
-			glUniform4f(font_loc_color, element->def.text_color.x, element->def.text_color.y, element->def.text_color.z, element->def.text_color.w);
+		if (element->def.text && element->def.text_color.w > 0.0f) {
+			if (!element->text) {
+				element->text = font_create(element->def.text);
+				gui_transform(element);
+			}
+
+			glUseProgram(font_prog); GL_DEBUG
+			glUniformMatrix4fv(font_loc_model, 1, GL_FALSE, element->text_transform[0]); GL_DEBUG
+			glUniform4f(font_loc_color, element->def.text_color.x, element->def.text_color.y, element->def.text_color.z, element->def.text_color.w); GL_DEBUG
 			font_render(element->text);
 		}
 
@@ -177,6 +183,9 @@ static void scale_element(GUIElement *element)
 			break;
 
 		case SCALE_TEXT:
+			if (!element->text)
+				break;
+
 			element->scale.x *= element->text->size.x;
 			element->scale.y *= element->text->size.y;
 			break;
@@ -231,9 +240,9 @@ bool gui_init()
 		return false;
 	}
 
-	background_loc_model = glGetUniformLocation(background_prog, "model");
-	background_loc_projection = glGetUniformLocation(background_prog, "projection");
-	background_loc_color = glGetUniformLocation(background_prog, "color");
+	background_loc_model = glGetUniformLocation(background_prog, "model"); GL_DEBUG
+	background_loc_projection = glGetUniformLocation(background_prog, "projection"); GL_DEBUG
+	background_loc_color = glGetUniformLocation(background_prog, "color"); GL_DEBUG
 
 	// initialize image pipeline
 
@@ -242,8 +251,8 @@ bool gui_init()
 		return false;
 	}
 
-	image_loc_model = glGetUniformLocation(image_prog, "model");
-	image_loc_projection = glGetUniformLocation(image_prog, "projection");
+	image_loc_model = glGetUniformLocation(image_prog, "model"); GL_DEBUG
+	image_loc_projection = glGetUniformLocation(image_prog, "projection"); GL_DEBUG
 
 	// initialize font pipeline
 
@@ -252,9 +261,9 @@ bool gui_init()
 		return false;
 	}
 
-	font_loc_model = glGetUniformLocation(font_prog, "model");
-	font_loc_projection = glGetUniformLocation(font_prog, "projection");
-	font_loc_color = glGetUniformLocation(font_prog, "color");
+	font_loc_model = glGetUniformLocation(font_prog, "model"); GL_DEBUG
+	font_loc_projection = glGetUniformLocation(font_prog, "projection"); GL_DEBUG
+	font_loc_color = glGetUniformLocation(font_prog, "color"); GL_DEBUG
 
 	// initialize GUI root element
 
@@ -283,13 +292,13 @@ bool gui_init()
 
 void gui_deinit()
 {
-	glDeleteProgram(background_prog);
+	glDeleteProgram(background_prog); GL_DEBUG
 	mesh_destroy(&background_mesh);
 
-	glDeleteProgram(image_prog);
+	glDeleteProgram(image_prog); GL_DEBUG
 	mesh_destroy(&image_mesh);
 
-	glDeleteProgram(font_prog);
+	glDeleteProgram(font_prog); GL_DEBUG
 
 	delete_elements(&root_element.children);
 }
@@ -297,9 +306,9 @@ void gui_deinit()
 void gui_update_projection()
 {
 	mat4x4_ortho(projection, 0, window.width, window.height, 0, -1.0f, 1.0f);
-	glProgramUniformMatrix4fv(background_prog, background_loc_projection, 1, GL_FALSE, projection[0]);
-	glProgramUniformMatrix4fv(image_prog, image_loc_projection, 1, GL_FALSE, projection[0]);
-	glProgramUniformMatrix4fv(font_prog, font_loc_projection, 1, GL_FALSE, projection[0]);
+	glProgramUniformMatrix4fv(background_prog, background_loc_projection, 1, GL_FALSE, projection[0]); GL_DEBUG
+	glProgramUniformMatrix4fv(image_prog, image_loc_projection, 1, GL_FALSE, projection[0]); GL_DEBUG
+	glProgramUniformMatrix4fv(font_prog, font_loc_projection, 1, GL_FALSE, projection[0]); GL_DEBUG
 
 	root_element.def.scale.x = window.width;
 	root_element.def.scale.y = window.height;
@@ -309,13 +318,13 @@ void gui_update_projection()
 
 void gui_render()
 {
-	glDisable(GL_CULL_FACE);
-	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE); GL_DEBUG
+	glDisable(GL_DEPTH_TEST); GL_DEBUG
 
 	render_elements(&root_element.children);
 
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST); GL_DEBUG
+	glEnable(GL_CULL_FACE); GL_DEBUG
 }
 
 GUIElement *gui_add(GUIElement *parent, GUIElementDefinition def)
@@ -327,15 +336,12 @@ GUIElement *gui_add(GUIElement *parent, GUIElementDefinition def)
 	element->def = def;
 	element->visible = true;
 	element->parent = parent;
+	element->text = NULL;
 
-	if (element->def.text) {
+	if (element->def.text)
 		element->def.text = strdup(element->def.text);
-		element->text = font_create(element->def.text);
-	} else {
-		element->text = NULL;
-	}
 
-	array_ins(&parent->children, &element, (void *) &cmp_element);
+	array_ins(&parent->children, &element, &cmp_element);
 	array_ini(&element->children, sizeof(GUIElement), 0);
 
 	if (element->def.affect_parent_scale)
@@ -346,15 +352,16 @@ GUIElement *gui_add(GUIElement *parent, GUIElementDefinition def)
 	return element;
 }
 
-void gui_text(GUIElement *element, char *text)
+void gui_text(GUIElement *element, const char *text)
 {
 	if (element->def.text)
 		free(element->def.text);
 
-	element->def.text = text;
-	font_delete(element->text);
-	element->text = font_create(text);
-	gui_transform(element);
+	if (element->text)
+		font_delete(element->text);
+
+	element->def.text = strdup(text);
+	element->text = NULL;
 }
 
 void gui_transform(GUIElement *element)

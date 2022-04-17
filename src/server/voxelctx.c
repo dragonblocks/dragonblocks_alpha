@@ -46,7 +46,7 @@ Voxelctx *voxelctx_create(List *changed_chunks, TerrainGenStage tgs, v3s32 pos)
 
 void voxelctx_delete(Voxelctx *ctx)
 {
-	list_clr(&ctx->statestack, (void *) &free, NULL, NULL);
+	list_clr(&ctx->statestack, &free, NULL, NULL);
 	free(ctx);
 }
 

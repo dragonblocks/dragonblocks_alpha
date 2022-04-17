@@ -4,6 +4,7 @@
 #include "client/camera.h"
 #include "client/client.h"
 #include "client/cube.h"
+#include "client/gl_debug.h"
 #include "client/mesh.h"
 #include "client/shader.h"
 #include "client/sky.h"
@@ -90,10 +91,10 @@ bool sky_init()
 		return false;
 	}
 
-	glProgramUniform1iv(skybox_prog, glGetUniformLocation(skybox_prog, "textures"), 2, (GLint[]) {0, 1});
+	glProgramUniform1iv(skybox_prog, glGetUniformLocation(skybox_prog, "textures"), 2, (GLint[]) {0, 1}); GL_DEBUG
 
-	skybox_loc_VP = glGetUniformLocation(skybox_prog, "VP");
-	skybox_loc_daylight = glGetUniformLocation(skybox_prog, "daylight");
+	skybox_loc_VP = glGetUniformLocation(skybox_prog, "VP"); GL_DEBUG
+	skybox_loc_daylight = glGetUniformLocation(skybox_prog, "daylight"); GL_DEBUG
 	skybox_texture_day = texture_load_cubemap(RESSOURCE_PATH "textures/skybox/day")->txo;
 	skybox_texture_night = texture_load_cubemap(RESSOURCE_PATH "textures/skybox/night")->txo;
 	skybox_mesh.data = skybox_vertices;
@@ -106,7 +107,7 @@ bool sky_init()
 		return false;
 	}
 
-	sun_loc_MVP = glGetUniformLocation(sun_prog, "MVP");
+	sun_loc_MVP = glGetUniformLocation(sun_prog, "MVP"); GL_DEBUG
 	sun_texture = texture_load(RESSOURCE_PATH "textures/sun.png", false)->txo;
 
 	// clouds
@@ -116,8 +117,8 @@ bool sky_init()
 		return false;
 	}
 
-	clouds_loc_VP = glGetUniformLocation(clouds_prog, "VP");
-	clouds_loc_daylight = glGetUniformLocation(clouds_prog, "daylight");
+	clouds_loc_VP = glGetUniformLocation(clouds_prog, "VP"); GL_DEBUG
+	clouds_loc_daylight = glGetUniformLocation(clouds_prog, "daylight"); GL_DEBUG
 	clouds_mesh.data = clouds_vertices;
 	mesh_upload(&clouds_mesh);
 
@@ -126,13 +127,13 @@ bool sky_init()
 
 void sky_deinit()
 {
-	glDeleteProgram(sun_prog);
+	glDeleteProgram(sun_prog); GL_DEBUG
 	mesh_destroy(&sun_mesh);
 
-	glDeleteProgram(skybox_prog);
+	glDeleteProgram(skybox_prog); GL_DEBUG
 	mesh_destroy(&skybox_mesh);
 
-	glDeleteProgram(clouds_prog);
+	glDeleteProgram(clouds_prog); GL_DEBUG
 	mesh_destroy(&clouds_mesh);
 }
 
@@ -161,27 +162,27 @@ void sky_render()
 	mat4x4 mvp;
 	mat4x4_mul(mvp, vp, model);
 
-	glDisable(GL_CULL_FACE);
-	glDepthFunc(GL_LEQUAL);
+	glDisable(GL_CULL_FACE); GL_DEBUG
+	glDepthFunc(GL_LEQUAL); GL_DEBUG
 
-	glUseProgram(skybox_prog);
-	glUniformMatrix4fv(skybox_loc_VP, 1, GL_FALSE, vp[0]);
-	glUniform1f(skybox_loc_daylight, daylight);
-	glBindTextureUnit(0, skybox_texture_day);
-	glBindTextureUnit(1, skybox_texture_night);
+	glUseProgram(skybox_prog); GL_DEBUG
+	glUniformMatrix4fv(skybox_loc_VP, 1, GL_FALSE, vp[0]); GL_DEBUG
+	glUniform1f(skybox_loc_daylight, daylight); GL_DEBUG
+	glBindTextureUnit(0, skybox_texture_day); GL_DEBUG
+	glBindTextureUnit(1, skybox_texture_night); GL_DEBUG
 	mesh_render(&skybox_mesh);
 
-	glUseProgram(sun_prog);
-	glUniformMatrix4fv(sun_loc_MVP, 1, GL_FALSE, mvp[0]);
-	glBindTextureUnit(0, sun_texture);
+	glUseProgram(sun_prog); GL_DEBUG
+	glUniformMatrix4fv(sun_loc_MVP, 1, GL_FALSE, mvp[0]); GL_DEBUG
+	glBindTextureUnit(0, sun_texture); GL_DEBUG
 	mesh_render(&sun_mesh);
 
-	glUseProgram(clouds_prog);
-	glUniformMatrix4fv(clouds_loc_VP, 1, GL_FALSE, vp[0]);
-	glUniform1f(clouds_loc_daylight, daylight);
-	glBindTextureUnit(0, skybox_texture_day);
+	glUseProgram(clouds_prog); GL_DEBUG
+	glUniformMatrix4fv(clouds_loc_VP, 1, GL_FALSE, vp[0]); GL_DEBUG
+	glUniform1f(clouds_loc_daylight, daylight); GL_DEBUG
+	glBindTextureUnit(0, skybox_texture_day); GL_DEBUG
 	mesh_render(&clouds_mesh);
 
-	glDepthFunc(GL_LESS);
-	glEnable(GL_CULL_FACE);
+	glDepthFunc(GL_LESS); GL_DEBUG
+	glEnable(GL_CULL_FACE); GL_DEBUG
 }

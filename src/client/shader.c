@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include "client/gl_debug.h"
 #include "client/shader.h"
 
 static GLuint compile_shader(GLenum type, const char *path, const char *name, GLuint program, const char *definitions)
@@ -45,7 +46,7 @@ static GLuint compile_shader(GLenum type, const char *path, const char *name, GL
 
 	fclose(file);
 
-	GLuint id = glCreateShader(type);
+	GLuint id = glCreateShader(type); GL_DEBUG
 
 	// Minimum OpenGL version is 4.2.0 (idk some shader feature from that version is required)
 	const char *version = "#version 420 core\n"; // 420 blaze it
@@ -62,28 +63,28 @@ static GLuint compile_shader(GLenum type, const char *path, const char *name, GL
 		size,
 	};
 
-	glShaderSource(id, 3, code_list, size_list);
+	glShaderSource(id, 3, code_list, size_list); GL_DEBUG
 
-	glCompileShader(id);
+	glCompileShader(id); GL_DEBUG
 
 	GLint success;
-	glGetShaderiv(id, GL_COMPILE_STATUS, &success);
+	glGetShaderiv(id, GL_COMPILE_STATUS, &success); GL_DEBUG
 	if (!success) {
 		char errbuf[BUFSIZ];
-		glGetShaderInfoLog(id, BUFSIZ, NULL, errbuf);
+		glGetShaderInfoLog(id, BUFSIZ, NULL, errbuf); GL_DEBUG
 		fprintf(stderr, "[error] failed to compile %s shader: %s", name, errbuf);
-		glDeleteShader(id);
+		glDeleteShader(id); GL_DEBUG
 		return 0;
 	}
 
-	glAttachShader(program, id);
+	glAttachShader(program, id); GL_DEBUG
 
 	return id;
 }
 
 bool shader_program_create(const char *path, GLuint *idptr, const char *definitions)
 {
-	GLuint id = glCreateProgram();
+	GLuint id = glCreateProgram(); GL_DEBUG
 
 	if (!definitions)
 		definitions = "";
@@ -91,27 +92,27 @@ bool shader_program_create(const char *path, GLuint *idptr, const char *definiti
 	GLuint vert, frag;
 
 	if (!(vert = compile_shader(GL_VERTEX_SHADER, path, "vertex", id, definitions))) {
-		glDeleteProgram(id);
+		glDeleteProgram(id); GL_DEBUG
 		return false;
 	}
 
 	if (!(frag = compile_shader(GL_FRAGMENT_SHADER, path, "fragment", id, definitions))) {
-		glDeleteShader(vert);
-		glDeleteProgram(id);
+		glDeleteShader(vert); GL_DEBUG
+		glDeleteProgram(id); GL_DEBUG
 		return false;
 	}
 
-	glLinkProgram(id);
-	glDeleteShader(vert);
-	glDeleteShader(frag);
+	glLinkProgram(id); GL_DEBUG
+	glDeleteShader(vert); GL_DEBUG
+	glDeleteShader(frag); GL_DEBUG
 
 	GLint success;
-	glGetProgramiv(id, GL_LINK_STATUS, &success);
+	glGetProgramiv(id, GL_LINK_STATUS, &success); GL_DEBUG
 	if (!success) {
 		char errbuf[BUFSIZ];
-		glGetProgramInfoLog(id, BUFSIZ, NULL, errbuf);
+		glGetProgramInfoLog(id, BUFSIZ, NULL, errbuf); GL_DEBUG
 		fprintf(stderr, "[error] failed to link shader program: %s\n", errbuf);
-		glDeleteProgram(id);
+		glDeleteProgram(id); GL_DEBUG
 		return false;
 	}
 

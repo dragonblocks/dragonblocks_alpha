@@ -5,6 +5,7 @@
 #include "client/camera.h"
 #include "client/client_config.h"
 #include "client/frustum.h"
+#include "client/gl_debug.h"
 #include "client/model.h"
 
 typedef struct {
@@ -13,7 +14,8 @@ typedef struct {
 } ModelBatchTexture;
 
 static List scene;
-static pthread_rwlock_t lock_scene;
+static List scene_new;
+static pthread_mutex_t lock_scene_new;
 static GLint units;
 
 // fixme: blending issues still occur
@@ -57,17 +59,18 @@ static void render_node(ModelNode *node)
 	for (size_t i = 0; i < node->meshes.siz; i++) {
 		ModelMesh *mesh = &((ModelMesh *) node->meshes.ptr)[i];
 
-		glUseProgram(mesh->shader->prog);
-		glUniformMatrix4fv(mesh->shader->loc_transform, 1, GL_FALSE, node->abs[0]);
+		glUseProgram(mesh->shader->prog); GL_DEBUG
+		glUniformMatrix4fv(mesh->shader->loc_transform, 1, GL_FALSE, node->abs[0]); GL_DEBUG
 
 		// bind textures
-		for (GLuint i = 0; i < mesh->num_textures; i++)
-			glBindTextureUnit(i, mesh->textures[i]);
+		for (GLuint i = 0; i < mesh->num_textures; i++) {
+			glBindTextureUnit(i, mesh->textures[i]); GL_DEBUG
+		}
 
 		mesh_render(mesh->mesh);
 	}
 
-	list_itr(&node->children, (void *) &render_node, NULL, NULL);
+	list_itr(&node->children, &render_node, NULL, NULL);
 }
 
 static void free_node_meshes(ModelNode *node)
@@ -79,7 +82,7 @@ static void free_node_meshes(ModelNode *node)
 		free(mesh->mesh);
 	}
 
-	list_clr(&node->children, (void *) &free_node_meshes, NULL, NULL);
+	list_clr(&node->children, &free_node_meshes, NULL, NULL);
 }
 
 static void delete_node(ModelNode *node)
@@ -90,7 +93,7 @@ static void delete_node(ModelNode *node)
 		if (mesh->textures)
 			free(mesh->textures);
 	}
-	list_clr(&node->children, (void *) &delete_node, NULL, NULL);
+	list_clr(&node->children, &delete_node, NULL, NULL);
 	array_clr(&node->meshes);
 
 	free(node);
@@ -121,7 +124,7 @@ static ModelNode *clone_node(ModelNode *original, ModelNode *parent)
 	for (size_t i = 0; i < node->meshes.siz; i++)
 		clone_mesh(&((ModelMesh *) node->meshes.ptr)[i]);
 
-	list_itr(&original->children, (void *) &clone_node, parent, NULL);
+	list_itr(&original->children, &clone_node, node, NULL);
 	return node;
 }
 
@@ -132,13 +135,15 @@ static int cmp_model(const Model *model, const f32 *distance)
 
 static void render_model(Model *model)
 {
-	if (model->flags.wireframe)
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	if (model->flags.wireframe) {
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); GL_DEBUG
+	}
 
 	render_node(model->root);
 
-	if (model->flags.wireframe)
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	if (model->flags.wireframe) {
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); GL_DEBUG
+	}
 }
 
 // step model help im stuck
@@ -172,15 +177,19 @@ static void model_step(Model *model, Tree *transparent, f64 dtime)
 void model_init()
 {
 	list_ini(&scene);
-	pthread_rwlock_init(&lock_scene, NULL);
-	glGetIntegerv(GL_MAX_TEXTURE_UNITS, &units);
+	list_ini(&scene_new);
+
+	pthread_mutex_init(&lock_scene_new, NULL);
+	glGetIntegerv(GL_MAX_TEXTURE_UNITS, &units); GL_DEBUG
 }
 
 // ded
 void model_deinit()
 {
 	list_clr(&scene, &model_delete, NULL, NULL);
-	pthread_rwlock_destroy(&lock_scene);
+	list_clr(&scene_new, &model_delete, NULL, NULL);
+
+	pthread_mutex_destroy(&lock_scene_new);
 }
 
 // Model functions
@@ -190,6 +199,7 @@ Model *model_create()
 	Model *model = malloc(sizeof *model);
 	model->root = model_node_create(NULL);
 	model->extra = NULL;
+	model->replace = NULL;
 
 	model->callbacks.step = NULL;
 	model->callbacks.delete = NULL;
@@ -272,11 +282,6 @@ Model *model_load(const char *path, const char *textures_path, Mesh *cube, Model
 					cursor += n;
 				else
 					fprintf(stderr, "[warning] invalid value for scale in model %s in line %d\n", path, count);
-			} else if (strcmp(key, "angle") == 0) {
-				if (sscanf(cursor, "%f%n", &node->angle, &n) == 1)
-					cursor += n;
-				else
-					fprintf(stderr, "[warning] invalid value for angle in model %s in line %d\n", path, count);
 			} else if (strcmp(key, "cube") == 0) {
 				char texture[length + 1];
 
@@ -313,6 +318,7 @@ Model *model_load(const char *path, const char *textures_path, Mesh *cube, Model
 	fclose(file);
 	array_clr(&stack);
 
+	transform_node(model->root);
 	return model;
 }
 
@@ -346,15 +352,16 @@ void model_get_bones(Model *model, ModelBoneMapping *mappings, size_t num_mappin
 		name = cursor = strdup(mappings[i].name);
 
 		ModelNode *node = model->root;
-		while ((tok = strtok_r(cursor, ".", &saveptr))) {
-			node = list_get(&node->children, tok, (void *) &cmp_node, NULL);
+
+		while (node && (tok = strtok_r(cursor, ".", &saveptr))) {
+			node = list_get(&node->children, tok, &cmp_node, NULL);
 			cursor = NULL;
 		}
 
 		if (node)
 			*mappings[i].node = node;
 		else
-			fprintf(stderr, "[warning] no such bone: %s\n", name);
+			fprintf(stderr, "[warning] no such bone: %s\n", mappings[i].name);
 
 		free(name);
 	}
@@ -370,7 +377,6 @@ ModelNode *model_node_create(ModelNode *parent)
 	node->pos = (v3f32) {0.0f, 0.0f, 0.0f};
 	node->rot = (v3f32) {0.0f, 0.0f, 0.0f};
 	node->scale = (v3f32) {1.0f, 1.0f, 1.0f};
-	node->angle = 0.0f;
 	array_ini(&node->meshes, sizeof(ModelMesh), 0);
 	init_node(node, parent);
 	return node;
@@ -378,21 +384,21 @@ ModelNode *model_node_create(ModelNode *parent)
 
 void model_node_transform(ModelNode *node)
 {
+	mat4x4_identity(node->rel);
+
 	mat4x4_translate(node->rel,
 		node->pos.x,
 		node->pos.y,
 		node->pos.z);
 
-	mat4x4_rotate(node->rel, node->rel,
-		node->rot.x,
-		node->rot.y,
-		node->rot.z,
-		node->angle);
-
 	mat4x4_scale_aniso(node->rel, node->rel,
 		node->scale.x,
 		node->scale.y,
 		node->scale.z);
+
+	mat4x4_rotate_X(node->rel, node->rel, node->rot.x);
+	mat4x4_rotate_Y(node->rel, node->rel, node->rot.y);
+	mat4x4_rotate_Z(node->rel, node->rel, node->rot.z);
 
 	transform_node(node);
 }
@@ -506,37 +512,40 @@ void model_batch_add_vertex(ModelBatch *batch, GLuint texture, const void *verte
 
 void model_scene_add(Model *model)
 {
-	pthread_rwlock_wrlock(&lock_scene);
-	list_apd(&scene, model);
-	pthread_rwlock_unlock(&lock_scene);
+	pthread_mutex_lock(&lock_scene_new);
+	list_apd(&scene_new, model);
+	pthread_mutex_unlock(&lock_scene_new);
 }
 
 void model_scene_render(f64 dtime)
 {
+	pthread_mutex_lock(&lock_scene_new);
+	if (scene_new.fst) {
+		*scene.end = scene_new.fst;
+		scene.end = scene_new.end;
+
+		list_ini(&scene_new);
+	}
+	pthread_mutex_unlock(&lock_scene_new);
+
 	Tree transparent;
 	tree_ini(&transparent);
 
-	pthread_rwlock_rdlock(&lock_scene);
 	for (ListNode **node = &scene.fst; *node != NULL;) {
 		Model *model = (*node)->dat;
 
-		pthread_rwlock_unlock(&lock_scene);
 		if (model->flags.delete) {
+			if (model->replace)
+				(*node)->dat = model->replace;
+			else
+				list_nrm(&scene, node);
+
 			model_delete(model);
-
-			pthread_rwlock_wrlock(&lock_scene);
-			list_nrm(&scene, node);
-			pthread_rwlock_unlock(&lock_scene);
-
-			pthread_rwlock_rdlock(&lock_scene);
 		} else {
-			model_step(model, &transparent, dtime);
-
-			pthread_rwlock_rdlock(&lock_scene);
 			node = &(*node)->nxt;
+			model_step(model, &transparent, dtime);
 		}
 	}
-	pthread_rwlock_unlock(&lock_scene);
 
 	tree_clr(&transparent, &render_model, NULL, NULL, TRAVERSION_INORDER);
 }

@@ -34,15 +34,7 @@ static void on_ToServerSetnode(__attribute__((unused)) DragonnetPeer *peer, ToSe
 // update player's position
 static void on_ToServerPosRot(DragonnetPeer *peer, ToServerPosRot *pkt)
 {
-	ServerPlayer *player = peer->extra;
-
-	pthread_rwlock_wrlock(&player->lock_pos);
-	player->pos = pkt->pos;
-	player->rot = pkt->rot;
-
-	// this is recv thread, no lock_auth needed
-	database_update_player_pos_rot(player->name, player->pos, player->rot);
-	pthread_rwlock_unlock(&player->lock_pos);
+	server_player_move(peer->extra, pkt->pos, pkt->rot);
 }
 
 // tell server map manager client requested the chunk

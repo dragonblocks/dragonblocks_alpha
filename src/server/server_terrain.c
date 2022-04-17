@@ -72,7 +72,7 @@ static void send_chunk_to_near(TerrainChunk *chunk)
 	if (meta->state == CHUNK_CREATED)
 		return;
 
-	server_player_iterate((void *) &send_chunk, chunk);
+	server_player_iterate(&send_chunk, chunk);
 }
 
 // Iterator for sending changed chunks to near clients
@@ -104,7 +104,7 @@ static void terrain_gen_step()
 	meta->state = CHUNK_READY;
 	pthread_mutex_unlock(&chunk->mtx);
 
-	list_clr(&changed_chunks, (void *) &iterator_send_chunk_to_near, NULL, NULL);
+	list_clr(&changed_chunks, &iterator_send_chunk_to_near, NULL, NULL);
 
 	pthread_mutex_lock(&mtx_num_gen_chunks);
 	num_gen_chunks--;
@@ -276,7 +276,7 @@ static void generate_spawn_hut()
 	}
 
 	Blob_free(&wood_color);
-	list_clr(&changed_chunks, (void *) iterator_send_chunk_to_near, NULL, NULL);
+	list_clr(&changed_chunks, &iterator_send_chunk_to_near, NULL, NULL);
 }
 
 // public functions

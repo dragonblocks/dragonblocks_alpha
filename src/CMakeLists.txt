@@ -22,6 +22,10 @@ find_package(Freetype REQUIRED)
 
 # Options
 
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+	add_compile_definitions("ENABLE_GL_DEBUG")
+endif()
+
 add_compile_definitions("USE_DRAGONNET")
 add_compile_definitions("RESSOURCE_PATH=\"${RESSOURCE_PATH}\"")
 
@@ -38,12 +42,12 @@ include_directories(BEFORE ${CMAKE_SOURCE_DIR})
 
 # System specific options
 
-if ("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD" OR "${CMAKE_SYSTEM_NAME}" STREQUAL "OpenBSD")
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "FreeBSD" OR "${CMAKE_SYSTEM_NAME}" STREQUAL "OpenBSD")
 	link_directories("/usr/local/lib")
 	include_directories("/usr/local/include")
 endif()
 
-if ("${CMAKE_SYSTEM_NAME}" STREQUAL "OpenBSD")
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "OpenBSD")
 	link_directories("/usr/X11R6/lib")
 	include_directories("/usr/X11R6/include")
 endif()
@@ -98,8 +102,10 @@ add_executable(dragonblocks
 	client/font.c
 	client/frustum.c
 	client/game.c
+	client/gl_debug.c
 	client/gui.c
 	client/input.c
+	client/light.c
 	client/mesh.c
 	client/model.c
 	client/shader.c
