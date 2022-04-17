@@ -16,6 +16,7 @@ typedef struct {
 	bool visible;
 	bool transparent;
 	ModelBatch *batch;
+	ModelBatch *batch_transparent;
 	TerrainChunk *chunk;
 	v3s32 chunkp;
 	TerrainChunk *nbrs[6];
@@ -121,8 +122,12 @@ static inline void render_node(ChunkRenderData *data, v3s32 offset)
 			data->visible = true;
 		}
 
-		if (def->visibility == VISIBILITY_BLEND)
+		ModelBatch *batch = data->batch;
+
+		if (def->visibility == VISIBILITY_BLEND) {
 			data->transparent = true;
+			batch = data->batch_transparent;
+		}
 
 		for (args.v = 0; args.v < 6; args.v++) {
 			args.vertex.cube = cube_vertices[args.f][args.v];
@@ -132,7 +137,7 @@ static inline void render_node(ChunkRenderData *data, v3s32 offset)
 			if (def->render)
 				def->render(&args);
 
-			model_batch_add_vertex(data->batch, def->tiles.textures[args.f]->txo, &args.vertex);
+			model_batch_add_vertex(batch, def->tiles.textures[args.f]->txo, &args.vertex);
 		}
 	}
 }
@@ -157,6 +162,7 @@ static Model *create_chunk_model(TerrainChunk *chunk, bool animate)
 		.visible = false,
 		.transparent = false,
 		.batch = model_batch_create(&model_shader, &terrain_vertex_layout, offsetof(TerrainVertex, textureIndex)),
+		.batch_transparent = model_batch_create(&model_shader, &terrain_vertex_layout, offsetof(TerrainVertex, textureIndex)),
 		.chunk = chunk,
 		.chunkp = v3s32_scale(chunk->pos, CHUNK_SIZE),
 		.nbrs = {NULL},
@@ -167,8 +173,9 @@ static Model *create_chunk_model(TerrainChunk *chunk, bool animate)
 	CHUNK_ITERATE
 		render_node(&data, (v3s32) {x, y, z});
 
-	if (!data.batch->textures.siz) {
+	if (!data.batch->textures.siz && !data.batch_transparent->textures.siz) {
 		model_batch_free(data.batch);
+		model_batch_free(data.batch_transparent);
 		return NULL;
 	}
 
@@ -186,10 +193,13 @@ static Model *create_chunk_model(TerrainChunk *chunk, bool animate)
 	model->root->pos = v3f32_add(v3s32_to_f32(data.chunkp), center_offset);
 	model->root->scale = (v3f32) {0.0f, 0.0f, 0.0f};
 
-	if (data.visible)
+	if (data.visible) {
 		model_node_add_batch(model->root, data.batch);
-	else
+		model_node_add_batch(model->root, data.batch_transparent);
+	} else {
 		model_batch_free(data.batch);
+		model_batch_free(data.batch_transparent);
+	}
 
 	return model;
 }

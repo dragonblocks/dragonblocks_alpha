@@ -18,7 +18,6 @@ static List scene_new;
 static pthread_mutex_t lock_scene_new;
 static GLint units;
 
-// fixme: blending issues still occur
 static int cmp_batch_texture(const ModelBatchTexture *ta, const ModelBatchTexture *tb)
 {
 	return
@@ -130,7 +129,7 @@ static ModelNode *clone_node(ModelNode *original, ModelNode *parent)
 
 static int cmp_model(const Model *model, const f32 *distance)
 {
-	return f32_cmp(&model->distance, distance);
+	return -f32_cmp(&model->distance, distance);
 }
 
 static void render_model(Model *model)
@@ -421,7 +420,7 @@ void model_node_add_batch(ModelNode *node, ModelBatch *batch)
 
 	size_t num_meshes = ceil((double) batch->textures.siz / (double) units);
 	array_grw(&node->meshes, num_meshes);
-	ModelMesh *meshes = node->meshes.ptr + node->meshes.siz - num_meshes;
+	ModelMesh *meshes = &((ModelMesh *) node->meshes.ptr)[node->meshes.siz - num_meshes];
 
 	for (size_t m = 0; m < num_meshes; m++) {
 		ModelMesh *mesh = &meshes[m];
