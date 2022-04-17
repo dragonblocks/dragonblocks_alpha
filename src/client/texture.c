@@ -90,7 +90,7 @@ static inline int least_common_multiple(int a, int b)
 	return lcm;
 }
 
-Texture *texture_load_cubemap(char *path)
+Texture *texture_load_cubemap(char *path, bool bilinear_filter)
 {
 	Texture *texture;
 	if (lookup_texture(path, &texture))
@@ -153,8 +153,8 @@ Texture *texture_load_cubemap(char *path)
 			stbi_image_free(data);
 	}
 
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST); GL_DEBUG
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST); GL_DEBUG
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, bilinear_filter ? GL_LINEAR : GL_NEAREST); GL_DEBUG
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, bilinear_filter ? GL_LINEAR : GL_NEAREST); GL_DEBUG
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); GL_DEBUG
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); GL_DEBUG
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE); GL_DEBUG

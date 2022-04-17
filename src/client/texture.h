@@ -10,7 +10,7 @@ typedef struct {
 } Texture;
 
 Texture *texture_load(char *path, bool mipmap);
-Texture *texture_load_cubemap(char *path);
+Texture *texture_load_cubemap(char *path, bool linear_filter);
 void texture_upload(Texture *texture, unsigned char *data, GLenum format, bool mipmap);
 void texture_destroy(Texture *texture);
 

@@ -95,8 +95,8 @@ bool sky_init()
 
 	skybox_loc_VP = glGetUniformLocation(skybox_prog, "VP"); GL_DEBUG
 	skybox_loc_daylight = glGetUniformLocation(skybox_prog, "daylight"); GL_DEBUG
-	skybox_texture_day = texture_load_cubemap(RESSOURCE_PATH "textures/skybox/day")->txo;
-	skybox_texture_night = texture_load_cubemap(RESSOURCE_PATH "textures/skybox/night")->txo;
+	skybox_texture_day = texture_load_cubemap(RESSOURCE_PATH "textures/skybox/day", true)->txo;
+	skybox_texture_night = texture_load_cubemap(RESSOURCE_PATH "textures/skybox/night", true)->txo;
 	skybox_mesh.data = skybox_vertices;
 	mesh_upload(&skybox_mesh);
 

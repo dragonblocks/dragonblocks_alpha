@@ -289,7 +289,7 @@ Model *model_load(const char *path, const char *textures_path, Mesh *cube, Model
 
 					char filepath[strlen(textures_path) + 1 + strlen(texture) + 1];
 					sprintf(filepath, "%s/%s", textures_path, texture);
-					Texture *texture = texture_load_cubemap(filepath);
+					Texture *texture = texture_load_cubemap(filepath, false);
 
 					model_node_add_mesh(node, &(ModelMesh) {
 						.mesh = cube,
