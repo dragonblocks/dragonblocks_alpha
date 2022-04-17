@@ -63,7 +63,7 @@ typedef struct {
 } OceanRowData;
 
 static const f64 vulcano_radius = 256.0;
-static const f64 vulcano_chunk_offset = vulcano_radius * 2.0 / CHUNK_SIZE;
+static const f64 vulcano_diameter = vulcano_radius * 2.0;
 
 static OceanLevel get_ocean_level(f64 factor)
 {
@@ -84,42 +84,6 @@ static f64 get_ocean_level_factor(f64 factor, OceanLevel level)
 	end = ++level == COUNT_OCEAN ? 1.0 : ocean_level_start[level];
 
 	return (factor - start) / (end - start);
-}
-
-static bool is_vulcano(v2s32 pos)
-{
-	f64 factor;
-
-	return noise2d(pos.x, pos.y, 0, seed + SO_VULCANO) > 0.0
-		&& get_biome((v2s32) {pos.x * CHUNK_SIZE, pos.y * CHUNK_SIZE}, &factor) == BIOME_OCEAN
-		&& get_ocean_level(factor) == OCEAN_DEEP;
-}
-
-static bool find_near_vulcano(v2s32 pos, v2s32 *result)
-{
-	f64 x = pos.x / vulcano_chunk_offset;
-	f64 z = pos.y / vulcano_chunk_offset;
-
-	s32 lx, lz;
-	lx = floor(x);
-	lz = floor(z);
-
-	s32 hx, hz;
-	hx = ceil(x);
-	hz = ceil(z);
-
-	for (s32 ix = lx; ix <= hx; ix++) {
-		for (s32 iz = lz; iz <= hz; iz++) {
-			v2s32 vulcano_pos = {ix * 32, iz * 32};
-
-			if (is_vulcano(vulcano_pos)) {
-				*result = vulcano_pos;
-				return true;
-			}
-		}
-	}
-
-	return false;
 }
 
 static f64 distance(v2s32 a, v2s32 b)
@@ -152,10 +116,16 @@ static s32 calculate_ocean_floor(f64 factor, s32 height)
 static void chunk_ocean(BiomeArgsChunk *args)
 {
 	OceanChunkData *chunk_data = args->chunk_data;
-	v2s32 vulcano_pos;
 
-	if ((chunk_data->has_vulcano = find_near_vulcano((v2s32) {args->chunk->pos.x, args->chunk->pos.z}, &vulcano_pos)))
-		chunk_data->vulcano_pos = (v2s32) {vulcano_pos.x * CHUNK_SIZE, vulcano_pos.y * CHUNK_SIZE};
+	chunk_data->vulcano_pos = (v2s32) {
+		floor((f64) args->chunk->pos.x * CHUNK_SIZE / vulcano_diameter + 0.5) * vulcano_diameter,
+		floor((f64) args->chunk->pos.z * CHUNK_SIZE / vulcano_diameter + 0.5) * vulcano_diameter
+	};
+
+	f64 factor;
+	chunk_data->has_vulcano = noise2d(chunk_data->vulcano_pos.x, chunk_data->vulcano_pos.y, 0, seed + SO_VULCANO) > 0.0
+		&& get_biome((v2s32) {chunk_data->vulcano_pos.x, chunk_data->vulcano_pos.y}, &factor) == BIOME_OCEAN
+		&& get_ocean_level(factor) == OCEAN_DEEP;
 }
 
 static void row_ocean(BiomeArgsRow *args)
