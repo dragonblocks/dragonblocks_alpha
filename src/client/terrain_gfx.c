@@ -64,7 +64,8 @@ static inline bool cull_face(NodeType self, NodeType nbr)
 			return false;
 
 		case VISIBILITY_BLEND:
-			return self == nbr;
+			return nbr == NODE_UNLOADED
+				|| nbr == self;
 
 		case VISIBILITY_SOLID:
 			return nbr == NODE_UNLOADED
