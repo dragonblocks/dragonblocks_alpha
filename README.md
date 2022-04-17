@@ -64,10 +64,10 @@ sudo pkg_add lzlib glfw glew freetype sqlite3
 Dragonblocks Alpha targets PCs only. Non x86-64 platforms may work, however there is no guarantee whatsoever.
 You need a POSIX system conforming to the ISO C and POSIX 2008 standards. However, so far only GNU/Linux systems, in particular Ubuntu and Debian, have been tested.
 The minimum OpenGL version is 4.6.0. Dragonblocks has been tested on Intel Integrated and NVIDIA GPUs, however other graphics cards should work as well.
-A PC with at least 4 CPU cores is recommended, but not necessarly required.
+A PC with at least 4 CPU cores is recommended, but not necessarily required.
 
 ## Current Features
-- Multiplayer
+- Multiplayer, Animated player model, Nametags
 - Mountains, snow, temperature and humidity, dynamic grass color, oceans and beaches, vulcanos, boulders
 - Physics
 - FPS Camera
@@ -75,10 +75,11 @@ A PC with at least 4 CPU cores is recommended, but not necessarly required.
 - Taking screenshots
 - Daylight cycle
 - GUI
-- Saving map, player positions and other data to a SQLite3 database
-- Multithreaded map generation, mesh generation and networking
+- Saving terrain, player positions and other data to a SQLite3 database
+- Multithreaded terrain generation, mesh generation and networking
 - Handlers for SIGINT und SIGTERM (just Ctrl+C to shut down the server)
 - Log levels: error, warning, access, action, info, verbose
+- Loading assets such as textures, models, schematics, shaders and fonts from files
 
 ## Usage
 
