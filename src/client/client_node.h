@@ -28,6 +28,8 @@ typedef struct {
 	NodeVisibility visibility;
 	bool mipmap;
 	void (*render)(NodeArgsRender *args);
+	bool pointable;
+	v3f32 selection_color;
 } ClientNodeDefinition;
 
 extern ClientNodeDefinition client_node_definitions[];

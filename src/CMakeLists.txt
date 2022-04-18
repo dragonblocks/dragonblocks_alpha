@@ -106,9 +106,11 @@ add_executable(dragonblocks
 	client/gl_debug.c
 	client/gui.c
 	client/input.c
+	client/interact.c
 	client/light.c
 	client/mesh.c
 	client/model.c
+	client/raycast.c
 	client/shader.c
 	client/sky.c
 	client/terrain_gfx.c

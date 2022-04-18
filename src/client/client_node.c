@@ -45,6 +45,8 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.visibility = VISIBILITY_SOLID,
 		.mipmap = true,
 		.render = NULL,
+		.pointable = true,
+		.selection_color = {1.0f, 1.0f, 1.0f},
 	},
 	// air
 	{
@@ -52,6 +54,8 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.visibility = VISIBILITY_NONE,
 		.mipmap = true,
 		.render = NULL,
+		.pointable = false,
+		.selection_color = {1.0f, 1.0f, 1.0f},
 	},
 	// grass
 	{
@@ -59,6 +63,8 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.visibility = VISIBILITY_SOLID,
 		.mipmap = true,
 		.render = &render_grass,
+		.pointable = true,
+		.selection_color = {1.0f, 1.0f, 1.0f},
 	},
 	// dirt
 	{
@@ -66,6 +72,8 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.visibility = VISIBILITY_SOLID,
 		.mipmap = true,
 		.render = NULL,
+		.pointable = true,
+		.selection_color = {1.0f, 1.0f, 1.0f},
 	},
 	// stone
 	{
@@ -73,6 +81,8 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.visibility = VISIBILITY_SOLID,
 		.mipmap = true,
 		.render = &render_stone,
+		.pointable = true,
+		.selection_color = {1.0f, 1.0f, 1.0f},
 	},
 	// snow
 	{
@@ -80,6 +90,8 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.visibility = VISIBILITY_SOLID,
 		.mipmap = true,
 		.render = NULL,
+		.pointable = true,
+		.selection_color = {0.1f, 0.5f, 1.0f},
 	},
 	// oak wood
 	{
@@ -91,6 +103,8 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.visibility = VISIBILITY_SOLID,
 		.mipmap = true,
 		.render = &render_color,
+		.pointable = true,
+		.selection_color = {1.0f, 1.0f, 1.0f},
 	},
 	// oak leaves
 	{
@@ -98,6 +112,8 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.visibility = VISIBILITY_SOLID,
 		.mipmap = true,
 		.render = &render_color,
+		.pointable = true,
+		.selection_color = {1.0f, 1.0f, 1.0f},
 	},
 	// pine wood
 	{
@@ -109,6 +125,8 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.visibility = VISIBILITY_SOLID,
 		.mipmap = true,
 		.render = &render_color,
+		.pointable = true,
+		.selection_color = {1.0f, 1.0f, 1.0f},
 	},
 	// pine leaves
 	{
@@ -116,6 +134,8 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.visibility = VISIBILITY_CLIP,
 		.mipmap = true,
 		.render = &render_color,
+		.pointable = true,
+		.selection_color = {1.0f, 1.0f, 1.0f},
 	},
 	// palm wood
 	{
@@ -127,6 +147,8 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.visibility = VISIBILITY_SOLID,
 		.mipmap = true,
 		.render = &render_color,
+		.pointable = true,
+		.selection_color = {1.0f, 1.0f, 1.0f},
 	},
 	// palm leaves
 	{
@@ -134,6 +156,8 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.visibility = VISIBILITY_SOLID,
 		.mipmap = true,
 		.render = &render_color,
+		.pointable = true,
+		.selection_color = {1.0f, 1.0f, 1.0f},
 	},
 	// sand
 	{
@@ -141,6 +165,8 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.visibility = VISIBILITY_SOLID,
 		.mipmap = true,
 		.render = NULL,
+		.pointable = true,
+		.selection_color = {1.0f, 1.0f, 1.0f},
 	},
 	// water
 	{
@@ -148,6 +174,8 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.visibility = VISIBILITY_BLEND,
 		.mipmap = true,
 		.render = NULL,
+		.pointable = false,
+		.selection_color = {1.0f, 1.0f, 1.0f},
 	},
 	// lava
 	{
@@ -155,6 +183,8 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.visibility = VISIBILITY_BLEND,
 		.mipmap = true,
 		.render = NULL,
+		.pointable = false,
+		.selection_color = {1.0f, 1.0f, 1.0f},
 	},
 	// vulcano_stone
 	{
@@ -162,6 +192,8 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.visibility = VISIBILITY_SOLID,
 		.mipmap = true,
 		.render = NULL,
+		.pointable = true,
+		.selection_color = {1.0f, 1.0f, 1.0f},
 	},
 };
 

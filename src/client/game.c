@@ -18,6 +18,7 @@
 #include "client/gl_debug.h"
 #include "client/gui.h"
 #include "client/input.h"
+#include "client/interact.h"
 #include "client/sky.h"
 #include "client/window.h"
 #include "day.h"
@@ -62,6 +63,7 @@ static void render(f64 dtime)
 
 	sky_render();
 	model_scene_render(dtime);
+	interact_render();
 	gui_render();
 }
 
@@ -89,6 +91,7 @@ static void game_loop()
 
 		input_tick(dtime);
 		client_player_tick(dtime);
+		interact_tick();
 
 		debug_menu_changed(ENTRY_TIME);
 		debug_menu_changed(ENTRY_DAYLIGHT);
@@ -123,6 +126,9 @@ bool game(Flag *gfx_init)
 
 	client_player_gfx_init();
 
+	if (!interact_init())
+		return false;
+
 	client_node_init();
 	client_terrain_start();
 
@@ -148,6 +154,7 @@ bool game(Flag *gfx_init)
 	terrain_gfx_deinit();
 	client_entity_gfx_deinit();
 	client_player_gfx_deinit();
+	interact_deinit();
 
 	return true;
 }

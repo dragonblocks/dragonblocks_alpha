@@ -215,15 +215,10 @@ static void before_chunk_hills(BiomeArgsChunk *args)
 	memset(chunk_data->boulder_success, 0, sizeof chunk_data->boulder_success);
 }
 
-static void wrap_free(void *ptr)
-{
-	free(ptr);
-}
-
 static void after_chunk_hills(BiomeArgsChunk *args)
 {
 	HillsChunkData *chunk_data = args->chunk_data;
-	tree_clr(&chunk_data->boulder_visit, &wrap_free, NULL, NULL, 0);
+	tree_clr(&chunk_data->boulder_visit, &free, NULL, NULL, 0);
 }
 
 static s32 height_hills(BiomeArgsHeight *args)

@@ -101,7 +101,7 @@ static void on_add(ClientEntity *entity)
 	}, 7);
 
 	entity->nametag_offset = bones->nametag ? &bones->nametag->abs : NULL;
-	entity->box_collision = (aabb3f32) {{-0.3f, 0.0f, -0.3f}, {0.3f, 1.8f, 0.3f}};
+	entity->box_collision = (aabb3f32) {{-0.45f, 0.0f, -0.45f}, {0.45f, 1.8f, 0.45f}};
 
 	model_scene_add(entity->model);
 	client_entity_transform(entity);
