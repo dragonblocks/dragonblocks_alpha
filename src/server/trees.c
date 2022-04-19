@@ -201,7 +201,7 @@ static void palm_tree(v3s32 pos, List *changed_chunks)
 	voxel_procedural_delete(proc);
 }
 
-TreeDef tree_definitions[NUM_TREES] = {
+TreeDef tree_defs[NUM_TREES] = {
 	// oak
 	{
 		.spread = 64.0f,

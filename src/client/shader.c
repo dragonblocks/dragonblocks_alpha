@@ -5,7 +5,7 @@
 #include "client/gl_debug.h"
 #include "client/shader.h"
 
-static GLuint compile_shader(GLenum type, const char *path, const char *name, GLuint program, const char *definitions)
+static GLuint compile_shader(GLenum type, const char *path, const char *name, GLuint program, const char *defs)
 {
 	char full_path[strlen(path) + 1 + strlen(name) + 1 + 4 + 1];
 	sprintf(full_path, "%s/%s.glsl", path, name);
@@ -53,13 +53,13 @@ static GLuint compile_shader(GLenum type, const char *path, const char *name, GL
 
 	const char *code_list[3] = {
 		version,
-		definitions,
+		defs,
 		code,
 	};
 
 	int size_list[3] = {
 		18,
-		strlen(definitions),
+		strlen(defs),
 		size,
 	};
 
@@ -82,21 +82,21 @@ static GLuint compile_shader(GLenum type, const char *path, const char *name, GL
 	return id;
 }
 
-bool shader_program_create(const char *path, GLuint *idptr, const char *definitions)
+bool shader_program_create(const char *path, GLuint *idptr, const char *defs)
 {
 	GLuint id = glCreateProgram(); GL_DEBUG
 
-	if (!definitions)
-		definitions = "";
+	if (!defs)
+		defs = "";
 
 	GLuint vert, frag;
 
-	if (!(vert = compile_shader(GL_VERTEX_SHADER, path, "vertex", id, definitions))) {
+	if (!(vert = compile_shader(GL_VERTEX_SHADER, path, "vertex", id, defs))) {
 		glDeleteProgram(id); GL_DEBUG
 		return false;
 	}
 
-	if (!(frag = compile_shader(GL_FRAGMENT_SHADER, path, "fragment", id, definitions))) {
+	if (!(frag = compile_shader(GL_FRAGMENT_SHADER, path, "fragment", id, defs))) {
 		glDeleteShader(vert); GL_DEBUG
 		glDeleteProgram(id); GL_DEBUG
 		return false;

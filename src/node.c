@@ -2,7 +2,7 @@
 #include "terrain.h"
 #include "types.h"
 
-NodeDefinition node_definitions[NODE_UNLOADED] = {
+NodeDef node_defs[NODE_UNLOADED] = {
 	// unknown
 	{
 		.solid = true,

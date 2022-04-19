@@ -59,7 +59,7 @@ static ModelShader model_shader;
 
 static inline bool cull_face(NodeType self, NodeType nbr)
 {
-	switch (client_node_definitions[self].visibility) {
+	switch (client_node_defs[self].visibility) {
 		case VISIBILITY_CLIP:
 			return false;
 
@@ -69,7 +69,7 @@ static inline bool cull_face(NodeType self, NodeType nbr)
 
 		case VISIBILITY_SOLID:
 			return nbr == NODE_UNLOADED
-				|| client_node_definitions[nbr].visibility == VISIBILITY_SOLID;
+				|| client_node_defs[nbr].visibility == VISIBILITY_SOLID;
 
 		default: // impossible
 			break;
@@ -85,7 +85,7 @@ static inline void render_node(ChunkRenderData *data, v3s32 offset)
 
 	args.node = &data->chunk->data[offset.x][offset.y][offset.z];
 
-	ClientNodeDefinition *def = &client_node_definitions[args.node->type];
+	ClientNodeDef *def = &client_node_defs[args.node->type];
 	if (def->visibility == VISIBILITY_NONE)
 		return;
 

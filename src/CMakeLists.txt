@@ -79,6 +79,7 @@ set(COMMON_SOURCES
 	day.c
 	environment.c
 	interrupt.c
+	item.c
 	node.c
 	perlin.c
 	physics.c
@@ -94,6 +95,8 @@ add_executable(dragonblocks
 	client/client_auth.c
 	client/client_config.c
 	client/client_entity.c
+	client/client_inventory.c
+	client/client_item.c
 	client/client_node.c
 	client/client_player.c
 	client/client_terrain.c
@@ -111,6 +114,7 @@ add_executable(dragonblocks
 	client/mesh.c
 	client/model.c
 	client/raycast.c
+	client/screenshot.c
 	client/shader.c
 	client/sky.c
 	client/terrain_gfx.c

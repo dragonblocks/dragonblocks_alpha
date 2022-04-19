@@ -1,6 +1,5 @@
 #include <math.h>
 #include "client/camera.h"
-#include "client/client.h"
 
 struct Camera camera;
 
@@ -12,6 +11,12 @@ static void camera_update()
 	vec3_add(center, camera.eye, camera.front);
 
 	mat4x4_look_at(camera.view, camera.eye, center, camera.up);
+}
+
+void camera_init()
+{
+	camera_set_position((v3f32) {0.0f, 0.0f, 0.0f});
+	camera_set_angle(0.0f, 0.0f);
 }
 
 void camera_set_position(v3f32 pos)

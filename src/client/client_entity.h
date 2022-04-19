@@ -1,12 +1,12 @@
 #ifndef _CLIENT_ENTITY_H_
 #define _CLIENT_ENTITY_H_
 
-#include <dragonnet/peer.h>
 #include <dragonstd/refcount.h>
 #include <pthread.h>
 #include "client/gui.h"
 #include "client/model.h"
 #include "entity.h"
+#include "item.h"
 #include "types.h"
 
 typedef struct {
@@ -56,9 +56,9 @@ void client_entity_drop(ClientEntity *entity);
 
 void client_entity_transform(ClientEntity *entity);
 
-void client_entity_add(DragonnetPeer *peer, ToClientEntityAdd *pkt);
-void client_entity_remove(DragonnetPeer *peer, ToClientEntityRemove *pkt);
-void client_entity_update_pos_rot(DragonnetPeer *peer, ToClientEntityUpdatePosRot *pkt);
-void client_entity_update_nametag(DragonnetPeer *peer, ToClientEntityUpdateNametag *pkt);
+void client_entity_add(void *peer, ToClientEntityAdd *pkt);
+void client_entity_remove(void *peer, ToClientEntityRemove *pkt);
+void client_entity_update_pos_rot(void *peer, ToClientEntityUpdatePosRot *pkt);
+void client_entity_update_nametag(void *peer, ToClientEntityUpdateNametag *pkt);
 
 #endif // _CLIENT_ENTITY_H_

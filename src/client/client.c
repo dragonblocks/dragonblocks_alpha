@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include "client/client.h"
 #include "client/client_auth.h"
+#include "client/client_inventory.h"
 #include "client/client_player.h"
 #include "client/client_terrain.h"
 #include "client/debug_menu.h"
@@ -143,6 +144,7 @@ int main(int argc, char **argv)
 	client->on_recv_type[DRAGONNET_TYPE_ToClientEntityRemove       ] = (void *) &client_entity_remove;
 	client->on_recv_type[DRAGONNET_TYPE_ToClientEntityUpdatePosRot ] = (void *) &client_entity_update_pos_rot;
 	client->on_recv_type[DRAGONNET_TYPE_ToClientEntityUpdateNametag] = (void *) &client_entity_update_nametag;
+	client->on_recv_type[DRAGONNET_TYPE_ToClientPlayerInventory    ] = (void *) &client_inventory_update_player;
 
 	flag_ini(&finish);
 	flag_ini(&gfx_init);

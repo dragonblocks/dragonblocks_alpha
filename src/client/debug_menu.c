@@ -6,12 +6,14 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include "client/client_config.h"
+#include "client/client_node.h"
 #include "client/client_player.h"
 #include "client/client_terrain.h"
 #include "client/debug_menu.h"
 #include "client/game.h"
 #include "client/gl_debug.h"
 #include "client/gui.h"
+#include "client/interact.h"
 #include "client/window.h"
 #include "day.h"
 #include "environment.h"
@@ -23,7 +25,7 @@ static bool changed_elements[COUNT_ENTRY] = {false};
 static pthread_mutex_t changed_elements_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 static bool debug_menu_enabled = true;
-static DebugMenuEntry last_always_visible = ENTRY_POS;
+static DebugMenuEntry last_always_visible = ENTRY_POINTED;
 
 static char *get_entry_text(DebugMenuEntry entry)
 {
@@ -33,6 +35,10 @@ static char *get_entry_text(DebugMenuEntry entry)
 	int minutes = 0;
 	v3f64 pos = {0.0f, 0.0f, 0.0f};
 	v3f32 rot = {0.0f, 0.0f, 0.0f};
+	char *pnt_name = NULL;
+
+	// shortcut
+	static struct InteractPointed *pnt = &interact_pointed;
 
 	switch (entry) {
 		case ENTRY_POS:
@@ -40,7 +46,7 @@ static char *get_entry_text(DebugMenuEntry entry)
 		case ENTRY_PITCH:
 		case ENTRY_HUMIDITY:
 		case ENTRY_TEMPERATURE: {
-			ClientEntity *entity = client_player_entity();
+			ClientEntity *entity = client_player_entity_local();
 			if (!entity)
 				return strdup("");
 
@@ -51,6 +57,13 @@ static char *get_entry_text(DebugMenuEntry entry)
 			refcount_drp(&entity->rc);
 			break;
 		}
+
+		case ENTRY_POINTED:
+			if (!pnt->exists)
+				return strdup("");
+
+			pnt_name = client_node_defs[pnt->node].name;
+			break;
 
 		case ENTRY_FLIGHT:
 		case ENTRY_COLLISION:
@@ -78,6 +91,7 @@ static char *get_entry_text(DebugMenuEntry entry)
 		case ENTRY_VERSION:       asprintf(&str, "Dragonblocks Alpha %s", VERSION                                    );          break;
 		case ENTRY_FPS:           asprintf(&str, "%d FPS", game_fps                                                  );          break;
 		case ENTRY_POS:           asprintf(&str, "(%.1f %.1f %.1f)", pos.x, pos.y, pos.z                             );          break;
+		case ENTRY_POINTED:       asprintf(&str, "%s (%d, %d, %d)", pnt_name, pnt->pos.x, pnt->pos.y, pnt->pos.z     );          break;
 		case ENTRY_YAW:           asprintf(&str, "yaw = %.1f", 360.0 - rot.y / M_PI * 180.0                          );          break;
 		case ENTRY_PITCH:         asprintf(&str, "pitch = %.1f", -rot.x / M_PI * 180.0                               );          break;
 		case ENTRY_TIME:          asprintf(&str, "%02d:%02d", hours, minutes                                         );          break;
@@ -106,7 +120,7 @@ void debug_menu_init()
 	s32 offset = -16;
 
 	for (DebugMenuEntry i = 0; i < COUNT_ENTRY; i++) {
-		gui_elements[i] = gui_add(NULL, (GUIElementDefinition) {
+		gui_elements[i] = gui_add(NULL, (GUIElementDef) {
 			.pos = {0.0f, 0.0f},
 			.z_index = 0.1f,
 			.offset = {2, offset += 18},

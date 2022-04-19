@@ -5,7 +5,6 @@ layout(location = 3) in float vertexTextureIndex;
 layout(location = 4) in vec3 vertexColor;
 
 out vec3 fragmentPosition;
-out vec3 fragmentNormal;
 out vec2 fragmentTextureCoordinates;
 out float fragmentTextureIndex;
 out vec3 fragmentColor;
@@ -22,13 +21,9 @@ void main()
 	gl_Position = VP * worldSpace;
 
 	fragmentPosition = worldSpace.xyz;
-	fragmentNormal = vertexNormal;
 	fragmentTextureCoordinates = vertexTextureCoordinates;
 	fragmentTextureIndex = vertexTextureIndex;
 	fragmentColor = vertexColor;
 
-	float diffuseLight = 0.3 * daylight * clamp(dot(normalize(fragmentNormal), normalize(lightDir)), 0.0, 1.0);
-	float light = ambientLight + diffuseLight;
-
-	fragmentColor *= light;
+	fragmentColor *= ambientLight + 0.3 * daylight * clamp(dot(normalize(vertexNormal), normalize(lightDir)), 0.0, 1.0);
 }

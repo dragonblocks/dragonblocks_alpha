@@ -30,6 +30,6 @@ typedef struct {
 	void (*generate)(v3s32 pos, List *changed_chunks);
 } TreeDef;
 
-extern TreeDef tree_definitions[];
+extern TreeDef tree_defs[];
 
 #endif // _TREES_H_

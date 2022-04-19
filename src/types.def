@@ -25,6 +25,11 @@ EntityData
 	v3f32 rot
 	String nametag
 
+SerializedItemStack
+	u32 type
+	u32 count
+	Blob data
+
 ; server packets
 
 pkt ToServerAuth
@@ -83,3 +88,8 @@ pkt ToClientEntityUpdatePosRot
 pkt ToClientEntityUpdateNametag
 	u64 id
 	String nametag
+
+pkt ToClientPlayerInventory
+	u64 id
+	SerializedItemStack left
+	SerializedItemStack right

@@ -166,7 +166,7 @@ Blob terrain_serialize_chunk(TerrainChunk *chunk)
 			},
 		};
 
-		NodeDefinition *def = &node_definitions[node->type];
+		NodeDef *def = &node_defs[node->type];
 
 		if (def->serialize)
 			def->serialize(&node_data->data, node->data);
@@ -242,7 +242,7 @@ TerrainNode terrain_node_create(NodeType type, Blob buffer)
 	if (type >= NODE_UNLOADED)
 		type = NODE_UNKNOWN;
 
-	NodeDefinition *def = &node_definitions[type];
+	NodeDef *def = &node_defs[type];
 
 	TerrainNode node;
 	node.type = type;
@@ -259,7 +259,7 @@ TerrainNode terrain_node_create(NodeType type, Blob buffer)
 
 void terrain_node_delete(TerrainNode node)
 {
-	NodeDefinition *def = &node_definitions[node.type];
+	NodeDef *def = &node_defs[node.type];
 
 	if (def->delete)
 		def->delete(&node);

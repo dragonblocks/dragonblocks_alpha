@@ -27,30 +27,48 @@ static void send_entity_add(ServerPlayer *player, ServerPlayer *entity)
 	});
 }
 
-static void send_entity_remove(ServerPlayer *player, ServerPlayer *entity)
+static void send_entity_remove(ServerPlayer *client, ServerPlayer *entity)
 {
-	dragonnet_peer_send_ToClientEntityRemove(player->peer, &(ToClientEntityRemove) {
+	dragonnet_peer_send_ToClientEntityRemove(client->peer, &(ToClientEntityRemove) {
 		.id = entity->id,
 	});
 }
 
-static void send_entity_update_pos_rot(ServerPlayer *player, ServerPlayer *entity)
+static void send_entity_update_pos_rot(ServerPlayer *client, ServerPlayer *entity)
 {
-	if (player != entity)
-		dragonnet_peer_send_ToClientEntityUpdatePosRot(player->peer, &(ToClientEntityUpdatePosRot) {
+	if (client != entity)
+		dragonnet_peer_send_ToClientEntityUpdatePosRot(client->peer, &(ToClientEntityUpdatePosRot) {
 			.id = entity->id,
 			.pos = entity->pos,
 			.rot = entity->rot,
 		});
 }
 
-static void send_entity_add_existing(ServerPlayer *entity, ServerPlayer *player)
+static void send_entity_add_existing(ServerPlayer *entity, ServerPlayer *client)
 {
-	if (player != entity) {
+	if (client != entity) {
 		pthread_rwlock_rdlock(&entity->lock_pos);
-		send_entity_add(player, entity);
+		send_entity_add(client, entity);
 		pthread_rwlock_unlock(&entity->lock_pos);
 	}
+}
+
+static void send_player_inventory(ServerPlayer *client, ServerPlayer *player)
+{
+	ToClientPlayerInventory pkt;
+	pkt.id = player->id;
+	item_stack_serialize(&player->inventory.left, &pkt.left);
+	item_stack_serialize(&player->inventory.right, &pkt.right);
+	dragonnet_peer_send_ToClientPlayerInventory(client->peer, &pkt);
+}
+
+static void send_player_inventory_existing(ServerPlayer *player, ServerPlayer *client)
+{
+	if (client != player) {
+		pthread_rwlock_rdlock(&player->lock_inv);
+		send_player_inventory(client, player);
+		pthread_rwlock_unlock(&player->lock_inv);
+	}	
 }
 
 // main thread
@@ -81,6 +99,10 @@ static void player_delete(ServerPlayer *player)
 
 	pthread_rwlock_destroy(&player->lock_pos);
 
+	item_stack_destroy(&player->inventory.left);
+	item_stack_destroy(&player->inventory.right);
+	pthread_rwlock_destroy(&player->lock_inv);
+
 	free(player);
 }
 
@@ -94,6 +116,9 @@ static void player_spawn(ServerPlayer *player)
 		player->rot = (v3f32) {0.0f, 0.0f, 0.0f};
 		database_create_player(player->name, player->pos, player->rot);
 	}
+
+	item_stack_set(&player->inventory.left, ITEM_NONE + rand() % (ITEM_AXE - ITEM_NONE + 1), 1, (Blob) {0, NULL});
+	item_stack_set(&player->inventory.right, ITEM_NONE + rand() % (ITEM_AXE - ITEM_NONE + 1), 1, (Blob) {0, NULL});
 
 	// since this is recv thread, we don't need lock_peer
 	dragonnet_peer_send_ToClientInfo(player->peer, &(ToClientInfo) {
@@ -113,6 +138,9 @@ static void player_spawn(ServerPlayer *player)
 
 	server_player_iterate(&send_entity_add, player);
 	server_player_iterate(&send_entity_add_existing, player);
+
+	server_player_iterate(&send_player_inventory, player);
+	server_player_iterate(&send_player_inventory_existing, player);
 }
 
 // any thread
@@ -169,6 +197,10 @@ void server_player_add(DragonnetPeer *peer)
 	player->pos = (v3f64) {0.0f, 0.0f, 0.0f};
 	player->rot = (v3f32) {0.0f, 0.0f, 0.0f};
 	pthread_rwlock_init(&player->lock_pos, NULL);
+
+	item_stack_initialize(&player->inventory.left);
+	item_stack_initialize(&player->inventory.right);
+	pthread_rwlock_init(&player->lock_inv, NULL);
 
 	printf("[access] connected %s\n", player->name);
 	peer->extra = refcount_grb(&player->rc);

@@ -1,13 +1,13 @@
-#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
-#include <stb/stb_image_write.h>
 #include <stdio.h>
 #include <unistd.h>
 #include "client/camera.h"
 #include "client/client.h"
 #include "client/client_entity.h"
+#include "client/client_inventory.h"
+#include "client/client_item.h"
 #include "client/client_node.h"
 #include "client/client_player.h"
 #include "client/client_terrain.h"
@@ -26,25 +26,7 @@
 
 int game_fps = 0;
 
-static void crosshair_init()
-{
-	gui_add(NULL, (GUIElementDefinition) {
-		.pos = {0.5f, 0.5f},
-		.z_index = 0.0f,
-		.offset = {0, 0},
-		.margin = {0, 0},
-		.align = {0.5f, 0.5f},
-		.scale = {1.0f, 1.0f},
-		.scale_type = SCALE_IMAGE,
-		.affect_parent_scale = false,
-		.text = NULL,
-		.image = texture_load(RESSOURCE_PATH "textures/crosshair.png", false),
-		.text_color = {0.0f, 0.0f, 0.0f, 0.0f},
-		.bg_color = {0.0f, 0.0f, 0.0f, 0.0f},
-	});
-}
-
-static void render(f64 dtime)
+void game_render(f64 dtime)
 {
 	glEnable(GL_DEPTH_TEST); GL_DEBUG
 	glEnable(GL_BLEND); GL_DEBUG
@@ -60,6 +42,7 @@ static void render(f64 dtime)
 	frustum_update();
 	terrain_gfx_update();
 	client_entity_gfx_update();
+	client_inventory_update();
 
 	sky_render();
 	model_scene_render(dtime);
@@ -98,7 +81,7 @@ static void game_loop()
 		debug_menu_changed(ENTRY_SUN_ANGLE);
 		debug_menu_update();
 
-		render(dtime);
+		game_render(dtime);
 
 		glfwSwapBuffers(window.handle);
 		glfwPollEvents();
@@ -126,23 +109,27 @@ bool game(Flag *gfx_init)
 
 	client_player_gfx_init();
 
+	camera_init();
+
+	if (!gui_init())
+		return false;
+
 	if (!interact_init())
+		return false;
+
+	client_item_init();
+
+	if (!client_inventory_init())
 		return false;
 
 	client_node_init();
 	client_terrain_start();
 
-	camera_set_position((v3f32) {0.0f, 0.0f, 0.0f});
-	camera_set_angle(0.0f, 0.0f);
-
-	if (!gui_init())
-		return false;
-
 	debug_menu_init();
-	crosshair_init();
 	input_init();
 
 	flag_set(gfx_init);
+
 	game_loop();
 
 	client_terrain_stop();
@@ -155,70 +142,9 @@ bool game(Flag *gfx_init)
 	client_entity_gfx_deinit();
 	client_player_gfx_deinit();
 	interact_deinit();
+	client_item_deinit();
+	client_inventory_deinit();
 
 	return true;
 }
 
-char *game_take_screenshot()
-{
-	// renderbuffer for depth & stencil buffer
-	GLuint rbo;
-	glGenRenderbuffers(1, &rbo); GL_DEBUG
-	glBindRenderbuffer(GL_RENDERBUFFER, rbo); GL_DEBUG
-	glRenderbufferStorageMultisample(GL_RENDERBUFFER, 8, GL_DEPTH24_STENCIL8, window.width, window.height); GL_DEBUG
-
-	// 2 textures, one with AA, one without
-
-	GLuint txos[2];
-	glGenTextures(2, txos); GL_DEBUG
-
-	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, txos[0]); GL_DEBUG
-	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 8, GL_RGB, window.width, window.height, GL_TRUE); GL_DEBUG
-
-	glBindTexture(GL_TEXTURE_2D, txos[1]); GL_DEBUG
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window.width, window.height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL); GL_DEBUG
-
-	// 2 framebuffers, one with AA, one without
-
-	GLuint fbos[2];
-	glGenFramebuffers(2, fbos); GL_DEBUG
-
-	glBindFramebuffer(GL_FRAMEBUFFER, fbos[0]); GL_DEBUG
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, txos[0], 0); GL_DEBUG
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo); GL_DEBUG
-
-	glBindFramebuffer(GL_FRAMEBUFFER, fbos[1]); GL_DEBUG
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, txos[1], 0); GL_DEBUG
-
-	// render scene
-	glBindFramebuffer(GL_FRAMEBUFFER, fbos[0]); GL_DEBUG
-	render(0.0);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0); GL_DEBUG
-
-	// blit AA-buffer into no-AA buffer
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, fbos[0]); GL_DEBUG
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbos[1]); GL_DEBUG
-	glBlitFramebuffer(0, 0, window.width, window.height, 0, 0, window.width, window.height, GL_COLOR_BUFFER_BIT, GL_NEAREST); GL_DEBUG
-
-	// read data
-	GLubyte data[window.width * window.height * 3];
-	glBindFramebuffer(GL_FRAMEBUFFER, fbos[1]); GL_DEBUG
-	glPixelStorei(GL_PACK_ALIGNMENT, 1); GL_DEBUG
-	glReadPixels(0, 0, window.width, window.height, GL_RGB, GL_UNSIGNED_BYTE, data); GL_DEBUG
-
-	// create filename
-	char filename[BUFSIZ];
-	time_t timep = time(0);
-	strftime(filename, BUFSIZ, "screenshot-%Y-%m-%d-%H:%M:%S.png", localtime(&timep));
-
-	// save screenshot
-	stbi_flip_vertically_on_write(true);
-	stbi_write_png(filename, window.width, window.height, 3, data, window.width * 3);
-
-	// delete buffers
-	glDeleteRenderbuffers(1, &rbo); GL_DEBUG
-	glDeleteTextures(2, txos); GL_DEBUG
-	glDeleteFramebuffers(2, fbos); GL_DEBUG
-
-	return strdup(filename);
-}

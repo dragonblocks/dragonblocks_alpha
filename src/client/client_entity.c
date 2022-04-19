@@ -94,7 +94,7 @@ static void update_nametag(ClientEntity *entity)
 		if (!entity->data.nametag)
 			entity->nametag->visible = false;
 	} else if (entity->data.nametag) {
-		entity->nametag = gui_add(NULL, (GUIElementDefinition) {
+		entity->nametag = gui_add(NULL, (GUIElementDef) {
 			.pos = {-1.0f, -1.0f},
 			.z_index = 0.1f,
 			.offset = {0, 0},
@@ -233,7 +233,7 @@ void client_entity_transform(ClientEntity *entity)
 	model_node_transform(entity->model->root);
 }
 
-void client_entity_add(__attribute__((unused)) DragonnetPeer *peer, ToClientEntityAdd *pkt)
+void client_entity_add(__attribute__((unused)) void *peer, ToClientEntityAdd *pkt)
 {
 	if (pkt->type >= COUNT_ENTITY)
 		return;
@@ -264,12 +264,12 @@ void client_entity_add(__attribute__((unused)) DragonnetPeer *peer, ToClientEnti
 	refcount_drp(&entity->rc);
 }
 
-void client_entity_remove(__attribute__((unused)) DragonnetPeer *peer, ToClientEntityRemove *pkt)
+void client_entity_remove(__attribute__((unused)) void *peer, ToClientEntityRemove *pkt)
 {
 	map_del(&entities, &pkt->id, &cmp_entity, &entity_drop, NULL, &refcount_obj);
 }
 
-void client_entity_update_pos_rot(__attribute__((unused)) DragonnetPeer *peer, ToClientEntityUpdatePosRot *pkt)
+void client_entity_update_pos_rot(__attribute__((unused)) void *peer, ToClientEntityUpdatePosRot *pkt)
 {
 	ClientEntity *entity = client_entity_grab(pkt->id);
 
@@ -291,7 +291,7 @@ void client_entity_update_pos_rot(__attribute__((unused)) DragonnetPeer *peer, T
 	refcount_drp(&entity->rc);
 }
 
-void client_entity_update_nametag(__attribute__((unused)) DragonnetPeer *peer, ToClientEntityUpdateNametag *pkt)
+void client_entity_update_nametag(__attribute__((unused)) void *peer, ToClientEntityUpdateNametag *pkt)
 {
 	ClientEntity *entity = client_entity_grab(pkt->id);
 

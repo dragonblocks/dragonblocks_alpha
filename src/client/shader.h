@@ -5,6 +5,6 @@
 #include <GL/gl.h>
 #include <stdbool.h>
 
-bool shader_program_create(const char *path, GLuint *idptr, const char *definitions);
+bool shader_program_create(const char *path, GLuint *idptr, const char *defs);
 
 #endif // _SHADER_H_

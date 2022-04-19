@@ -55,8 +55,15 @@ static void render_node(ModelNode *node)
 	if (!node->visible)
 		return;
 
+	if (node->clockwise) {
+		glFrontFace(GL_CW); GL_DEBUG
+	}
+
 	for (size_t i = 0; i < node->meshes.siz; i++) {
 		ModelMesh *mesh = &((ModelMesh *) node->meshes.ptr)[i];
+
+		if (!mesh->mesh)
+			continue;
 
 		glUseProgram(mesh->shader->prog); GL_DEBUG
 		glUniformMatrix4fv(mesh->shader->loc_transform, 1, GL_FALSE, node->abs[0]); GL_DEBUG
@@ -70,6 +77,10 @@ static void render_node(ModelNode *node)
 	}
 
 	list_itr(&node->children, &render_node, NULL, NULL);
+
+	if (node->clockwise) {
+		glFrontFace(GL_CCW); GL_DEBUG
+	}
 }
 
 static void free_node_meshes(ModelNode *node)
@@ -276,11 +287,15 @@ Model *model_load(const char *path, const char *textures_path, Mesh *cube, Model
 					cursor += n;
 				else
 					fprintf(stderr, "[warning] invalid value for rot in model %s in line %d\n", path, count);
+
+				node->rot = v3f32_scale(node->rot, M_PI / 180.0);
 			} else if (strcmp(key, "scale") == 0) {
 				if (sscanf(cursor, "%f %f %f %n", &node->scale.x, &node->scale.y, &node->scale.z, &n) == 3)
 					cursor += n;
 				else
 					fprintf(stderr, "[warning] invalid value for scale in model %s in line %d\n", path, count);
+			} else if (strcmp(key, "clockwise") == 0) {
+				node->clockwise = 1;
 			} else if (strcmp(key, "cube") == 0) {
 				char texture[length + 1];
 
@@ -372,7 +387,8 @@ ModelNode *model_node_create(ModelNode *parent)
 {
 	ModelNode *node = malloc(sizeof *node);
 	node->name = NULL;
-	node->visible = true;
+	node->visible = 1;
+	node->clockwise = 0;
 	node->pos = (v3f32) {0.0f, 0.0f, 0.0f};
 	node->rot = (v3f32) {0.0f, 0.0f, 0.0f};
 	node->scale = (v3f32) {1.0f, 1.0f, 1.0f};

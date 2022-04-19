@@ -6,9 +6,9 @@
 #include "client/client.h"
 #include "client/client_player.h"
 #include "client/debug_menu.h"
-#include "client/game.h"
 #include "client/gui.h"
 #include "client/input.h"
+#include "client/screenshot.h"
 #include "client/window.h"
 #include "day.h"
 
@@ -72,7 +72,7 @@ static bool key_listener(KeyListener *listener)
 
 void input_init()
 {
-	pause_menu = gui_add(NULL, (GUIElementDefinition) {
+	pause_menu = gui_add(NULL, (GUIElementDef) {
 		.pos = {0.0f, 0.0f},
 		.z_index = 0.5f,
 		.offset = {0, 0},
@@ -87,7 +87,7 @@ void input_init()
 		.bg_color = {0.0f, 0.0f, 0.0f, 0.4f},
 	});
 
-	status_message = gui_add(NULL, (GUIElementDefinition) {
+	status_message = gui_add(NULL, (GUIElementDef) {
 		.pos = {0.5f, 0.25f},
 		.z_index = 0.1f,
 		.offset = {0, 0},
@@ -165,7 +165,7 @@ void input_tick(f64 dtime)
 			debug_menu_toggle();
 
 		if (key_listener(&listener_screenshot)) {
-			char *screenshot_filename = game_take_screenshot();
+			char *screenshot_filename = screenshot();
 			SET_STATUS_MESSAGE("Screenshot saved to %s", screenshot_filename)
 			free(screenshot_filename);
 		}
@@ -202,7 +202,7 @@ void input_cursor(double current_x, double current_y)
 	cursor_last_x = current_x;
 	cursor_last_y = current_y;
 
-	ClientEntity *entity = client_player_entity();
+	ClientEntity *entity = client_player_entity_local();
 	if (!entity)
 		return;
 

@@ -3,15 +3,17 @@
 #include "client/camera.h"
 #include "client/client_node.h"
 #include "client/cube.h"
+#include "client/debug_menu.h"
 #include "client/frustum.h"
 #include "client/gl_debug.h"
+#include "client/gui.h"
 #include "client/interact.h"
 #include "client/mesh.h"
 #include "client/raycast.h"
 #include "client/shader.h"
 
-static bool pointed;
-static v3s32 node_pos;
+struct InteractPointed interact_pointed;
+
 static GLuint shader_prog;
 static GLint loc_MVP;
 static GLint loc_color;
@@ -53,6 +55,21 @@ bool interact_init()
 	selection_mesh.data = vertices;
 	mesh_upload(&selection_mesh);
 
+	gui_add(NULL, (GUIElementDef) {
+		.pos = {0.5f, 0.5f},
+		.z_index = 0.0f,
+		.offset = {0, 0},
+		.margin = {0, 0},
+		.align = {0.5f, 0.5f},
+		.scale = {1.0f, 1.0f},
+		.scale_type = SCALE_IMAGE,
+		.affect_parent_scale = false,
+		.text = NULL,
+		.image = texture_load(RESSOURCE_PATH "textures/crosshair.png", false),
+		.text_color = {0.0f, 0.0f, 0.0f, 0.0f},
+		.bg_color = {0.0f, 0.0f, 0.0f, 0.0f},
+	});
+
 	return true;
 }
 
@@ -64,22 +81,27 @@ void interact_deinit()
 
 void interact_tick()
 {
-	v3s32 old_node_pos = node_pos;
-
-	NodeType node;
-	if ((pointed = raycast(
-			(v3f64) {camera.eye  [0], camera.eye  [1], camera.eye  [2]}, 
-			(v3f64) {camera.front[0], camera.front[1], camera.front[2]},
-			5, &node_pos, &node)) && !v3s32_equals(node_pos, old_node_pos)) {
-		mat4x4_translate(model, node_pos.x, node_pos.y, node_pos.z);
-		v3f32 *color = &client_node_definitions[node].selection_color;
+	bool old_exists = interact_pointed.exists;
+	v3s32 old_pointed = interact_pointed.pos;
+	if ((interact_pointed.exists = raycast(
+				(v3f64) {camera.eye  [0], camera.eye  [1], camera.eye  [2]}, 
+				(v3f64) {camera.front[0], camera.front[1], camera.front[2]},
+				5, &interact_pointed.pos, &interact_pointed.node)) 
+			&& !v3s32_equals(interact_pointed.pos, old_pointed)) {
+		mat4x4_translate(model,
+			interact_pointed.pos.x, interact_pointed.pos.y, interact_pointed.pos.z);
+		v3f32 *color = &client_node_defs[interact_pointed.node].selection_color;
 		glProgramUniform3f(shader_prog, loc_color, color->x, color->y, color->z); GL_DEBUG
+		debug_menu_changed(ENTRY_POINTED);
 	}
+
+	if (old_exists && !interact_pointed.exists)
+		debug_menu_changed(ENTRY_POINTED);	
 }
 
 void interact_render()
 {
-	if (!pointed)
+	if (!interact_pointed.exists)
 		return;
 
 	mat4x4 mvp;

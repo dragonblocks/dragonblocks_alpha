@@ -30,9 +30,10 @@ typedef struct {
 	void (*render)(NodeArgsRender *args);
 	bool pointable;
 	v3f32 selection_color;
-} ClientNodeDefinition;
+	char *name;
+} ClientNodeDef;
 
-extern ClientNodeDefinition client_node_definitions[];
+extern ClientNodeDef client_node_defs[];
 void client_node_init();
 
 #endif // _CLIENT_NODE_H_

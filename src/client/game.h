@@ -2,10 +2,11 @@
 #define _GAME_H_
 
 #include <dragonstd/flag.h>
+#include "types.h"
 
 extern int game_fps;
 
 bool game(Flag *gfx_init);
-char *game_take_screenshot();
+void game_render(f64 dtime);
 
 #endif // _GAME_H_

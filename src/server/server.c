@@ -1,8 +1,9 @@
 #define _GNU_SOURCE // don't worry, GNU extensions are only used when available
 #include <dragonnet/addr.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
+#include <time.h>
 #include "interrupt.h"
 #include "server/database.h"
 #include "server/server.h"
@@ -69,6 +70,8 @@ int main(int argc, char **argv)
 	server->on_recv_type[DRAGONNET_TYPE_ToServerSetnode     ] = (void *) &on_ToServerSetnode;
 	server->on_recv_type[DRAGONNET_TYPE_ToServerPosRot      ] = (void *) &on_ToServerPosRot;
 	server->on_recv_type[DRAGONNET_TYPE_ToServerRequestChunk] = (void *) &on_ToServerRequestChunk;
+
+	srand(time(0));
 
 	interrupt_init();
 	if (!database_init())

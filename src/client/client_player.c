@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "client/camera.h"
 #include "client/client.h"
+#include "client/client_inventory.h"
 #include "client/client_player.h"
 #include "client/client_terrain.h"
 #include "client/cube.h"
@@ -9,16 +10,6 @@
 #include "client/texture.h"
 #include "environment.h"
 #include "physics.h"
-
-typedef struct {
-	ModelNode *nametag;
-	ModelNode *neck;
-	ModelNode *eyes;
-	ModelNode *shoulder_left;
-	ModelNode *shoulder_right;
-	ModelNode *hip_left;
-	ModelNode *hip_right;
-} PlayerModelBones;
 
 struct ClientPlayer client_player;
 
@@ -33,10 +24,10 @@ static void update_camera()
 {
 	vec4 dst, src = {0.0f, 0.0f, 0.0f, 1.0f};
 
-	PlayerModelBones *bones = player_entity->extra;
+	ClientPlayerData *data = player_entity->extra;
 
-	if (bones->eyes)
-		mat4x4_mul_vec4(dst, bones->eyes->abs, src);
+	if (data->bones.eyes)
+		mat4x4_mul_vec4(dst, data->bones.eyes->abs, src);
 	else
 		vec4_dup(dst, src);
 
@@ -88,20 +79,25 @@ static void on_add(ClientEntity *entity)
 	entity->model = model_clone(player_model);
 	entity->model->extra = refcount_grb(&entity->rc);
 
-	PlayerModelBones *bones = entity->extra = malloc(sizeof *bones);
-	*bones = (PlayerModelBones) {NULL};
-	model_get_bones(entity->model, (ModelBoneMapping[]) {
-		{"player.nametag",                    &bones->nametag       },
-		{"player.neck",                       &bones->neck          },
-		{"player.neck.head.eyes",             &bones->eyes          },
-		{"player.body.upper.shoulders.left",  &bones->shoulder_left },
-		{"player.body.upper.shoulders.right", &bones->shoulder_right},
-		{"player.body.lower.hips.left",       &bones->hip_left      },
-		{"player.body.lower.hips.right",      &bones->hip_right     },
-	}, 7);
+	ClientPlayerData *data = entity->extra = malloc(sizeof *data);
+	data->bones = (struct ClientPlayerBones) {NULL};
 
-	entity->nametag_offset = bones->nametag ? &bones->nametag->abs : NULL;
+	model_get_bones(entity->model, (ModelBoneMapping[9]) {
+		{"nametag",        &data->bones.nametag   },
+		{"neck",           &data->bones.neck      },
+		{"neck.head.eyes", &data->bones.eyes      },
+		{"arm_left",       &data->bones.arm_left  },
+		{"arm_right",      &data->bones.arm_right },
+		{"arm_left.hand",  &data->bones.hand_left },
+		{"arm_right.hand", &data->bones.hand_right},
+		{"leg_left",       &data->bones.leg_left  },
+		{"leg_right",      &data->bones.leg_right },
+	}, 9);
+
+	entity->nametag_offset = data->bones.nametag ? &data->bones.nametag->abs : NULL;
 	entity->box_collision = (aabb3f32) {{-0.45f, 0.0f, -0.45f}, {0.45f, 1.8f, 0.45f}};
+
+	client_inventory_init_player(entity);
 
 	model_scene_add(entity->model);
 	client_entity_transform(entity);
@@ -115,18 +111,19 @@ static void on_remove(ClientEntity *entity)
 
 static void on_free(ClientEntity *entity)
 {
+	client_inventory_init_player(entity);
 	free(entity->extra);
 }
 
 static void on_transform(ClientEntity *entity)
 {
-	PlayerModelBones *bones = entity->extra;
+	ClientPlayerData *data = entity->extra;
 
 	entity->model->root->rot.x = entity->model->root->rot.z = 0.0f;
 
-	if (bones->neck) {
-		bones->neck->rot.x = entity->data.rot.x;
-		model_node_transform(bones->neck);
+	if (data->bones.neck) {
+		data->bones.neck->rot.x = entity->data.rot.x;
+		model_node_transform(data->bones.neck);
 	}
 }
 
@@ -174,8 +171,8 @@ static void local_on_update_nametag(ClientEntity *entity)
 
 static void __attribute__((unused)) on_model_step(Model *model, __attribute__((unused)) f64 dtime)
 {
-	PlayerModelBones *bones = ((ClientEntity *) model->extra)->extra;
-	(void) bones;
+	ClientPlayerData *data = ((ClientEntity *) model->extra)->extra;
+	(void) data; // ToDo: animations
 }
 
 static void on_model_delete(Model *model)
@@ -241,7 +238,19 @@ void client_player_gfx_deinit()
 	model_delete(player_model);
 }
 
-ClientEntity *client_player_entity()
+ClientEntity *client_player_entity(u64 id)
+{
+	ClientEntity *entity = client_entity_grab(id);
+
+	if (entity->type == &client_entity_types[ENTITY_LOCALPLAYER] 
+			|| entity->type == &client_entity_types[ENTITY_PLAYER])
+		return entity;
+
+	refcount_drp(&entity->rc);
+	return NULL;
+}
+
+ClientEntity *client_player_entity_local()
 {
 	ClientEntity *entity = NULL;
 
@@ -280,7 +289,7 @@ void client_player_update_rot(ClientEntity *entity)
 // jump if possible
 void client_player_jump()
 {
-	ClientEntity *entity = client_player_entity();
+	ClientEntity *entity = client_player_entity_local();
 	if (!entity)
 		return;
 
@@ -305,7 +314,7 @@ void client_player_jump()
 // to be called every frame
 void client_player_tick(f64 dtime)
 {
-	ClientEntity *entity = client_player_entity();
+	ClientEntity *entity = client_player_entity_local();
 	if (!entity)
 		return;
 

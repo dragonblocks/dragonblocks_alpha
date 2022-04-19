@@ -327,7 +327,7 @@ void gui_render()
 	glEnable(GL_CULL_FACE); GL_DEBUG
 }
 
-GUIElement *gui_add(GUIElement *parent, GUIElementDefinition def)
+GUIElement *gui_add(GUIElement *parent, GUIElementDef def)
 {
 	if (parent == NULL)
 		parent = &root_element;

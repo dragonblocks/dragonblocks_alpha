@@ -63,7 +63,7 @@ static void sync_step()
 	static size_t old_num_requests = 0;
 
 	v3f64 player_pos;
-	ClientEntity *entity = client_player_entity();
+	ClientEntity *entity = client_player_entity_local();
 
 	if (entity) {
 		pthread_rwlock_rdlock(&entity->lock_pos_rot);

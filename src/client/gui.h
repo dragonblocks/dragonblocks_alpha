@@ -29,10 +29,10 @@ typedef struct {
 	Texture *image;
 	v4f32 text_color;
 	v4f32 bg_color;
-} GUIElementDefinition;
+} GUIElementDef;
 
 typedef struct GUIElement {
-	GUIElementDefinition def;
+	GUIElementDef def;
 	bool visible;
 	v2f32 pos;
 	v2f32 scale;
@@ -47,7 +47,7 @@ bool gui_init();
 void gui_deinit();
 void gui_update_projection();
 void gui_render();
-GUIElement *gui_add(GUIElement *parent, GUIElementDefinition def);
+GUIElement *gui_add(GUIElement *parent, GUIElementDef def);
 void gui_text(GUIElement *element, const char *text);
 void gui_transform(GUIElement *element);
 

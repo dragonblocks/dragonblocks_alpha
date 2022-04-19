@@ -1,19 +1,15 @@
-name player scale 1 1.8 1
-	name nametag pos 0 1.1 0
-	name neck pos 0 0.75 0 scale 0.45 0.25 0.45
-		name head pos 0 +0.5 0 cube head
-			name eyes pos 0 0 +0.5
-	name body scale 0.48 0.75 0.225
-		name upper pos 0 1.0 0 scale 1 0.5 1
-			name chest pos 0 -0.5 0 cube chest
-			name shoulders scale 0.5 1 1
-				name left pos -1.5 0 0
-					name arm pos 0 -0.5 0 cube arm
-				name right pos +1.5 0 0
-					name arm pos 0 -0.5 0 cube arm
-		name lower pos 0 0.5 0 scale 1 0.5 1
-			name hips scale 0.5 1 1
-				name left pos -0.5 0 0
-					name leg pos 0 -0.5 0 cube leg
-				name right pos +0.5 0 0
-					name leg pos 0 -0.5 0 cube leg
+name nametag pos 0 2 0
+name neck pos 0 1.35 0
+	name head pos 0 0.225 0 scale 0.45 0.45 0.45 cube head
+		name eyes pos 0 0 +0.5
+name chest pos 0 1.0125 0 scale 0.48 0.675 0.225 cube chest
+name arm_left pos -0.36 1.35 0 scale -1 1 1 clockwise
+	pos 0 -0.3375 0 scale 0.24 0.675 0.225 cube arm
+	name hand pos 0 -0.585 0 scale 0.0625 0.0625 0.0625 rot 90 0 0
+name arm_right pos +0.36 1.35 0
+	pos 0 -0.3375 0 scale 0.24 0.675 0.225 cube arm
+	name hand pos 0 -0.585 0 scale 0.0625 0.0625 0.0625 rot 90 0 0
+name leg_left pos -0.12 0.675 0 scale -1 1 1 clockwise
+	pos 0 -0.3375 0 scale 0.24 0.675 0.225 cube leg
+name leg_right pos +0.12 0.675 0
+	pos 0 -0.3375 0 scale 0.24 0.675 0.225 cube leg

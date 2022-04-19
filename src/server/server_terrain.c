@@ -263,7 +263,7 @@ static void generate_spawn_hut()
 				pos.y++;
 			}
 
-			if (node_definitions[node].solid)
+			if (node_defs[node].solid)
 				break;
 
 			server_terrain_gen_node(pos,

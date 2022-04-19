@@ -5,6 +5,7 @@
 #include <dragonstd/refcount.h>
 #include <pthread.h>
 #include <stdbool.h>
+#include "item.h"
 #include "types.h"
 
 typedef struct {
@@ -21,6 +22,12 @@ typedef struct {
 	v3f64 pos;                     // player position
 	v3f32 rot;                     // you wont guess what this is
 	pthread_rwlock_t lock_pos;     // git commit crime
+
+	struct {
+		ItemStack left;
+		ItemStack right;
+	} inventory;
+	pthread_rwlock_t lock_inv;
 } ServerPlayer;
 
 void server_player_init();

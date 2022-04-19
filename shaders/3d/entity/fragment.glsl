@@ -1,5 +1,4 @@
 in vec3 fragmentPosition;
-in vec3 fragmentNormal;
 in vec3 fragmentTextureCoordinates;
 in float fragmentLight;
 

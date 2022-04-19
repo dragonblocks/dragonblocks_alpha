@@ -14,7 +14,7 @@ bool raycast(v3f64 pos, v3f64 dir, f64 len, v3s32 *node_pos, NodeType *node)
 		if (*node == NODE_UNLOADED)
 			return false;
 
-		if (client_node_definitions[*node].pointable)
+		if (client_node_defs[*node].pointable)
 			return true;
 
 		f64 vpos[3] = {pos.x, pos.y, pos.z};

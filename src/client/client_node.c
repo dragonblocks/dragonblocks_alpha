@@ -38,7 +38,7 @@ static void render_color(NodeArgsRender *args)
 	args->vertex.color = ((ColorData *) args->node->data)->color;
 }
 
-ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
+ClientNodeDef client_node_defs[NODE_UNLOADED] = {
 	// unknown
 	{
 		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/unknown.png"),
@@ -47,6 +47,7 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.render = NULL,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
+		.name = "Unknown",
 	},
 	// air
 	{
@@ -56,6 +57,7 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.render = NULL,
 		.pointable = false,
 		.selection_color = {1.0f, 1.0f, 1.0f},
+		.name = "Air",
 	},
 	// grass
 	{
@@ -65,6 +67,7 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.render = &render_grass,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
+		.name = "Grass",
 	},
 	// dirt
 	{
@@ -74,6 +77,7 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.render = NULL,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
+		.name = "Dirt",
 	},
 	// stone
 	{
@@ -83,6 +87,7 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.render = &render_stone,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
+		.name = "Stone",
 	},
 	// snow
 	{
@@ -92,6 +97,7 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.render = NULL,
 		.pointable = true,
 		.selection_color = {0.1f, 0.5f, 1.0f},
+		.name = "Snow",
 	},
 	// oak wood
 	{
@@ -105,6 +111,7 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.render = &render_color,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
+		.name = "Oak Wood",
 	},
 	// oak leaves
 	{
@@ -114,6 +121,7 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.render = &render_color,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
+		.name = "Oak Leaves",
 	},
 	// pine wood
 	{
@@ -127,6 +135,7 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.render = &render_color,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
+		.name = "Pine Wood",
 	},
 	// pine leaves
 	{
@@ -136,6 +145,7 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.render = &render_color,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
+		.name = "Pine Leaves",
 	},
 	// palm wood
 	{
@@ -149,6 +159,7 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.render = &render_color,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
+		.name = "Palm Wood",
 	},
 	// palm leaves
 	{
@@ -158,6 +169,7 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.render = &render_color,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
+		.name = "Palm Leaves",
 	},
 	// sand
 	{
@@ -167,6 +179,7 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.render = NULL,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
+		.name = "Sand",
 	},
 	// water
 	{
@@ -176,6 +189,7 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.render = NULL,
 		.pointable = false,
 		.selection_color = {1.0f, 1.0f, 1.0f},
+		.name = "Water",
 	},
 	// lava
 	{
@@ -185,6 +199,7 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.render = NULL,
 		.pointable = false,
 		.selection_color = {1.0f, 1.0f, 1.0f},
+		.name = "Lava",
 	},
 	// vulcano_stone
 	{
@@ -194,13 +209,14 @@ ClientNodeDefinition client_node_definitions[NODE_UNLOADED] = {
 		.render = NULL,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
+		.name = "Vulcano Stone",
 	},
 };
 
 void client_node_init()
 {
-	for (NodeType node = NODE_UNKNOWN; node < NODE_UNLOADED; node++) {
-		ClientNodeDefinition *def = &client_node_definitions[node];
+	for (NodeType node = 0; node < NODE_UNLOADED; node++) {
+		ClientNodeDef *def = &client_node_defs[node];
 
 		if (def->visibility != VISIBILITY_NONE) {
 			Texture *textures[6];

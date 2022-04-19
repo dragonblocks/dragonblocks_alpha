@@ -25,6 +25,7 @@ typedef struct {
 	bool free_data;
 } Mesh;
 
+void mesh_load(Mesh *mesh, const char *path);
 void mesh_upload(Mesh *mesh);
 void mesh_render(Mesh *mesh);
 void mesh_destroy(Mesh *mesh);

@@ -5,8 +5,6 @@
 #include <stddef.h>
 #include "types.h"
 
-#define NODE_DEFINITION(type) ((type) < NODE_UNLOADED ? &node_definitions[NODE_UNKNOWN] : &node_definitions[(type)]);
-
 typedef enum {
 	NODE_UNKNOWN,       // Used for unknown nodes received from server (caused by outdated clients)
 	NODE_AIR,
@@ -36,8 +34,8 @@ typedef struct {
 	void (*delete)(struct TerrainNode *node);
 	void (*serialize)(Blob *buffer, void *data);
 	void (*deserialize)(Blob *buffer, void *data);
-} NodeDefinition;
+} NodeDef;
 
-extern NodeDefinition node_definitions[];
+extern NodeDef node_defs[];
 
 #endif

@@ -26,12 +26,13 @@ typedef struct {
 
 typedef struct ModelNode {
 	char *name;
-	bool visible;
 	v3f32 pos, rot, scale;
 	mat4x4 abs, rel;
 	Array meshes;
 	struct ModelNode *parent;
 	List children;
+	unsigned int visible: 1;
+	unsigned int clockwise: 1;
 } ModelNode;
 
 typedef struct {
