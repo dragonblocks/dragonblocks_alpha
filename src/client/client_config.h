@@ -9,6 +9,7 @@ extern struct ClientConfig {
 	double view_distance;
 	bool vsync;
 	unsigned int meshgen_threads;
+	bool swap_mouse_buttons;
 } client_config;
 
 #endif

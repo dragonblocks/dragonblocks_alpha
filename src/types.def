@@ -35,9 +35,10 @@ SerializedItemStack
 pkt ToServerAuth
 	String name
 
-pkt ToServerSetnode
+pkt ToServerInteract
+	u8 left
+	u8 pointed
 	v3s32 pos
-	u32 node
 
 pkt ToServerPosRot
 	v3f64 pos

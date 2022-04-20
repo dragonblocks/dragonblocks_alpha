@@ -168,8 +168,8 @@ Blob terrain_serialize_chunk(TerrainChunk *chunk)
 
 		NodeDef *def = &node_defs[node->type];
 
-		if (def->serialize)
-			def->serialize(&node_data->data, node->data);
+		if (def->callbacks.serialize)
+			def->callbacks.serialize(&node_data->data, node->data);
 	}
 
 	Blob buffer = {0, NULL};
@@ -248,11 +248,11 @@ TerrainNode terrain_node_create(NodeType type, Blob buffer)
 	node.type = type;
 	node.data = def->data_size ? malloc(def->data_size) : NULL;
 
-	if (def->create)
-		def->create(&node);
+	if (def->callbacks.create)
+		def->callbacks.create(&node);
 
-	if (def->deserialize)
-		def->deserialize(&buffer, node.data);
+	if (def->callbacks.deserialize)
+		def->callbacks.deserialize(&buffer, node.data);
 
 	return node;
 }
@@ -261,8 +261,8 @@ void terrain_node_delete(TerrainNode node)
 {
 	NodeDef *def = &node_defs[node.type];
 
-	if (def->delete)
-		def->delete(&node);
+	if (def->callbacks.delete)
+		def->callbacks.delete(&node);
 
 	if (node.data)
 		free(node.data);

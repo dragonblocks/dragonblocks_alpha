@@ -49,6 +49,12 @@ static void window_pos_callback(__attribute__((unused)) GLFWwindow *handle, int 
 	}
 }
 
+static void mouse_button_callback(__attribute__((unused)) GLFWwindow *handle, int button, int action, __attribute__((unused)) int mods)
+{
+	if ((button == GLFW_MOUSE_BUTTON_RIGHT || button == GLFW_MOUSE_BUTTON_LEFT) && action == GLFW_PRESS)
+		input_click(button == GLFW_MOUSE_BUTTON_LEFT);
+}
+
 void window_enter_fullscreen()
 {
 	window.fullscreen = true;
@@ -108,6 +114,7 @@ bool window_init()
 	glfwSetFramebufferSizeCallback(window.handle, &framebuffer_size_callback);
 	glfwSetCursorPosCallback(window.handle, &cursor_pos_callback);
 	glfwSetWindowPosCallback(window.handle, &window_pos_callback);
+	glfwSetMouseButtonCallback(window.handle, &mouse_button_callback);
 
 	return true;
 }

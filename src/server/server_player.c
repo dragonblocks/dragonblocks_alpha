@@ -65,10 +65,10 @@ static void send_player_inventory(ServerPlayer *client, ServerPlayer *player)
 static void send_player_inventory_existing(ServerPlayer *player, ServerPlayer *client)
 {
 	if (client != player) {
-		pthread_rwlock_rdlock(&player->lock_inv);
+		pthread_mutex_lock(&player->mtx_inv);
 		send_player_inventory(client, player);
-		pthread_rwlock_unlock(&player->lock_inv);
-	}	
+		pthread_mutex_unlock(&player->mtx_inv);
+	}
 }
 
 // main thread
@@ -101,7 +101,7 @@ static void player_delete(ServerPlayer *player)
 
 	item_stack_destroy(&player->inventory.left);
 	item_stack_destroy(&player->inventory.right);
-	pthread_rwlock_destroy(&player->lock_inv);
+	pthread_mutex_destroy(&player->mtx_inv);
 
 	free(player);
 }
@@ -200,7 +200,7 @@ void server_player_add(DragonnetPeer *peer)
 
 	item_stack_initialize(&player->inventory.left);
 	item_stack_initialize(&player->inventory.right);
-	pthread_rwlock_init(&player->lock_inv, NULL);
+	pthread_mutex_init(&player->mtx_inv, NULL);
 
 	printf("[access] connected %s\n", player->name);
 	peer->extra = refcount_grb(&player->rc);
@@ -315,6 +315,11 @@ void server_player_disconnect(ServerPlayer *player)
 void server_player_iterate(void *func, void *arg)
 {
 	map_trv(&players_named, func, arg, &refcount_obj, TRAVERSION_INORDER);
+}
+
+void server_player_inventory_changed(ServerPlayer *player)
+{
+	server_player_iterate(&send_player_inventory, player);
 }
 
 /*

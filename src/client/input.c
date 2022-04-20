@@ -4,9 +4,12 @@
 #include <stdlib.h>
 #include "client/camera.h"
 #include "client/client.h"
+#include "client/client_config.h"
+#include "client/client_inventory.h"
 #include "client/client_player.h"
 #include "client/debug_menu.h"
 #include "client/gui.h"
+#include "client/interact.h"
 #include "client/input.h"
 #include "client/screenshot.h"
 #include "client/window.h"
@@ -217,4 +220,12 @@ void input_cursor(double current_x, double current_y)
 	client_player_update_rot(entity);
 	pthread_rwlock_unlock(&entity->lock_pos_rot);
 	refcount_drp(&entity->rc);
+}
+
+void input_click(bool left)
+{
+	if (client_config.swap_mouse_buttons)
+		left = !left;
+
+	interact_use(left);
 }

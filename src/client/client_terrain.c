@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include "client/client.h"
+#include "client/facedir.h"
 #include "client/facecache.h"
 #include "client/client_config.h"
 #include "client/client_player.h"
@@ -170,6 +171,9 @@ static void on_create_chunk(TerrainChunk *chunk)
 	meta->sync = 0;
 	meta->model = NULL;
 	meta->empty = false;
+	meta->has_model = false;
+	for (int i = 0; i < 6; i++)
+		meta->depends[i] = false;
 }
 
 // callback for deleting a chunk
@@ -258,47 +262,49 @@ u32 client_terrain_get_load_distance()
 void client_terrain_chunk_received(TerrainChunk *chunk)
 {
 	pthread_mutex_lock(&chunk->mtx);
-	TerrainChunkMeta *extra = chunk->extra;
-	if (extra->state == CHUNK_RECIEVING)
-		extra->state = CHUNK_FRESH;
+	TerrainChunkMeta *meta = chunk->extra;
+
+	if (meta->state == CHUNK_RECIEVING)
+		meta->state = CHUNK_FRESH;
+
 	pthread_mutex_unlock(&chunk->mtx);
 
-	client_terrain_meshgen_task(chunk);
+	client_terrain_meshgen_task(chunk, true);
 
-	v3s32 neighbors[6] = {
-		{+1,  0,  0},
-		{ 0, +1,  0},
-		{ 0,  0, +1},
-		{-1,  0,  0},
-		{ 0, -1,  0},
-		{ 0,  0, -1},
-	};
+	for (int i = 0; i < 6; i++) {
+		TerrainChunk *neighbor = terrain_get_chunk(client_terrain,
+			v3s32_sub(chunk->pos, facedir[i]), false);
+		if (!neighbor)
+			continue;
 
-	for (int i = 0; i < 6; i++)
-		client_terrain_meshgen_task(terrain_get_chunk(client_terrain,
-			v3s32_add(chunk->pos, neighbors[i]), false));
+		pthread_mutex_lock(&neighbor->mtx);
+		TerrainChunkMeta *neighbor_meta = neighbor->extra;
+		if (neighbor_meta->depends[i])
+			client_terrain_meshgen_task(neighbor, true);
+		pthread_mutex_unlock(&neighbor->mtx);
+	}
 }
 
 // enqueue chunk to mesh update queue
-void client_terrain_meshgen_task(TerrainChunk *chunk)
+void client_terrain_meshgen_task(TerrainChunk *chunk, bool changed)
 {
-	if (!chunk)
+	TerrainChunkMeta *meta = chunk->extra;
+	if (meta->queue)
 		return;
 
-	pthread_mutex_lock(&chunk->mtx);
+	if (meta->empty) {
+		meta->has_model = true;
 
-	TerrainChunkMeta *meta = chunk->extra;
-	if (!meta->queue) {
-		if (meta->empty) {
-			if (meta->model) {
-				meta->model->flags.delete = 1;
-				meta->model = NULL;
-			}
-		} else {
-			meta->queue = true;
-			queue_enq(&meshgen_tasks, chunk);
+		if (meta->model) {
+			meta->model->flags.delete = 1;
+			meta->model = NULL;
 		}
-	}
+	} else {
+		meta->queue = true;
 
-	pthread_mutex_unlock(&chunk->mtx);
+		if (meta->has_model && changed)
+			queue_ppd(&meshgen_tasks, chunk);
+		else
+			queue_enq(&meshgen_tasks, chunk);
+	}
 }

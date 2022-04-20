@@ -1,7 +1,10 @@
 #include <linmath.h/linmath.h>
 #include <stdio.h>
 #include "client/camera.h"
+#include "client/client.h"
+#include "client/client_item.h"
 #include "client/client_node.h"
+#include "client/client_player.h"
 #include "client/cube.h"
 #include "client/debug_menu.h"
 #include "client/frustum.h"
@@ -84,9 +87,9 @@ void interact_tick()
 	bool old_exists = interact_pointed.exists;
 	v3s32 old_pointed = interact_pointed.pos;
 	if ((interact_pointed.exists = raycast(
-				(v3f64) {camera.eye  [0], camera.eye  [1], camera.eye  [2]}, 
+				(v3f64) {camera.eye  [0], camera.eye  [1], camera.eye  [2]},
 				(v3f64) {camera.front[0], camera.front[1], camera.front[2]},
-				5, &interact_pointed.pos, &interact_pointed.node)) 
+				5, &interact_pointed.pos, &interact_pointed.node))
 			&& !v3s32_equals(interact_pointed.pos, old_pointed)) {
 		mat4x4_translate(model,
 			interact_pointed.pos.x, interact_pointed.pos.y, interact_pointed.pos.z);
@@ -96,7 +99,7 @@ void interact_tick()
 	}
 
 	if (old_exists && !interact_pointed.exists)
-		debug_menu_changed(ENTRY_POINTED);	
+		debug_menu_changed(ENTRY_POINTED);
 }
 
 void interact_render()
@@ -110,4 +113,25 @@ void interact_render()
 	glUseProgram(shader_prog); GL_DEBUG
 	glUniformMatrix4fv(loc_MVP, 1, GL_FALSE, mvp[0]); GL_DEBUG
 	mesh_render(&selection_mesh);
+}
+
+void interact_use(bool left)
+{
+	ClientEntity *entity = client_player_entity_local();
+	if (!entity)
+		return;
+
+	ClientPlayerData *data = entity->extra;
+	pthread_mutex_lock(&data->mtx_inv);
+
+	ItemStack *stack = left ? &data->inventory.left : &data->inventory.right;
+	if (client_item_defs[stack->type].use && client_item_defs[stack->type].use(stack))
+		dragonnet_peer_send_ToServerInteract(client, &(ToServerInteract) {
+			.left = left,
+			.pointed = interact_pointed.exists,
+			.pos = interact_pointed.pos,
+		});
+
+	pthread_mutex_unlock(&data->mtx_inv);
+	refcount_drp(&entity->rc);
 }

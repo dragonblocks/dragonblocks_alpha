@@ -30,10 +30,13 @@ struct TerrainNode;
 typedef struct {
 	bool solid;
 	size_t data_size;
-	void (*create)(struct TerrainNode *node);
-	void (*delete)(struct TerrainNode *node);
-	void (*serialize)(Blob *buffer, void *data);
-	void (*deserialize)(Blob *buffer, void *data);
+	unsigned long dig_class;
+	struct {
+		void (*create)(struct TerrainNode *node);
+		void (*delete)(struct TerrainNode *node);
+		void (*serialize)(Blob *buffer, void *data);
+		void (*deserialize)(Blob *buffer, void *data);
+	} callbacks;
 } NodeDef;
 
 extern NodeDef node_defs[];

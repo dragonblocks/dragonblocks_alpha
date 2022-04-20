@@ -248,7 +248,7 @@ ClientEntity *client_player_entity(u64 id)
 {
 	ClientEntity *entity = client_entity_grab(id);
 
-	if (entity->type == &client_entity_types[ENTITY_LOCALPLAYER] 
+	if (entity->type == &client_entity_types[ENTITY_LOCALPLAYER]
 			|| entity->type == &client_entity_types[ENTITY_PLAYER])
 		return entity;
 

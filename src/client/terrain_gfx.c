@@ -6,6 +6,7 @@
 #include "client/client_node.h"
 #include "client/client_terrain.h"
 #include "client/cube.h"
+#include "client/facedir.h"
 #include "client/frustum.h"
 #include "client/gl_debug.h"
 #include "client/light.h"
@@ -20,8 +21,9 @@ typedef struct {
 	TerrainChunk *chunk;
 	v3s32 chunkp;
 	TerrainChunk *nbrs[6];
-	bool tried_nbrs[6];
-	bool cull_edges;
+	bool *tried_nbrs;
+	bool show_edges;
+	bool shown_edges;
 } ChunkRenderData;
 
 static VertexLayout terrain_vertex_layout = {
@@ -36,15 +38,6 @@ static VertexLayout terrain_vertex_layout = {
 	.size = sizeof(TerrainVertex),
 };
 
-static v3s32 face_dir[6] = {
-	{+0, +0, -1},
-	{+0, +0, +1},
-	{-1, +0, +0},
-	{+1, +0, +0},
-	{+0, -1, +0},
-	{+0, +1, +0},
-};
-
 static v3f32 center_offset = {
 	CHUNK_SIZE * 0.5f + 0.5f,
 	CHUNK_SIZE * 0.5f + 0.5f,
@@ -57,19 +50,17 @@ static GLint loc_VP;
 static LightShader light_shader;
 static ModelShader model_shader;
 
-static inline bool cull_face(NodeType self, NodeType nbr)
+static inline bool show_face(NodeType self, NodeType nbr)
 {
 	switch (client_node_defs[self].visibility) {
 		case VISIBILITY_CLIP:
-			return false;
+			return true;
 
 		case VISIBILITY_BLEND:
-			return nbr == NODE_UNLOADED
-				|| nbr == self;
+			return nbr != self;
 
 		case VISIBILITY_SOLID:
-			return nbr == NODE_UNLOADED
-				|| client_node_defs[nbr].visibility == VISIBILITY_SOLID;
+			return nbr != NODE_UNLOADED && client_node_defs[nbr].visibility != VISIBILITY_SOLID;
 
 		default: // impossible
 			break;
@@ -94,7 +85,7 @@ static inline void render_node(ChunkRenderData *data, v3s32 offset)
 		args.pos = v3s32_add(offset, data->chunkp);
 
 	for (args.f = 0; args.f < 6; args.f++) {
-		v3s32 nbr_offset = v3s32_add(offset, face_dir[args.f]);
+		v3s32 nbr_offset = v3s32_add(offset, facedir[args.f]);
 
 		TerrainChunk *nbr_chunk;
 
@@ -104,7 +95,7 @@ static inline void render_node(ChunkRenderData *data, v3s32 offset)
 			nbr_chunk = data->chunk;
 		} else if (!(nbr_chunk = data->nbrs[args.f]) && !data->tried_nbrs[args.f]) {
 			nbr_chunk = data->nbrs[args.f] = terrain_get_chunk(client_terrain,
-				v3s32_add(data->chunk->pos, face_dir[args.f]), false);
+				v3s32_add(data->chunk->pos, facedir[args.f]), false);
 			data->tried_nbrs[args.f] = true;
 		}
 
@@ -115,13 +106,15 @@ static inline void render_node(ChunkRenderData *data, v3s32 offset)
 				[(nbr_offset.y + CHUNK_SIZE) % CHUNK_SIZE]
 				[(nbr_offset.z + CHUNK_SIZE) % CHUNK_SIZE].type;
 
-		if (cull_face(args.node->type, nbr_node)) {
-			// exception to culling rules: don't cull solid edge nodes, unless cull_edges
-			if (data->cull_edges || nbr_chunk == data->chunk || def->visibility != VISIBILITY_SOLID)
-				continue;
-		} else {
+		bool show = show_face(args.node->type, nbr_node);
+
+		if (show)
 			data->visible = true;
-		}
+		else if (data->show_edges && nbr_chunk != data->chunk && def->visibility == VISIBILITY_SOLID)
+			data->shown_edges = show = true;
+
+		if (!show)
+			continue;
 
 		ModelBatch *batch = data->batch;
 
@@ -145,19 +138,30 @@ static inline void render_node(ChunkRenderData *data, v3s32 offset)
 
 static void animate_chunk_model(Model *model, f64 dtime)
 {
-	if ((model->root->scale.x += dtime * 2.0f) > 1.0f) {
+	bool finished = (model->root->scale.x += dtime * 2.0f) > 1.0f;
+	if (finished)
 		model->root->scale.x = 1.0f;
-		client_terrain_meshgen_task(model->extra);
-	}
 
 	model->root->scale.z
 		= model->root->scale.y
 		= model->root->scale.x;
 
 	model_node_transform(model->root);
+
+	if (finished) {
+		model->callbacks.step = NULL;
+
+		if (model->extra) {
+			TerrainChunk *chunk = model->extra;
+
+			pthread_mutex_lock(&chunk->mtx);
+			client_terrain_meshgen_task(chunk, false);
+			pthread_mutex_unlock(&chunk->mtx);
+		}
+	}
 }
 
-static Model *create_chunk_model(TerrainChunk *chunk, bool animate)
+static Model *create_chunk_model(TerrainChunk *chunk, bool animate, bool *depends)
 {
 	ChunkRenderData data = {
 		.visible = false,
@@ -167,21 +171,23 @@ static Model *create_chunk_model(TerrainChunk *chunk, bool animate)
 		.chunk = chunk,
 		.chunkp = v3s32_scale(chunk->pos, CHUNK_SIZE),
 		.nbrs = {NULL},
-		.tried_nbrs = {false},
-		.cull_edges = !animate,
+		.tried_nbrs = depends,
+		.show_edges = animate,
+		.shown_edges = false,
 	};
 
 	CHUNK_ITERATE
 		render_node(&data, (v3s32) {x, y, z});
 
-	if (!data.batch->textures.siz && !data.batch_transparent->textures.siz) {
+	if (!data.visible || (!data.batch->textures.siz && !data.batch_transparent->textures.siz)) {
 		model_batch_free(data.batch);
 		model_batch_free(data.batch_transparent);
 		return NULL;
 	}
 
 	Model *model = model_create();
-	model->extra = chunk;
+	if (data.shown_edges)
+		model->extra = chunk;
 	model->box = (aabb3f32) {
 		v3f32_sub((v3f32) {-1.0f, -1.0f, -1.0f}, center_offset),
 		v3f32_add((v3f32) {+1.0f, +1.0f, +1.0f}, center_offset)};
@@ -201,6 +207,10 @@ static Model *create_chunk_model(TerrainChunk *chunk, bool animate)
 		model_batch_free(data.batch);
 		model_batch_free(data.batch_transparent);
 	}
+
+	for (int i = 0; i < 6; i++)
+		if (data.nbrs[i])
+			data.tried_nbrs[i] = true;
 
 	return model;
 }
@@ -256,15 +266,18 @@ void terrain_gfx_update()
 void terrain_gfx_make_chunk_model(TerrainChunk *chunk)
 {
 	TerrainChunkMeta *meta = chunk->extra;
-
-	bool animate = true;
-
 	pthread_mutex_lock(&chunk->mtx);
-	if (meta->model && meta->model->root->scale.x == 1.0f)
-		animate = false;
+
+	bool animate;
+	if (meta->model)
+		animate = meta->model->callbacks.step ? true : false;
+	else
+		animate = !meta->has_model;
+
 	pthread_mutex_unlock(&chunk->mtx);
 
-	Model *model = create_chunk_model(chunk, animate);
+	bool depends[6] = {false};
+	Model *model = create_chunk_model(chunk, animate, depends);
 
 	pthread_mutex_lock(&chunk->mtx);
 
@@ -282,5 +295,10 @@ void terrain_gfx_make_chunk_model(TerrainChunk *chunk)
 	}
 
 	meta->model = model;
+	meta->has_model = true;
+
+	for (int i = 0; i < 6; i++)
+		meta->depends[i] = depends[i];
+
 	pthread_mutex_unlock(&chunk->mtx);
 }

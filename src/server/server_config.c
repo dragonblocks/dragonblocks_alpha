@@ -12,8 +12,7 @@ struct ServerConfig server_config = {
 	}
 };
 
-#define NUM_CONFIG_ENTRIES 6
-static ConfigEntry config_entries[NUM_CONFIG_ENTRIES] = {
+static ConfigEntry config_entries[] = {
 	{
 		.type = CONFIG_UINT,
 		.key = "load_distance",
@@ -48,10 +47,10 @@ static ConfigEntry config_entries[NUM_CONFIG_ENTRIES] = {
 
 __attribute__((constructor)) static void server_config_init()
 {
-	config_read("server.conf", config_entries, NUM_CONFIG_ENTRIES);
+	config_read("server.conf", config_entries, sizeof config_entries / sizeof *config_entries);
 }
 
 __attribute__((destructor)) static void server_config_deinit()
 {
-	config_free(config_entries, NUM_CONFIG_ENTRIES);
+	config_free(config_entries, sizeof config_entries / sizeof *config_entries);
 }

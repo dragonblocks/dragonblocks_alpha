@@ -103,6 +103,7 @@ add_executable(dragonblocks
 	client/cube.c
 	client/debug_menu.c
 	client/facecache.c
+	client/facedir.c
 	client/font.c
 	client/frustum.c
 	client/game.c
@@ -142,6 +143,7 @@ add_executable(dragonblocks_server
 	server/schematic.c
 	server/server.c
 	server/server_config.c
+	server/server_item.c
 	server/server_player.c
 	server/server_terrain.c
 	server/terrain_gen.c

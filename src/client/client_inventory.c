@@ -77,13 +77,15 @@ static void wield_update(ModelNode *hand, ModelNode *arm, ItemType item)
 
 	if (arm) {
 		arm->rot.x = mesh ? -M_PI / 8.0 : 0.0;
-		model_node_transform(arm);		
+		model_node_transform(arm);
 	}
 }
 
 void client_inventory_init_player(ClientEntity *entity)
 {
 	ClientPlayerData *data = entity->extra;
+
+	pthread_mutex_init(&data->mtx_inv, NULL);
 
 	item_stack_initialize(&data->inventory.left);
 	item_stack_initialize(&data->inventory.right);
@@ -96,6 +98,8 @@ void client_inventory_deinit_player(ClientEntity *entity)
 {
 	ClientPlayerData *data = entity->extra;
 
+	pthread_mutex_destroy(&data->mtx_inv);
+
 	item_stack_destroy(&data->inventory.left);
 	item_stack_destroy(&data->inventory.right);
 }
@@ -107,6 +111,7 @@ void client_inventory_update_player(__attribute__((unused)) void *peer, ToClient
 		return;
 
 	ClientPlayerData *data = entity->extra;
+	pthread_mutex_lock(&data->mtx_inv);
 
 	item_stack_deserialize(&data->inventory.left, &pkt->left);
 	item_stack_deserialize(&data->inventory.right, &pkt->right);
@@ -114,5 +119,6 @@ void client_inventory_update_player(__attribute__((unused)) void *peer, ToClient
 	wield_update(data->bones.hand_left,  data->bones.arm_left,  data->inventory.left.type);
 	wield_update(data->bones.hand_right, data->bones.arm_right, data->inventory.right.type);
 
+	pthread_mutex_unlock(&data->mtx_inv);
 	refcount_drp(&entity->rc);
 }

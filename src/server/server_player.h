@@ -27,7 +27,7 @@ typedef struct {
 		ItemStack left;
 		ItemStack right;
 	} inventory;
-	pthread_rwlock_t lock_inv;
+	pthread_mutex_t mtx_inv;
 } ServerPlayer;
 
 void server_player_init();
@@ -43,5 +43,6 @@ bool server_player_auth(ServerPlayer *player, char *name);
 void server_player_disconnect(ServerPlayer *player);
 void server_player_move(ServerPlayer *player, v3f64 pos, v3f32 rot);
 void server_player_iterate(void *func, void *arg);
+void server_player_inventory_changed(ServerPlayer *player);
 
 #endif // _SERVER_PLAYER_H_

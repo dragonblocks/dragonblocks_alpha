@@ -7,6 +7,7 @@
 #include "interrupt.h"
 #include "server/database.h"
 #include "server/server.h"
+#include "server/server_item.h"
 #include "server/server_player.h"
 #include "server/server_terrain.h"
 
@@ -24,12 +25,16 @@ static void on_ToServerAuth(DragonnetPeer *peer, ToServerAuth *pkt)
 		pkt->name = NULL;
 }
 
-// set a node on the map
-static void on_ToServerSetnode(__attribute__((unused)) DragonnetPeer *peer, ToServerSetnode *pkt)
+static void on_ToServerInteract(DragonnetPeer *peer, ToServerInteract *pkt)
 {
-	terrain_set_node(server_terrain, pkt->pos,
-		terrain_node_create(pkt->node, (Blob) {0, NULL}),
-		false, NULL);
+	ServerPlayer *player = peer->extra;
+	pthread_mutex_lock(&player->mtx_inv);
+
+	ItemStack *stack = pkt->left ? &player->inventory.left : &player->inventory.right;
+	if (server_item_defs[stack->type].use)
+		server_item_defs[stack->type].use(player, stack, pkt->pointed, pkt->pos);
+
+	pthread_mutex_unlock(&player->mtx_inv);
 }
 
 // update player's position
@@ -67,7 +72,7 @@ int main(int argc, char **argv)
 	server->on_disconnect = &server_player_remove;
 	server->on_recv = &on_recv;
 	server->on_recv_type[DRAGONNET_TYPE_ToServerAuth        ] = (void *) &on_ToServerAuth;
-	server->on_recv_type[DRAGONNET_TYPE_ToServerSetnode     ] = (void *) &on_ToServerSetnode;
+	server->on_recv_type[DRAGONNET_TYPE_ToServerInteract    ] = (void *) &on_ToServerInteract;
 	server->on_recv_type[DRAGONNET_TYPE_ToServerPosRot      ] = (void *) &on_ToServerPosRot;
 	server->on_recv_type[DRAGONNET_TYPE_ToServerRequestChunk] = (void *) &on_ToServerRequestChunk;
 

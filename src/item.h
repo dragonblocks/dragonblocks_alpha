@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include "dig.h"
 #include "types.h"
 
 typedef enum {
@@ -22,10 +23,13 @@ typedef struct {
 typedef struct {
 	bool stackable;
 	size_t data_size;
-	void (*create)(ItemStack *stack);
-	void (*delete)(ItemStack *stack);
-	void (*serialize)(Blob *buffer, void *data);
-	void (*deserialize)(Blob *buffer, void *data);
+	DigClass dig_class;
+	struct {
+		void (*create)(ItemStack *stack);
+		void (*delete)(ItemStack *stack);
+		void (*serialize)(Blob *buffer, void *data);
+		void (*deserialize)(Blob *buffer, void *data);
+	} callbacks;
 } ItemDef;
 
 void item_stack_initialize(ItemStack *stack);

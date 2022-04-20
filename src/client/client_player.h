@@ -16,6 +16,7 @@ typedef struct {
 		ItemStack left;
 		ItemStack right;
 	} inventory;
+	pthread_mutex_t mtx_inv;
 	struct ClientPlayerBones {
 		ModelNode *nametag;
 		ModelNode *neck;
