@@ -39,6 +39,6 @@ typedef struct {
 	} callbacks;
 } NodeDef;
 
-extern NodeDef node_defs[];
+extern NodeDef node_def[];
 
 #endif

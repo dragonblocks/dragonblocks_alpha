@@ -267,9 +267,8 @@ void client_terrain_chunk_received(TerrainChunk *chunk)
 	if (meta->state == CHUNK_RECIEVING)
 		meta->state = CHUNK_FRESH;
 
-	pthread_mutex_unlock(&chunk->mtx);
-
 	client_terrain_meshgen_task(chunk, true);
+	pthread_mutex_unlock(&chunk->mtx);
 
 	for (int i = 0; i < 6; i++) {
 		TerrainChunk *neighbor = terrain_get_chunk(client_terrain,

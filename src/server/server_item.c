@@ -12,7 +12,7 @@ static void use_dig(__attribute__((unused)) ServerPlayer *player, ItemStack *sta
 	if (node == NODE_UNLOADED)
 		return;
 
-	if (!(node_defs[node].dig_class & item_defs[stack->type].dig_class))
+	if (!(node_def[node].dig_class & item_def[stack->type].dig_class))
 		return;
 
 	terrain_set_node(server_terrain, pos,
@@ -20,7 +20,7 @@ static void use_dig(__attribute__((unused)) ServerPlayer *player, ItemStack *sta
 		false, NULL);
 }
 
-ServerItemDef server_item_defs[COUNT_ITEM] = {
+ServerItemDef server_item_def[COUNT_ITEM] = {
 	// unknown
 	{
 		.use = NULL,
@@ -34,6 +34,10 @@ ServerItemDef server_item_defs[COUNT_ITEM] = {
 		.use = &use_dig,
 	},
 	// axe
+	{
+		.use = &use_dig,
+	},
+	// shovel
 	{
 		.use = &use_dig,
 	},

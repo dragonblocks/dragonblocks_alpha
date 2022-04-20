@@ -17,15 +17,15 @@ static LightShader _3d_light_shader;
 
 bool client_inventory_init()
 {
-	char *_3d_shader_defs;
-	asprintf(&_3d_shader_defs, "#define VIEW_DISTANCE %lf\n", client_config.view_distance);
+	char *_3d_shader_def;
+	asprintf(&_3d_shader_def, "#define VIEW_DISTANCE %lf\n", client_config.view_distance);
 
-	if (!shader_program_create(RESSOURCE_PATH "shaders/3d/item", &_3d_shader_prog, _3d_shader_defs)) {
+	if (!shader_program_create(RESSOURCE_PATH "shaders/3d/item", &_3d_shader_prog, _3d_shader_def)) {
 		fprintf(stderr, "[error] failed to create 3D item shader program\n");
 		return false;
 	}
 
-	free(_3d_shader_defs);
+	free(_3d_shader_def);
 
 	_3d_loc_VP = glGetUniformLocation(_3d_shader_prog, "VP");
 	_3d_loc_depthOffset = glGetUniformLocation(_3d_shader_prog, "depthOffset");

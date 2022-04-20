@@ -12,7 +12,7 @@ typedef struct {
 	bool (*use)(ItemStack *stack);
 } ClientItemDef;
 
-extern ClientItemDef client_item_defs[];
+extern ClientItemDef client_item_def[];
 
 void client_item_init();
 void client_item_deinit();

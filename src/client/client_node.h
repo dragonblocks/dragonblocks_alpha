@@ -33,7 +33,7 @@ typedef struct {
 	char *name;
 } ClientNodeDef;
 
-extern ClientNodeDef client_node_defs[];
+extern ClientNodeDef client_node_def[];
 void client_node_init();
 
 #endif // _CLIENT_NODE_H_

@@ -117,8 +117,8 @@ static void player_spawn(ServerPlayer *player)
 		database_create_player(player->name, player->pos, player->rot);
 	}
 
-	item_stack_set(&player->inventory.left, ITEM_NONE + rand() % (ITEM_AXE - ITEM_NONE + 1), 1, (Blob) {0, NULL});
-	item_stack_set(&player->inventory.right, ITEM_NONE + rand() % (ITEM_AXE - ITEM_NONE + 1), 1, (Blob) {0, NULL});
+	item_stack_set(&player->inventory.left, ITEM_NONE + rand() % (COUNT_ITEM - ITEM_NONE), 1, (Blob) {0, NULL});
+	item_stack_set(&player->inventory.right, ITEM_NONE + rand() % (COUNT_ITEM - ITEM_NONE), 1, (Blob) {0, NULL});
 
 	// since this is recv thread, we don't need lock_peer
 	dragonnet_peer_send_ToClientInfo(player->peer, &(ToClientInfo) {

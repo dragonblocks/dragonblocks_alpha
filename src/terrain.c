@@ -166,7 +166,7 @@ Blob terrain_serialize_chunk(TerrainChunk *chunk)
 			},
 		};
 
-		NodeDef *def = &node_defs[node->type];
+		NodeDef *def = &node_def[node->type];
 
 		if (def->callbacks.serialize)
 			def->callbacks.serialize(&node_data->data, node->data);
@@ -242,7 +242,7 @@ TerrainNode terrain_node_create(NodeType type, Blob buffer)
 	if (type >= NODE_UNLOADED)
 		type = NODE_UNKNOWN;
 
-	NodeDef *def = &node_defs[type];
+	NodeDef *def = &node_def[type];
 
 	TerrainNode node;
 	node.type = type;
@@ -259,7 +259,7 @@ TerrainNode terrain_node_create(NodeType type, Blob buffer)
 
 void terrain_node_delete(TerrainNode node)
 {
-	NodeDef *def = &node_defs[node.type];
+	NodeDef *def = &node_def[node.type];
 
 	if (def->callbacks.delete)
 		def->callbacks.delete(&node);

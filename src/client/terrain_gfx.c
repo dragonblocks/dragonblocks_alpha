@@ -52,7 +52,7 @@ static ModelShader model_shader;
 
 static inline bool show_face(NodeType self, NodeType nbr)
 {
-	switch (client_node_defs[self].visibility) {
+	switch (client_node_def[self].visibility) {
 		case VISIBILITY_CLIP:
 			return true;
 
@@ -60,7 +60,7 @@ static inline bool show_face(NodeType self, NodeType nbr)
 			return nbr != self;
 
 		case VISIBILITY_SOLID:
-			return nbr != NODE_UNLOADED && client_node_defs[nbr].visibility != VISIBILITY_SOLID;
+			return nbr != NODE_UNLOADED && client_node_def[nbr].visibility != VISIBILITY_SOLID;
 
 		default: // impossible
 			break;
@@ -76,7 +76,7 @@ static inline void render_node(ChunkRenderData *data, v3s32 offset)
 
 	args.node = &data->chunk->data[offset.x][offset.y][offset.z];
 
-	ClientNodeDef *def = &client_node_defs[args.node->type];
+	ClientNodeDef *def = &client_node_def[args.node->type];
 	if (def->visibility == VISIBILITY_NONE)
 		return;
 
@@ -179,6 +179,10 @@ static Model *create_chunk_model(TerrainChunk *chunk, bool animate, bool *depend
 	CHUNK_ITERATE
 		render_node(&data, (v3s32) {x, y, z});
 
+	for (int i = 0; i < 6; i++)
+		if (data.nbrs[i])
+			depends[i] = true;
+
 	if (!data.visible || (!data.batch->textures.siz && !data.batch_transparent->textures.siz)) {
 		model_batch_free(data.batch);
 		model_batch_free(data.batch_transparent);
@@ -208,10 +212,6 @@ static Model *create_chunk_model(TerrainChunk *chunk, bool animate, bool *depend
 		model_batch_free(data.batch_transparent);
 	}
 
-	for (int i = 0; i < 6; i++)
-		if (data.nbrs[i])
-			data.tried_nbrs[i] = true;
-
 	return model;
 }
 
@@ -220,20 +220,20 @@ bool terrain_gfx_init()
 	GLint texture_units;
 	glGetIntegerv(GL_MAX_TEXTURE_UNITS, &texture_units); GL_DEBUG
 
-	char *shader_defs;
-	asprintf(&shader_defs,
+	char *shader_def;
+	asprintf(&shader_def,
 		"#define MAX_TEXTURE_UNITS %d\n"
 		"#define VIEW_DISTANCE %lf\n",
 		texture_units,
 		client_config.view_distance
 	);
 
-	if (!shader_program_create(RESSOURCE_PATH "shaders/3d/terrain", &shader_prog, shader_defs)) {
+	if (!shader_program_create(RESSOURCE_PATH "shaders/3d/terrain", &shader_prog, shader_def)) {
 		fprintf(stderr, "[error] failed to create terrain shader program\n");
 		return false;
 	}
 
-	free(shader_defs);
+	free(shader_def);
 
 	loc_VP = glGetUniformLocation(shader_prog, "VP"); GL_DEBUG
 

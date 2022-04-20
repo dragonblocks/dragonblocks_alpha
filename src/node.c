@@ -3,7 +3,7 @@
 #include "terrain.h"
 #include "types.h"
 
-NodeDef node_defs[NODE_UNLOADED] = {
+NodeDef node_def[NODE_UNLOADED] = {
 	// unknown
 	{
 		.solid = true,
@@ -62,7 +62,7 @@ NodeDef node_defs[NODE_UNLOADED] = {
 	{
 		.solid = true,
 		.data_size = sizeof(ColorData),
-		.dig_class = DIG_NONE,
+		.dig_class = DIG_LEAVES,
 		.callbacks = {
 			.create = NULL,
 			.delete = NULL,
@@ -86,7 +86,7 @@ NodeDef node_defs[NODE_UNLOADED] = {
 	{
 		.solid = true,
 		.data_size = sizeof(ColorData),
-		.dig_class = DIG_NONE,
+		.dig_class = DIG_LEAVES,
 		.callbacks = {
 			.create = NULL,
 			.delete = NULL,
@@ -110,7 +110,7 @@ NodeDef node_defs[NODE_UNLOADED] = {
 	{
 		.solid = true,
 		.data_size = sizeof(ColorData),
-		.dig_class = DIG_NONE,
+		.dig_class = DIG_LEAVES,
 		.callbacks = {
 			.create = NULL,
 			.delete = NULL,

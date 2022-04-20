@@ -62,7 +62,7 @@ static char *get_entry_text(DebugMenuEntry entry)
 			if (!pnt->exists)
 				return strdup("");
 
-			pnt_name = client_node_defs[pnt->node].name;
+			pnt_name = client_node_def[pnt->node].name;
 			break;
 
 		case ENTRY_FLIGHT:

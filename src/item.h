@@ -11,6 +11,7 @@ typedef enum {
 	ITEM_NONE,
 	ITEM_PICKAXE,
 	ITEM_AXE,
+	ITEM_SHOVEL,
 	COUNT_ITEM,
 } ItemType;
 
@@ -39,6 +40,6 @@ void item_stack_set(ItemStack *stack, ItemType type, u32 count, Blob buffer);
 void item_stack_serialize(ItemStack *stack, SerializedItemStack *serialized);
 void item_stack_deserialize(ItemStack *stack, SerializedItemStack *serialized);
 
-extern ItemDef item_defs[];
+extern ItemDef item_def[];
 
 #endif // _ITEM_H_

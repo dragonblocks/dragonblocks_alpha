@@ -20,7 +20,7 @@ static aabb3s32 round_box(aabb3f64 box)
 static bool is_solid(Terrain *terrain, s32 x, s32 y, s32 z)
 {
 	NodeType node = terrain_get_node(terrain, (v3s32) {x, y, z}).type;
-	return node == NODE_UNLOADED || node_defs[node].solid;
+	return node == NODE_UNLOADED || node_def[node].solid;
 }
 
 bool physics_ground(Terrain *terrain, bool collide, aabb3f32 box, v3f64 *pos, v3f64 *vel)

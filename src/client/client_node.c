@@ -38,7 +38,7 @@ static void render_color(NodeArgsRender *args)
 	args->vertex.color = ((ColorData *) args->node->data)->color;
 }
 
-ClientNodeDef client_node_defs[NODE_UNLOADED] = {
+ClientNodeDef client_node_def[NODE_UNLOADED] = {
 	// unknown
 	{
 		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/unknown.png"),
@@ -216,7 +216,7 @@ ClientNodeDef client_node_defs[NODE_UNLOADED] = {
 void client_node_init()
 {
 	for (NodeType node = 0; node < NODE_UNLOADED; node++) {
-		ClientNodeDef *def = &client_node_defs[node];
+		ClientNodeDef *def = &client_node_def[node];
 
 		if (def->visibility != VISIBILITY_NONE) {
 			Texture *textures[6];

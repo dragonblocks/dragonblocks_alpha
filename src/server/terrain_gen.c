@@ -95,7 +95,7 @@ void terrain_gen_chunk(TerrainChunk *chunk, List *changed_chunks)
 					node = NODE_SNOW;
 
 				if (generate_args.diff == 1) for (int i = 0; i < NUM_TREES; i++) {
-					TreeDef *def = &tree_defs[i];
+					TreeDef *def = &tree_def[i];
 
 					if (def->condition(&condition_args)
 							&& noise2d(condition_args.pos.x, condition_args.pos.z, 0, seed + def->offset) * 0.5 + 0.5 < def->probability

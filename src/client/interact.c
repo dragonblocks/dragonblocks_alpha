@@ -93,7 +93,7 @@ void interact_tick()
 			&& !v3s32_equals(interact_pointed.pos, old_pointed)) {
 		mat4x4_translate(model,
 			interact_pointed.pos.x, interact_pointed.pos.y, interact_pointed.pos.z);
-		v3f32 *color = &client_node_defs[interact_pointed.node].selection_color;
+		v3f32 *color = &client_node_def[interact_pointed.node].selection_color;
 		glProgramUniform3f(shader_prog, loc_color, color->x, color->y, color->z); GL_DEBUG
 		debug_menu_changed(ENTRY_POINTED);
 	}
@@ -125,7 +125,7 @@ void interact_use(bool left)
 	pthread_mutex_lock(&data->mtx_inv);
 
 	ItemStack *stack = left ? &data->inventory.left : &data->inventory.right;
-	if (client_item_defs[stack->type].use && client_item_defs[stack->type].use(stack))
+	if (client_item_def[stack->type].use && client_item_def[stack->type].use(stack))
 		dragonnet_peer_send_ToServerInteract(client, &(ToServerInteract) {
 			.left = left,
 			.pointed = interact_pointed.exists,

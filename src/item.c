@@ -7,14 +7,14 @@ void item_stack_initialize(ItemStack *stack)
 	stack->count = 1;
 	stack->data = NULL;
 
-	if (item_defs[stack->type].callbacks.create)
-		item_defs[stack->type].callbacks.create(stack);
+	if (item_def[stack->type].callbacks.create)
+		item_def[stack->type].callbacks.create(stack);
 }
 
 void item_stack_destroy(ItemStack *stack)
 {
-	if (item_defs[stack->type].callbacks.delete)
-		item_defs[stack->type].callbacks.delete(stack);
+	if (item_def[stack->type].callbacks.delete)
+		item_def[stack->type].callbacks.delete(stack);
 
 	if (stack->data) {
 		free(stack->data);
@@ -28,14 +28,14 @@ void item_stack_set(ItemStack *stack, ItemType type, u32 count, Blob buffer)
 
 	stack->type = type;
 	stack->count = count;
-	stack->data = item_defs[stack->type].data_size > 0 ?
-		malloc(item_defs[stack->type].data_size) : NULL;
+	stack->data = item_def[stack->type].data_size > 0 ?
+		malloc(item_def[stack->type].data_size) : NULL;
 
-	if (item_defs[stack->type].callbacks.create)
-		item_defs[stack->type].callbacks.create(stack);
+	if (item_def[stack->type].callbacks.create)
+		item_def[stack->type].callbacks.create(stack);
 
-	if (item_defs[stack->type].callbacks.deserialize)
-		item_defs[stack->type].callbacks.deserialize(&buffer, stack->data);
+	if (item_def[stack->type].callbacks.deserialize)
+		item_def[stack->type].callbacks.deserialize(&buffer, stack->data);
 }
 
 void item_stack_serialize(ItemStack *stack, SerializedItemStack *serialized)
@@ -44,8 +44,8 @@ void item_stack_serialize(ItemStack *stack, SerializedItemStack *serialized)
 	serialized->count = stack->count;
 	serialized->data = (Blob) {0, NULL};
 
-	if (item_defs[stack->type].callbacks.serialize)
-		item_defs[stack->type].callbacks.serialize(&serialized->data, stack->data);
+	if (item_def[stack->type].callbacks.serialize)
+		item_def[stack->type].callbacks.serialize(&serialized->data, stack->data);
 }
 
 void item_stack_deserialize(ItemStack *stack, SerializedItemStack *serialized)
@@ -58,7 +58,7 @@ void item_stack_deserialize(ItemStack *stack, SerializedItemStack *serialized)
 	item_stack_set(stack, type, serialized->count, serialized->data);
 }
 
-ItemDef item_defs[COUNT_ITEM] = {
+ItemDef item_def[COUNT_ITEM] = {
 	// unknown
 	{
 		.stackable = false,
@@ -85,6 +85,13 @@ ItemDef item_defs[COUNT_ITEM] = {
 		.stackable = false,
 		.data_size = 0,
 		.dig_class = DIG_WOOD,
+		.callbacks = {NULL},
+	},
+	// shovel
+	{
+		.stackable = false,
+		.data_size = 0,
+		.dig_class = DIG_DIRT,
 		.callbacks = {NULL},
 	},
 };

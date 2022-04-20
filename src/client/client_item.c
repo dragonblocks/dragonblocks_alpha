@@ -5,10 +5,10 @@
 static bool use_dig(__attribute__((unused)) ItemStack *stack)
 {
 	return interact_pointed.exists
-		&& (node_defs[interact_pointed.node].dig_class & item_defs[stack->type].dig_class);
+		&& (node_def[interact_pointed.node].dig_class & item_def[stack->type].dig_class);
 }
 
-ClientItemDef client_item_defs[COUNT_ITEM] = {
+ClientItemDef client_item_def[COUNT_ITEM] = {
 	// unknown
 	{
 		.mesh_path = RESSOURCE_PATH "meshes/unknown.txt",
@@ -33,23 +33,29 @@ ClientItemDef client_item_defs[COUNT_ITEM] = {
 		.mesh = {0},
 		.use = &use_dig,
 	},
+	// shovel
+	{
+		.mesh_path = RESSOURCE_PATH "meshes/shovel.txt",
+		.mesh = {0},
+		.use = &use_dig,
+	},
 };
 
 void client_item_init()
 {
 	for (ItemType i = 0; i < COUNT_ITEM; i++)
-		if (client_item_defs[i].mesh_path)
-			mesh_load(&client_item_defs[i].mesh, client_item_defs[i].mesh_path);
+		if (client_item_def[i].mesh_path)
+			mesh_load(&client_item_def[i].mesh, client_item_def[i].mesh_path);
 }
 
 void client_item_deinit()
 {
 	for (ItemType i = 0; i < COUNT_ITEM; i++)
-		if (client_item_defs[i].mesh_path)
-			mesh_destroy(&client_item_defs[i].mesh);
+		if (client_item_def[i].mesh_path)
+			mesh_destroy(&client_item_def[i].mesh);
 }
 
 Mesh *client_item_mesh(ItemType type)
 {
-	return client_item_defs[type].mesh_path ? &client_item_defs[type].mesh : NULL;
+	return client_item_def[type].mesh_path ? &client_item_def[type].mesh : NULL;
 }

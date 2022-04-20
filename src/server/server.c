@@ -31,8 +31,8 @@ static void on_ToServerInteract(DragonnetPeer *peer, ToServerInteract *pkt)
 	pthread_mutex_lock(&player->mtx_inv);
 
 	ItemStack *stack = pkt->left ? &player->inventory.left : &player->inventory.right;
-	if (server_item_defs[stack->type].use)
-		server_item_defs[stack->type].use(player, stack, pkt->pointed, pkt->pos);
+	if (server_item_def[stack->type].use)
+		server_item_def[stack->type].use(player, stack, pkt->pointed, pkt->pos);
 
 	pthread_mutex_unlock(&player->mtx_inv);
 }
