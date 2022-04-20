@@ -37,6 +37,7 @@ Mesh client_entity_cube = {
 
 static GLuint shader_prog;
 static GLint loc_VP;
+static GLint loc_depthOffset;
 static LightShader light_shader;
 static Map entities;
 static List nametagged;
@@ -177,6 +178,7 @@ bool client_entity_gfx_init()
 	free(shader_defs);
 
 	loc_VP = glGetUniformLocation(shader_prog, "VP"); GL_DEBUG
+	loc_depthOffset = glGetUniformLocation(shader_prog, "depthOffset"); GL_DEBUG
 
 	EntityVertex vertices[6][6];
 	for (int f = 0; f < 6; f++) {
@@ -195,6 +197,8 @@ bool client_entity_gfx_init()
 	light_shader.prog = shader_prog;
 	light_shader_locate(&light_shader);
 
+	client_entity_depth_offset(0.0f);
+
 	return true;
 }
 
@@ -212,6 +216,11 @@ void client_entity_gfx_update()
 	pthread_mutex_lock(&mtx_nametagged);
 	list_itr(&nametagged, &update_nametag_pos, NULL, &refcount_obj);
 	pthread_mutex_unlock(&mtx_nametagged);
+}
+
+void client_entity_depth_offset(f32 offset)
+{
+	glProgramUniform1f(shader_prog, loc_depthOffset, offset);
 }
 
 ClientEntity *client_entity_grab(u64 id)

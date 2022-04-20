@@ -145,28 +145,26 @@ static int cmp_model(const Model *model, const f32 *distance)
 
 static void render_model(Model *model)
 {
-	if (model->flags.wireframe) {
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); GL_DEBUG
-	}
+	if (model->callbacks.before_render)
+		model->callbacks.before_render(model);
 
 	render_node(model->root);
 
-	if (model->flags.wireframe) {
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); GL_DEBUG
-	}
+	if (model->callbacks.after_render)
+		model->callbacks.after_render(model);
 }
 
 // step model help im stuck
 static void model_step(Model *model, Tree *transparent, f64 dtime)
 {
+	if (model->callbacks.step)
+		model->callbacks.step(model, dtime);
+
 	if (client_config.view_distance < (model->distance = sqrt(
 			pow(model->root->pos.x - camera.eye[0], 2) +
 			pow(model->root->pos.y - camera.eye[1], 2) +
 			pow(model->root->pos.z - camera.eye[2], 2))))
 		return;
-
-	if (model->callbacks.step)
-		model->callbacks.step(model, dtime);
 
 	if (!model->root->visible)
 		return;
@@ -212,10 +210,11 @@ Model *model_create()
 	model->replace = NULL;
 
 	model->callbacks.step = NULL;
+	model->callbacks.before_render = NULL;
+	model->callbacks.after_render = NULL;
 	model->callbacks.delete = NULL;
 
 	model->flags.delete =
-		model->flags.wireframe =
 		model->flags.frustum_culling =
 		model->flags.transparent = 0;
 

@@ -10,11 +10,14 @@ uniform mat4 VP;
 uniform float daylight;
 uniform float ambientLight;
 uniform vec3 lightDir;
+uniform float depthOffset;
 
 void main()
 {
 	vec4 worldSpace = model * vec4(vertexPosition, 1.0);
 	gl_Position = VP * worldSpace;
+	if (gl_Position.z > -1.0)
+		gl_Position.z = max(-1.0, gl_Position.z - depthOffset);
 
 	fragmentPosition = worldSpace.xyz;
 	fragmentColor = vertexColor;

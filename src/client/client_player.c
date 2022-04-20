@@ -74,6 +74,17 @@ static void recv_pos_rot()
 
 // entity callbacks
 
+static void local_on_model_before_render(__attribute__((unused)) Model *model)
+{
+	client_entity_depth_offset(0.2f);
+	client_inventory_depth_offset(0.2f);
+}
+
+static void local_on_model_after_render(__attribute__((unused)) Model *model)
+{
+	client_entity_depth_offset(0.0f);
+	client_inventory_depth_offset(0.0f);}
+
 static void on_add(ClientEntity *entity)
 {
 	entity->model = model_clone(player_model);
@@ -137,6 +148,8 @@ static void local_on_add(ClientEntity *entity)
 	}
 
 	on_add(entity);
+	entity->model->callbacks.before_render = &local_on_model_before_render;
+	entity->model->callbacks.after_render = &local_on_model_after_render;
 
 	player_entity = refcount_grb(&entity->rc);
 	recv_pos_rot();
@@ -167,12 +180,6 @@ static void local_on_update_nametag(ClientEntity *entity)
 		free(entity->data.nametag);
 		entity->data.nametag = NULL;
 	}
-}
-
-static void __attribute__((unused)) on_model_step(Model *model, __attribute__((unused)) f64 dtime)
-{
-	ClientPlayerData *data = ((ClientEntity *) model->extra)->extra;
-	(void) data; // ToDo: animations
 }
 
 static void on_model_delete(Model *model)
@@ -229,7 +236,6 @@ void client_player_gfx_init()
 		RESSOURCE_PATH "models/player.txt", RESSOURCE_PATH "textures/models/player",
 		&client_entity_cube, &client_entity_shader);
 
-	player_model->callbacks.step = &on_model_step;
 	player_model->callbacks.delete = &on_model_delete;
 }
 

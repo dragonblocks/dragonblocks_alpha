@@ -55,11 +55,12 @@ typedef struct Model {
 	struct Model *replace;
 	struct {
 		void (*step)(struct Model *model, f64 dtime);
+		void (*before_render)(struct Model *model);
+		void (*after_render)(struct Model *model);
 		void (*delete)(struct Model *model);
 	} callbacks;
 	struct {
 		unsigned int delete: 1;
-		unsigned int wireframe: 1;
 		unsigned int frustum_culling: 1;
 		unsigned int transparent: 1;
 	} flags;

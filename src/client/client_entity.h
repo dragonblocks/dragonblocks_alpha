@@ -50,6 +50,7 @@ void client_entity_deinit();
 bool client_entity_gfx_init();
 void client_entity_gfx_deinit();
 void client_entity_gfx_update();
+void client_entity_depth_offset(f32 offset);
 
 ClientEntity *client_entity_grab(u64 id);
 void client_entity_drop(ClientEntity *entity);

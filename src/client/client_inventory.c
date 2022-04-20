@@ -11,6 +11,7 @@
 
 static GLuint _3d_shader_prog;
 static GLint _3d_loc_VP;
+static GLint _3d_loc_depthOffset;
 static ModelShader _3d_model_shader;
 static LightShader _3d_light_shader;
 
@@ -27,12 +28,15 @@ bool client_inventory_init()
 	free(_3d_shader_defs);
 
 	_3d_loc_VP = glGetUniformLocation(_3d_shader_prog, "VP");
+	_3d_loc_depthOffset = glGetUniformLocation(_3d_shader_prog, "depthOffset");
 
 	_3d_model_shader.prog = _3d_shader_prog;
 	_3d_model_shader.loc_transform = glGetUniformLocation(_3d_shader_prog, "model"); GL_DEBUG
 
 	_3d_light_shader.prog = _3d_shader_prog;
 	light_shader_locate(&_3d_light_shader);
+
+	client_inventory_depth_offset(0.0f);
 
 	return true;
 }
@@ -46,6 +50,11 @@ void client_inventory_update()
 {
 	glProgramUniformMatrix4fv(_3d_shader_prog, _3d_loc_VP, 1, GL_FALSE, frustum[0]); GL_DEBUG
 	light_shader_update(&_3d_light_shader);
+}
+
+void client_inventory_depth_offset(f32 offset)
+{
+	glProgramUniform1f(_3d_shader_prog, _3d_loc_depthOffset, offset);
 }
 
 static void wield_init(ModelNode *hand)
