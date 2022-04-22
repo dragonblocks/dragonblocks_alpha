@@ -1,16 +1,49 @@
 #include <math.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include "terrain.h"
+
+typedef struct {
+	v2s32 pos;
+	Tree chunks;
+	pthread_rwlock_t lock;
+} TerrainSector;
+
+static TerrainChunk *allocate_chunk(v3s32 pos)
+{
+	TerrainChunk *chunk = malloc(sizeof * chunk);
+	chunk->level = pos.y;
+	chunk->pos = pos;
+	chunk->extra = NULL;
+	pthread_mutexattr_t attr;
+	pthread_mutexattr_init(&attr);
+	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
+	pthread_mutex_init(&chunk->mtx, &attr);
+
+	CHUNK_ITERATE
+		chunk->data[x][y][z] = (TerrainNode) {NODE_UNKNOWN, NULL};
+
+	return chunk;
+}
+
+static void free_chunk(Terrain *terrain, TerrainChunk *chunk)
+{
+	if (terrain->callbacks.delete_node) CHUNK_ITERATE
+		terrain->callbacks.delete_node(&chunk->data[x][y][z]);
+
+	pthread_mutex_destroy(&chunk->mtx);
+	free(chunk);
+}
 
 static void delete_chunk(TerrainChunk *chunk, Terrain *terrain)
 {
 	if (terrain->callbacks.delete_chunk)
 		terrain->callbacks.delete_chunk(chunk);
 
-	terrain_free_chunk(chunk);
+	free_chunk(terrain, chunk);
 }
 
 static void delete_sector(TerrainSector *sector, Terrain *terrain)
@@ -20,25 +53,7 @@ static void delete_sector(TerrainSector *sector, Terrain *terrain)
 	free(sector);
 }
 
-Terrain *terrain_create()
-{
-	Terrain *terrain = malloc(sizeof *terrain);
-	tree_ini(&terrain->sectors);
-	pthread_rwlock_init(&terrain->lock, NULL);
-	terrain->cache = NULL;
-	pthread_rwlock_init(&terrain->cache_lock, NULL);
-	return terrain;
-}
-
-void terrain_delete(Terrain *terrain)
-{
-	tree_clr(&terrain->sectors, &delete_sector, terrain, NULL, 0);
-	pthread_rwlock_destroy(&terrain->lock);
-	pthread_rwlock_destroy(&terrain->cache_lock);
-	free(terrain);
-}
-
-TerrainSector *terrain_get_sector(Terrain *terrain, v2s32 pos, bool create)
+static TerrainSector *get_sector(Terrain *terrain, v2s32 pos, bool create)
 {
 	if (create)
 		pthread_rwlock_wrlock(&terrain->lock);
@@ -64,6 +79,24 @@ TerrainSector *terrain_get_sector(Terrain *terrain, v2s32 pos, bool create)
 	return sector;
 }
 
+Terrain *terrain_create()
+{
+	Terrain *terrain = malloc(sizeof *terrain);
+	tree_ini(&terrain->sectors);
+	pthread_rwlock_init(&terrain->lock, NULL);
+	terrain->cache = NULL;
+	pthread_rwlock_init(&terrain->cache_lock, NULL);
+	return terrain;
+}
+
+void terrain_delete(Terrain *terrain)
+{
+	tree_clr(&terrain->sectors, &delete_sector, terrain, NULL, 0);
+	pthread_rwlock_destroy(&terrain->lock);
+	pthread_rwlock_destroy(&terrain->cache_lock);
+	free(terrain);
+}
+
 TerrainChunk *terrain_get_chunk(Terrain *terrain, v3s32 pos, bool create)
 {
 	TerrainChunk *cache = NULL;
@@ -75,7 +108,7 @@ TerrainChunk *terrain_get_chunk(Terrain *terrain, v3s32 pos, bool create)
 	if (cache && v3s32_equals(cache->pos, pos))
 		return cache;
 
-	TerrainSector *sector = terrain_get_sector(terrain, (v2s32) {pos.x, pos.z}, create);
+	TerrainSector *sector = get_sector(terrain, (v2s32) {pos.x, pos.z}, create);
 	if (!sector)
 		return NULL;
 
@@ -90,18 +123,15 @@ TerrainChunk *terrain_get_chunk(Terrain *terrain, v3s32 pos, bool create)
 	if (*loc) {
 		chunk = (*loc)->dat;
 
-		pthread_mutex_lock(&chunk->mtx);
 		if (terrain->callbacks.get_chunk && !terrain->callbacks.get_chunk(chunk, create)) {
-			pthread_mutex_unlock(&chunk->mtx);
 			chunk = NULL;
 		} else {
-			pthread_mutex_unlock(&chunk->mtx);
 			pthread_rwlock_wrlock(&terrain->cache_lock);
 			terrain->cache = chunk;
 			pthread_rwlock_unlock(&terrain->cache_lock);
 		}
 	} else if (create) {
-		tree_nmk(&sector->chunks, loc, chunk = terrain_allocate_chunk(pos));
+		tree_nmk(&sector->chunks, loc, chunk = allocate_chunk(pos));
 
 		if (terrain->callbacks.create_chunk)
 			terrain->callbacks.create_chunk(chunk);
@@ -112,33 +142,16 @@ TerrainChunk *terrain_get_chunk(Terrain *terrain, v3s32 pos, bool create)
 	return chunk;
 }
 
-TerrainChunk *terrain_allocate_chunk(v3s32 pos)
+TerrainChunk *terrain_get_chunk_nodep(Terrain *terrain, v3s32 nodep, v3s32 *offset, bool create)
 {
-	TerrainChunk *chunk = malloc(sizeof * chunk);
-	chunk->level = pos.y;
-	chunk->pos = pos;
-	chunk->extra = NULL;
-	pthread_mutexattr_t attr;
-	pthread_mutexattr_init(&attr);
-	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-	pthread_mutex_init(&chunk->mtx, &attr);
-
-	CHUNK_ITERATE
-		chunk->data[x][y][z] = terrain_node_create(NODE_UNKNOWN, (Blob) {0, NULL});
-
+	TerrainChunk *chunk = terrain_get_chunk(terrain, terrain_chunkp(nodep), create);
+	if (!chunk)
+		return NULL;
+	*offset = terrain_offset(nodep);
 	return chunk;
 }
 
-void terrain_free_chunk(TerrainChunk *chunk)
-{
-	CHUNK_ITERATE
-		terrain_node_delete(chunk->data[x][y][z]);
-
-	pthread_mutex_destroy(&chunk->mtx);
-	free(chunk);
-}
-
-Blob terrain_serialize_chunk(TerrainChunk *chunk)
+Blob terrain_serialize_chunk(__attribute__((unused)) Terrain *terrain, TerrainChunk *chunk, void (*callback)(TerrainNode *node, Blob *buffer))
 {
 	bool empty = true;
 
@@ -152,118 +165,95 @@ Blob terrain_serialize_chunk(TerrainChunk *chunk)
 	if (empty)
 		return (Blob) {0, NULL};
 
-	SerializedTerrainChunk chunk_data;
+	SerializedTerrainChunk serialized_chunk;
 
 	CHUNK_ITERATE {
 		TerrainNode *node = &chunk->data[x][y][z];
-		SerializedTerrainNode *node_data = &chunk_data.raw.nodes[x][y][z];
+		SerializedTerrainNode *serialized = &serialized_chunk.raw.nodes[x][y][z];
 
-		*node_data = (SerializedTerrainNode) {
-			.type = node->type,
-			.data = {
-				.siz = 0,
-				.data = NULL,
-			},
-		};
+		serialized->type = node->type;
+		serialized->data = (Blob) {0, NULL};
 
-		NodeDef *def = &node_def[node->type];
-
-		if (def->callbacks.serialize)
-			def->callbacks.serialize(&node_data->data, node->data);
+		if (callback)
+			callback(node, &serialized->data);
 	}
 
 	Blob buffer = {0, NULL};
-	SerializedTerrainChunk_write(&buffer, &chunk_data);
-	SerializedTerrainChunk_free(&chunk_data);
-
+	SerializedTerrainChunk_write(&buffer, &serialized_chunk);
+	SerializedTerrainChunk_free(&serialized_chunk);
 	return buffer;
 }
 
-bool terrain_deserialize_chunk(TerrainChunk *chunk, Blob buffer)
+bool terrain_deserialize_chunk(Terrain *terrain, TerrainChunk *chunk, Blob buffer, void (*callback)(TerrainNode *node, Blob buffer))
 {
 	if (buffer.siz == 0) {
-		CHUNK_ITERATE
-			chunk->data[x][y][z] = terrain_node_create(NODE_AIR, (Blob) {0, NULL});
+		CHUNK_ITERATE {
+			if (terrain->callbacks.delete_node)
+				terrain->callbacks.delete_node(&chunk->data[x][y][z]);
 
+			chunk->data[x][y][z] = (TerrainNode) {NODE_AIR, NULL};
+		}
 		return true;
 	}
 
 	// it's important to copy Blobs that have been malloc'd before reading from them
 	// because reading from a Blob modifies its data and size pointer,
 	// but does not free anything
-	SerializedTerrainChunk chunk_data = {0};
-	bool success = SerializedTerrainChunk_read(&buffer, &chunk_data);
+	SerializedTerrainChunk serialized_chunk = {0};
+	bool success = SerializedTerrainChunk_read(&buffer, &serialized_chunk);
 
-	if (success) CHUNK_ITERATE
-		chunk->data[x][y][z] = terrain_node_create(chunk_data.raw.nodes[x][y][z].type, chunk_data.raw.nodes[x][y][z].data);
+	if (success) CHUNK_ITERATE {
+		if (terrain->callbacks.delete_node)
+			terrain->callbacks.delete_node(&chunk->data[x][y][z]);
 
-	SerializedTerrainChunk_free(&chunk_data);
+		TerrainNode *node = &chunk->data[x][y][z];
+		SerializedTerrainNode *serialized = &serialized_chunk.raw.nodes[x][y][z];
+
+		node->type = serialized->type;
+
+		if (callback)
+			callback(node, serialized->data);
+	}
+
+	SerializedTerrainChunk_free(&serialized_chunk);
 	return success;
 }
 
-v3s32 terrain_node_to_chunk_pos(v3s32 pos, v3u8 *offset)
+void terrain_lock_chunk(TerrainChunk *chunk)
 {
-	if (offset)
-		*offset = (v3u8) {(u32) pos.x % CHUNK_SIZE, (u32) pos.y % CHUNK_SIZE, (u32) pos.z % CHUNK_SIZE};
-	return (v3s32) {floor((double) pos.x / (double) CHUNK_SIZE), floor((double) pos.y / (double) CHUNK_SIZE), floor((double) pos.z / (double) CHUNK_SIZE)};
+	if (pthread_mutex_lock(&chunk->mtx) == 0)
+		return;
+
+	fprintf(stderr, "[error] failed to lock terrain chunk mutex\n");
+	abort();
 }
 
 TerrainNode terrain_get_node(Terrain *terrain, v3s32 pos)
 {
-	v3u8 offset;
-	v3s32 chunkpos = terrain_node_to_chunk_pos(pos, &offset);
-	TerrainChunk *chunk = terrain_get_chunk(terrain, chunkpos, false);
+	v3s32 offset;
+	TerrainChunk *chunk = terrain_get_chunk_nodep(terrain, pos, &offset, false);
 	if (!chunk)
-		return terrain_node_create(NODE_UNLOADED, (Blob) {0, NULL});
-	return chunk->data[offset.x][offset.y][offset.z];
-}
+		return (TerrainNode) {COUNT_NODE, NULL};
 
-void terrain_set_node(Terrain *terrain, v3s32 pos, TerrainNode node, bool create, void *arg)
-{
-	v3u8 offset;
-	TerrainChunk *chunk = terrain_get_chunk(terrain, terrain_node_to_chunk_pos(pos, &offset), create);
-
-	if (!chunk)
-		return;
-
-	pthread_mutex_lock(&chunk->mtx);
-	if (!terrain->callbacks.set_node || terrain->callbacks.set_node(chunk, offset, &node, arg)) {
-		chunk->data[offset.x][offset.y][offset.z] = node;
-		if (terrain->callbacks.after_set_node)
-			terrain->callbacks.after_set_node(chunk, offset, arg);
-	} else {
-		terrain_node_delete(node);
-	}
+	terrain_lock_chunk(chunk);
+	TerrainNode node = chunk->data[offset.x][offset.y][offset.z];
 	pthread_mutex_unlock(&chunk->mtx);
-}
-
-TerrainNode terrain_node_create(NodeType type, Blob buffer)
-{
-	if (type >= NODE_UNLOADED)
-		type = NODE_UNKNOWN;
-
-	NodeDef *def = &node_def[type];
-
-	TerrainNode node;
-	node.type = type;
-	node.data = def->data_size ? malloc(def->data_size) : NULL;
-
-	if (def->callbacks.create)
-		def->callbacks.create(&node);
-
-	if (def->callbacks.deserialize)
-		def->callbacks.deserialize(&buffer, node.data);
 
 	return node;
 }
 
-void terrain_node_delete(TerrainNode node)
+v3s32 terrain_chunkp(v3s32 pos)
 {
-	NodeDef *def = &node_def[node.type];
+	return (v3s32) {
+		floor((double) pos.x / (double) CHUNK_SIZE),
+		floor((double) pos.y / (double) CHUNK_SIZE),
+		floor((double) pos.z / (double) CHUNK_SIZE)};
+}
 
-	if (def->callbacks.delete)
-		def->callbacks.delete(&node);
-
-	if (node.data)
-		free(node.data);
+v3s32 terrain_offset(v3s32 pos)
+{
+	return (v3s32) {
+		(u32) pos.x % CHUNK_SIZE,
+		(u32) pos.y % CHUNK_SIZE,
+		(u32) pos.z % CHUNK_SIZE};
 }

@@ -6,6 +6,7 @@
 #include <time.h>
 #include "day.h"
 #include "server/database.h"
+#include "server/server_node.h"
 #include "server/server_terrain.h"
 #include "perlin.h"
 
@@ -138,12 +139,13 @@ bool database_load_chunk(TerrainChunk *chunk)
 		TerrainChunkMeta *meta = chunk->extra;
 
 		meta->state = sqlite3_column_int(stmt, 0) ? CHUNK_READY : CHUNK_CREATED;
-		Blob_read(                 &(Blob) {sqlite3_column_bytes(stmt, 1), (void *) sqlite3_column_blob(stmt, 1)}, &meta->data);
-		TerrainGenStageBuffer_read(&(Blob) {sqlite3_column_bytes(stmt, 2), (void *) sqlite3_column_blob(stmt, 2)}, &meta->tgsb);
+		Blob data = {sqlite3_column_bytes(stmt, 1), (void *) sqlite3_column_blob(stmt, 1)};
+		Blob tgsb = {sqlite3_column_bytes(stmt, 2), (void *) sqlite3_column_blob(stmt, 2)};
 
-		if (!terrain_deserialize_chunk(chunk, meta->data)) {
+		TerrainGenStageBuffer_read(&tgsb, &meta->tgsb);
+		if (!terrain_deserialize_chunk(server_terrain, chunk, data, &server_node_deserialize)) {
 			fprintf(stderr, "[error] failed deserializing chunk at (%d, %d, %d)\n", chunk->pos.x, chunk->pos.y, chunk->pos.z);
-			exit(EXIT_FAILURE);
+			abort();
 		}
 	} else if (rc != SQLITE_DONE) {
 		print_chunk_error(chunk, "loading");
@@ -163,8 +165,7 @@ void database_save_chunk(TerrainChunk *chunk)
 
 	TerrainChunkMeta *meta = chunk->extra;
 
-	Blob data = {0, NULL};
-	Blob_write(&data, &meta->data);
+	Blob data = terrain_serialize_chunk(server_terrain, chunk, &server_node_serialize);
 
 	Blob tgsb = {0, NULL};
 	TerrainGenStageBuffer_write(&tgsb, &meta->tgsb);

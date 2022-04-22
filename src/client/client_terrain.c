@@ -6,13 +6,14 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include "client/client.h"
-#include "client/facedir.h"
 #include "client/facecache.h"
 #include "client/client_config.h"
+#include "client/client_node.h"
 #include "client/client_player.h"
 #include "client/client_terrain.h"
 #include "client/debug_menu.h"
 #include "client/terrain_gfx.h"
+#include "facedir.h"
 
 #define MAX_REQUESTS 4
 
@@ -77,7 +78,7 @@ static void sync_step()
 		return;
 	}
 
-	v3s32 center = terrain_node_to_chunk_pos((v3s32) {player_pos.x, player_pos.y, player_pos.z}, NULL);
+	v3s32 center = terrain_chunkp((v3s32) {player_pos.x, player_pos.y, player_pos.z});
 
 	u64 last_tick = tick++;
 
@@ -196,11 +197,10 @@ static bool on_get_chunk(TerrainChunk *chunk, bool create)
 void client_terrain_init()
 {
 	client_terrain = terrain_create();
-	client_terrain->callbacks.create_chunk   = &on_create_chunk;
-	client_terrain->callbacks.delete_chunk   = &on_delete_chunk;
-	client_terrain->callbacks.get_chunk      = &on_get_chunk;
-	client_terrain->callbacks.set_node       = NULL;
-	client_terrain->callbacks.after_set_node = NULL;
+	client_terrain->callbacks.create_chunk = &on_create_chunk;
+	client_terrain->callbacks.delete_chunk = &on_delete_chunk;
+	client_terrain->callbacks.get_chunk    = &on_get_chunk;
+	client_terrain->callbacks.delete_node  = &client_node_delete;
 
 	cancel = false;
 	queue_ini(&meshgen_tasks);

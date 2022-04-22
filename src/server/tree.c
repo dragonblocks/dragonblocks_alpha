@@ -1,8 +1,23 @@
 #include <stdlib.h>
 #include "server/biomes.h"
+#include "server/server_node.h"
 #include "server/server_terrain.h"
-#include "server/trees.h"
+#include "server/tree.h"
 #include "server/voxel_procedural.h"
+
+typedef struct {
+	NodeType type;
+	v3s32 root;
+} ProceduralTreeArg;
+
+static TerrainNode create_tree_node(__attribute__((unused)) v3s32 pos, v3f32 color, ProceduralTreeArg *arg)
+{
+	return server_node_create_tree(arg->type, (TreeData) {
+		.color = color,
+		.has_root = 1,
+		.root = arg->root,
+	});
+}
 
 // oak
 
@@ -11,13 +26,14 @@ static bool oak_condition(TreeArgsCondition *args)
 	return args->biome == BIOME_HILLS;
 }
 
-static void oak_tree_leaf(VoxelProcedural *proc)
+static void oak_tree_leaf(VoxelProcedural *proc, v3s32 root)
 {
 	if (!voxel_procedural_is_alive(proc))
 		return;
 
 	voxel_procedural_push(proc);
-		voxel_procedural_cube(proc, NODE_OAK_LEAVES, true);
+		voxel_procedural_cube(proc, (void *) &create_tree_node,
+			&(ProceduralTreeArg) {NODE_OAK_LEAVES, root});
 	voxel_procedural_pop(proc);
 
 	voxel_procedural_push(proc);
@@ -27,11 +43,11 @@ static void oak_tree_leaf(VoxelProcedural *proc)
 		voxel_procedural_sz(proc, 0.8f);
 		voxel_procedural_ry(proc, 25.0f);
 		voxel_procedural_x(proc, 0.4f);
-		oak_tree_leaf(proc);
+		oak_tree_leaf(proc, root);
 	voxel_procedural_pop(proc);
 }
 
-static void oak_tree_top(VoxelProcedural *proc)
+static void oak_tree_top(VoxelProcedural *proc, v3s32 root)
 {
 	if (!voxel_procedural_is_alive(proc))
 		return;
@@ -48,13 +64,13 @@ static void oak_tree_top(VoxelProcedural *proc)
 			voxel_procedural_sat(proc, 0.5f);
 			voxel_procedural_hue(proc, voxel_procedural_random(proc, 60.0f, 20.0f));
 			voxel_procedural_ry(proc, -45.0f);
-			oak_tree_leaf(proc);
+			oak_tree_leaf(proc, root);
 		voxel_procedural_pop(proc);
 	}
 	voxel_procedural_pop(proc);
 }
 
-static void oak_tree_part(VoxelProcedural *proc, f32 n)
+static void oak_tree_part(VoxelProcedural *proc, v3s32 root, f32 n)
 {
 	if (!voxel_procedural_is_alive(proc))
 		return;
@@ -69,21 +85,22 @@ static void oak_tree_part(VoxelProcedural *proc, f32 n)
 			voxel_procedural_s(proc, 4.0f);
 			voxel_procedural_x(proc, 0.1f);
 			voxel_procedural_light(proc, voxel_procedural_random(proc, 0.0f, 0.1f));
-			voxel_procedural_cylinder(proc, NODE_OAK_WOOD, true);
+			voxel_procedural_cylinder(proc, (void *) &create_tree_node,
+				&(ProceduralTreeArg) {NODE_OAK_WOOD, root});
 		voxel_procedural_pop(proc);
 
 		if (i == (int) (n - 2.0f)) {
 			voxel_procedural_push(proc);
-				oak_tree_top(proc);
+				oak_tree_top(proc, root);
 			voxel_procedural_pop(proc);
 		}
 	}
 	voxel_procedural_pop(proc);
 }
 
-static void oak_tree(v3s32 pos, List *changed_chunks)
+static void oak_tree(v3s32 root, List *changed_chunks)
 {
-	VoxelProcedural *proc = voxel_procedural_create(changed_chunks, STAGE_TREES, pos);
+	VoxelProcedural *proc = voxel_procedural_create(changed_chunks, STAGE_TREES, root);
 
 	voxel_procedural_hue(proc, 40.0f);
 	voxel_procedural_light(proc, -0.5f);
@@ -97,7 +114,7 @@ static void oak_tree(v3s32 pos, List *changed_chunks)
 		voxel_procedural_push(proc);
 			voxel_procedural_y(proc, 0.5f);
 			voxel_procedural_light(proc, voxel_procedural_random(proc, -0.3f, 0.05f));
-			oak_tree_part(proc, n);
+			oak_tree_part(proc, root, n);
 		voxel_procedural_pop(proc);
 	}
 	voxel_procedural_pop(proc);
@@ -128,12 +145,10 @@ static void pine_tree(v3s32 pos, List *changed_chunks)
 		s32 dir = (noise3d(tree_pos.x, tree_pos.y, tree_pos.z, 0, seed + OFFSET_PINETREE_BRANCH_DIR) * 0.5 + 0.5) * 4.0;
 
 		for (v3s32 branch_pos = tree_pos; branch_length > 0; branch_length--, branch_pos = v3s32_add(branch_pos, dirs[dir]))
-			server_terrain_gen_node(branch_pos,
-				terrain_node_create(NODE_PINE_WOOD, (Blob) {0, NULL}),
+			server_terrain_gen_node(branch_pos, server_node_create(NODE_PINE_WOOD),
 				STAGE_TREES, changed_chunks);
 
-		server_terrain_gen_node(tree_pos,
-			terrain_node_create(NODE_PINE_WOOD, (Blob) {0, NULL}),
+		server_terrain_gen_node(tree_pos, server_node_create(NODE_PINE_WOOD),
 			STAGE_TREES, changed_chunks);
 	}
 }
@@ -147,24 +162,26 @@ static bool palm_condition(TreeArgsCondition *args)
 		&& ocean_get_node_at((v3s32) {args->pos.x, args->pos.y - 1, args->pos.z}, 0, args->row_data) == NODE_SAND;
 }
 
-static void palm_branch(VoxelProcedural *proc)
+static void palm_branch(VoxelProcedural *proc, v3s32 root)
 {
 	if (!voxel_procedural_is_alive(proc))
 		return;
 
-	voxel_procedural_cube(proc, NODE_PALM_LEAVES, true);
+	voxel_procedural_cube(proc, (void *) &create_tree_node,
+		&(ProceduralTreeArg) {NODE_PALM_LEAVES, root});
+
 	voxel_procedural_push(proc);
 		voxel_procedural_z(proc, 0.5f);
 		voxel_procedural_s(proc, 0.8f);
 		voxel_procedural_rx(proc, voxel_procedural_random(proc, 20.0f, 4.0f));
 		voxel_procedural_z(proc, 0.5f);
-		palm_branch(proc);
+		palm_branch(proc, root);
 	voxel_procedural_pop(proc);
 }
 
-static void palm_tree(v3s32 pos, List *changed_chunks)
+static void palm_tree(v3s32 root, List *changed_chunks)
 {
-	VoxelProcedural *proc = voxel_procedural_create(changed_chunks, STAGE_TREES, (v3s32) {pos.x, pos.y - 1, pos.z});
+	VoxelProcedural *proc = voxel_procedural_create(changed_chunks, STAGE_TREES, (v3s32) {root.x, root.y - 1, root.z});
 
 	f32 s = voxel_procedural_random(proc, 8.0f, 2.0f);
 
@@ -175,7 +192,8 @@ static void palm_tree(v3s32 pos, List *changed_chunks)
 			voxel_procedural_s(proc, 1.0f);
 			voxel_procedural_light(proc, voxel_procedural_random(proc, -0.8f, 0.1f));
 			voxel_procedural_sat(proc, 0.5f);
-			voxel_procedural_cube(proc, NODE_PALM_WOOD, true);
+			voxel_procedural_cube(proc, (void *) &create_tree_node,
+				&(ProceduralTreeArg) {NODE_PALM_WOOD, root});
 		voxel_procedural_pop(proc);
 	}
 	voxel_procedural_pop(proc);
@@ -193,7 +211,7 @@ static void palm_tree(v3s32 pos, List *changed_chunks)
 			voxel_procedural_light(proc, voxel_procedural_random(proc, 0.0f, 0.3f));
 			voxel_procedural_rx(proc, 90.0f);
 			voxel_procedural_s(proc, 2.0f);
-			palm_branch(proc);
+			palm_branch(proc, root);
 		voxel_procedural_pop(proc);
 	}
 	voxel_procedural_pop(proc);

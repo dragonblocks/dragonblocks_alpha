@@ -3,6 +3,11 @@
 ColorData
 	v3f32 color
 
+TreeData
+	v3f32 color
+	u8 has_root
+	v3s32 root
+
 SerializedTerrainNode
 	u32 type
 	Blob data

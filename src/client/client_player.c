@@ -144,7 +144,7 @@ static void local_on_add(ClientEntity *entity)
 
 	if (player_entity) {
 		fprintf(stderr, "[error] attempt to re-add localplayer entity\n");
-		exit(EXIT_FAILURE);
+		abort();
 	}
 
 	on_add(entity);

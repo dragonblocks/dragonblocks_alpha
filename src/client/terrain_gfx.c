@@ -6,12 +6,12 @@
 #include "client/client_node.h"
 #include "client/client_terrain.h"
 #include "client/cube.h"
-#include "client/facedir.h"
 #include "client/frustum.h"
 #include "client/gl_debug.h"
 #include "client/light.h"
 #include "client/shader.h"
 #include "client/terrain_gfx.h"
+#include "facedir.h"
 
 typedef struct {
 	bool visible;
@@ -60,7 +60,7 @@ static inline bool show_face(NodeType self, NodeType nbr)
 			return nbr != self;
 
 		case VISIBILITY_SOLID:
-			return nbr != NODE_UNLOADED && client_node_def[nbr].visibility != VISIBILITY_SOLID;
+			return nbr != COUNT_NODE && client_node_def[nbr].visibility != VISIBILITY_SOLID;
 
 		default: // impossible
 			break;
@@ -99,7 +99,7 @@ static inline void render_node(ChunkRenderData *data, v3s32 offset)
 			data->tried_nbrs[args.f] = true;
 		}
 
-		NodeType nbr_node = NODE_UNLOADED;
+		NodeType nbr_node = COUNT_NODE;
 		if (nbr_chunk)
 			nbr_node = nbr_chunk->data
 				[(nbr_offset.x + CHUNK_SIZE) % CHUNK_SIZE]

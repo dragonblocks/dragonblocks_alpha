@@ -64,7 +64,7 @@ Texture *texture_load(char *path, bool mipmap)
 		&texture->width, &texture->height, &texture->channels, 0);
 	if (!data) {
 		fprintf(stderr, "[error] failed to load texture %s\n", path);
-		exit(EXIT_FAILURE);
+		abort();
 	}
 
 	texture_upload(texture, data, GL_RGBA, mipmap);
@@ -123,7 +123,7 @@ Texture *texture_load_cubemap(char *path, bool bilinear_filter)
 		if (!(faces[i].data = stbi_load(filename,
 				&faces[i].width, &faces[i].height, &faces[i].channels, 0))) {
 			fprintf(stderr, "[error] failed to load texture %s\n", filename);
-			exit(EXIT_FAILURE);
+			abort();
 		}
 
 		size = least_common_multiple(size, faces[i].width);

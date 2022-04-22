@@ -11,7 +11,7 @@ bool raycast(v3f64 pos, v3f64 dir, f64 len, v3s32 *node_pos, NodeType *node)
 		*node = terrain_get_node(client_terrain,
 			*node_pos = (v3s32) {floor(pos.x + 0.5), floor(pos.y + 0.5), floor(pos.z + 0.5)}).type;
 
-		if (*node == NODE_UNLOADED)
+		if (*node == COUNT_NODE)
 			return false;
 
 		if (client_node_def[*node].pointable)

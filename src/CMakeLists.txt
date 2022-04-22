@@ -78,6 +78,7 @@ set(COMMON_SOURCES
 	config.c
 	day.c
 	environment.c
+	facedir.c
 	interrupt.c
 	item.c
 	node.c
@@ -103,7 +104,6 @@ add_executable(dragonblocks
 	client/cube.c
 	client/debug_menu.c
 	client/facecache.c
-	client/facedir.c
 	client/font.c
 	client/frustum.c
 	client/game.c
@@ -144,10 +144,12 @@ add_executable(dragonblocks_server
 	server/server.c
 	server/server_config.c
 	server/server_item.c
+	server/server_node.c
 	server/server_player.c
 	server/server_terrain.c
 	server/terrain_gen.c
-	server/trees.c
+	server/tree.c
+	server/tree_physics.c
 	server/voxel_depth_search.c
 	server/voxel_procedural.c
 )
@@ -159,7 +161,7 @@ target_link_libraries(dragonblocks_server
 # Version
 
 add_custom_target(version
-	COMMAND ${CMAKE_COMMAND} -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}  -P ${CMAKE_CURRENT_SOURCE_DIR}/version.cmake
+	COMMAND ${CMAKE_COMMAND} -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/version.cmake
 	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 

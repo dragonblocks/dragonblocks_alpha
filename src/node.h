@@ -5,6 +5,8 @@
 #include <stddef.h>
 #include "types.h"
 
+#define NODES_TREE case NODE_OAK_WOOD: case NODE_OAK_LEAVES: case NODE_PINE_WOOD: case NODE_PINE_LEAVES: case NODE_PALM_WOOD: case NODE_PALM_LEAVES:
+
 typedef enum {
 	NODE_UNKNOWN,       // Used for unknown nodes received from server (caused by outdated clients)
 	NODE_AIR,
@@ -22,21 +24,14 @@ typedef enum {
 	NODE_WATER,
 	NODE_LAVA,
 	NODE_VULCANO_STONE,
-	NODE_UNLOADED,      // Used for nodes in unloaded chunks
+	COUNT_NODE,      // Used for nodes in unloaded chunks
 } NodeType;
 
 struct TerrainNode;
 
 typedef struct {
 	bool solid;
-	size_t data_size;
 	unsigned long dig_class;
-	struct {
-		void (*create)(struct TerrainNode *node);
-		void (*delete)(struct TerrainNode *node);
-		void (*serialize)(Blob *buffer, void *data);
-		void (*deserialize)(Blob *buffer, void *data);
-	} callbacks;
 } NodeDef;
 
 extern NodeDef node_def[];

@@ -8,6 +8,7 @@
 
 struct ClientAuth client_auth;
 
+#include <string.h>
 static void auth_loop()
 {
 	while (!interrupt.set) switch (client_auth.state) {
@@ -15,8 +16,11 @@ static void auth_loop()
 			if (client_auth.name)
 				linenoiseFree(client_auth.name);
 
+			/*
 			if (!(client_auth.name = linenoise("Enter name: ")))
 				return;
+			*/
+			client_auth.name = strdup("singleplayer");
 
 			printf("[access] authenticating as %s...\n", client_auth.name);
 			client_auth.state = AUTH_WAIT;

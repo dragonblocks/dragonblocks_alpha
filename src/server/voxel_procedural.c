@@ -171,10 +171,15 @@ bool voxel_procedural_is_alive(VoxelProcedural *proc)
 		VOXEL_PROCEDURAL_STATE(proc).scale[2] >= 1.0f;
 }
 
-void voxel_procedural_cube(VoxelProcedural *proc, NodeType node, bool use_color)
+void voxel_procedural_cube(VoxelProcedural *proc, VoxelProceduralNode func, void *arg)
 {
 	if (!voxel_procedural_is_alive(proc))
 		return;
+
+	v3f32 color = hsl_to_rgb((v3f32) {
+		VOXEL_PROCEDURAL_STATE(proc).h / 360.0,
+		VOXEL_PROCEDURAL_STATE(proc).s,
+		VOXEL_PROCEDURAL_STATE(proc).l});
 
 	vec4 base_corners[8] = {
 		{0.0f, 0.0f, 0.0f, 0.0f},
@@ -221,30 +226,16 @@ void voxel_procedural_cube(VoxelProcedural *proc, NodeType node, bool use_color)
 			v[i] = floor(VOXEL_PROCEDURAL_STATE(proc).pos[i] + f + 0.5f);
 		}
 
-		Blob buffer = {0, NULL};
-
-		if (use_color)
-			ColorData_write(&buffer, &(ColorData) {hsl_to_rgb((v3f32) {
-				VOXEL_PROCEDURAL_STATE(proc).h / 360.0,
-				VOXEL_PROCEDURAL_STATE(proc).s,
-				VOXEL_PROCEDURAL_STATE(proc).l,
-			})});
-
-		server_terrain_gen_node(
-			v3s32_add(proc->pos, (v3s32) {v[0], v[2], v[1]}),
-			terrain_node_create(node, buffer),
-			proc->tgs,
-			proc->changed_chunks
-		);
-
-		Blob_free(&buffer);
+		v3s32 pos = v3s32_add(proc->pos, (v3s32) {v[0], v[2], v[1]});
+		server_terrain_gen_node(pos, func(pos, color, arg),
+			proc->tgs, proc->changed_chunks);
 	}
 }
 
 
-void voxel_procedural_cylinder(VoxelProcedural *proc, NodeType node, bool use_color)
+void voxel_procedural_cylinder(VoxelProcedural *proc, VoxelProceduralNode func, void *arg)
 {
-	voxel_procedural_cube(proc, node, use_color);
+	voxel_procedural_cube(proc, func, arg);
 }
 
 /*

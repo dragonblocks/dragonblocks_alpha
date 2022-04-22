@@ -18,22 +18,13 @@ typedef struct TerrainNode {
 	void *data;
 } TerrainNode;
 
-typedef TerrainNode TerrainChunkData[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
-
 typedef struct {
 	s32 level;
 	v3s32 pos;
-	TerrainChunkData data;
+	TerrainNode data[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
 	void *extra;
 	pthread_mutex_t mtx;
 } TerrainChunk;
-
-typedef struct
-{
-	v2s32 pos;
-	Tree chunks;
-	pthread_rwlock_t lock;
-} TerrainSector;
 
 typedef struct {
 	Tree sectors;
@@ -44,29 +35,24 @@ typedef struct {
 		void (*create_chunk)(TerrainChunk *chunk);
 		void (*delete_chunk)(TerrainChunk *chunk);
 		bool (*get_chunk)(TerrainChunk *chunk, bool create);
-		bool (*set_node) (TerrainChunk *chunk, v3u8 offset, TerrainNode *node, void *arg);
-		void (*after_set_node)(TerrainChunk *chunk, v3u8 offset, void *arg);
+		void (*delete_node)(TerrainNode *node);
 	} callbacks;
 } Terrain;
 
 Terrain *terrain_create();
 void terrain_delete(Terrain *terrain);
 
-TerrainSector *terrain_get_sector(Terrain *terrain, v2s32 pos, bool create);
 TerrainChunk *terrain_get_chunk(Terrain *terrain, v3s32 pos, bool create);
+TerrainChunk *terrain_get_chunk_nodep(Terrain *terrain, v3s32 node_pos, v3s32 *offset, bool create);
 
-TerrainChunk *terrain_allocate_chunk(v3s32 pos);
-void terrain_free_chunk(TerrainChunk *chunk);
-
-Blob terrain_serialize_chunk(TerrainChunk *chunk);
-bool terrain_deserialize_chunk(TerrainChunk *chunk, Blob buffer);
-
-v3s32 terrain_node_to_chunk_pos(v3s32 pos, v3u8 *offset);
+Blob terrain_serialize_chunk(Terrain *terrain, TerrainChunk *chunk, void (*callback)(TerrainNode *node, Blob *buffer));
+bool terrain_deserialize_chunk(Terrain *terrain, TerrainChunk *chunk, Blob buffer, void (*callback)(TerrainNode *node, Blob buffer));
 
 TerrainNode terrain_get_node(Terrain *terrain, v3s32 pos);
-void terrain_set_node(Terrain *terrain, v3s32 pos, TerrainNode node, bool create, void *arg);
 
-TerrainNode terrain_node_create(NodeType type, Blob buffer);
-void terrain_node_delete(TerrainNode node);
+void terrain_lock_chunk(TerrainChunk *chunk);
+
+v3s32 terrain_chunkp(v3s32 pos);
+v3s32 terrain_offset(v3s32 pos);
 
 #endif

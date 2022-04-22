@@ -3,9 +3,10 @@
 #include "environment.h"
 #include "perlin.h"
 #include "server/biomes.h"
+#include "server/server_node.h"
 #include "server/server_terrain.h"
 #include "server/terrain_gen.h"
-#include "server/trees.h"
+#include "server/tree.h"
 
 s32 terrain_gen_get_base_height(v2s32 pos)
 {
@@ -105,9 +106,9 @@ void terrain_gen_chunk(TerrainChunk *chunk, List *changed_chunks)
 					}
 				}
 
-				pthread_mutex_lock(&chunk->mtx);
+				terrain_lock_chunk(chunk);
 				if (meta->tgsb.raw.nodes[x][y][z] <= STAGE_TERRAIN) {
-					chunk->data[x][y][z] = terrain_node_create(node, (Blob) {0, NULL});
+					chunk->data[x][y][z] = server_node_create(node);
 					meta->tgsb.raw.nodes[x][y][z] = STAGE_TERRAIN;
 				}
 				pthread_mutex_unlock(&chunk->mtx);

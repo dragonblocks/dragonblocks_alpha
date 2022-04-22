@@ -16,8 +16,7 @@ typedef struct {
 
 typedef struct {
 	v3s32 pos;
-	NodeType type;
-	Blob data;
+	TerrainNode node;
 } SchematicNode;
 
 void schematic_load(List *schematic, const char *path, SchematicMapping *mappings, size_t num_mappings);

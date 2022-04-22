@@ -36,4 +36,7 @@ typedef struct {
 extern ClientNodeDef client_node_def[];
 void client_node_init();
 
+void client_node_delete(TerrainNode *node);
+void client_node_deserialize(TerrainNode *node, Blob buffer);
+
 #endif // _CLIENT_NODE_H_

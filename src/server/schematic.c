@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "server/schematic.h"
+#include "server/server_node.h"
 #include "terrain.h"
 
 void schematic_load(List *schematic, const char *path, SchematicMapping *mappings, size_t num_mappings)
@@ -26,7 +27,6 @@ void schematic_load(List *schematic, const char *path, SchematicMapping *mapping
 			continue;
 
 		SchematicNode *node = malloc(sizeof *node);
-		node->data = (Blob) {0, NULL};
 
 		v3s32 color;
 		if (sscanf(line, "%d %d %d %2x%2x%2x",
@@ -52,14 +52,12 @@ void schematic_load(List *schematic, const char *path, SchematicMapping *mapping
 			continue;
 		}
 
-		node->type = mapping->type;
-
-		if (mapping->use_color)
-			ColorData_write(&node->data, &(ColorData) {{
+		node->node = mapping->use_color
+			? server_node_create_color(mapping->type, (v3f32) {
 				(f32) color.x / 0xFF,
 				(f32) color.y / 0xFF,
 				(f32) color.z / 0xFF,
-			}});
+			}) : server_node_create(mapping->type);
 
 		list_apd(schematic, node);
 	}
@@ -77,14 +75,14 @@ void schematic_place(List *schematic, v3s32 pos, TerrainGenStage tgs, List *chan
 
 		server_terrain_gen_node(
 			v3s32_add(pos, node->pos),
-			terrain_node_create(node->type, node->data),
+			server_node_copy(node->node),
 			tgs, changed_chunks);
 	}
 }
 
 static void delete_schematic_node(SchematicNode *node)
 {
-	Blob_free(&node->data);
+	server_node_delete(&node->node);
 	free(node);
 }
 

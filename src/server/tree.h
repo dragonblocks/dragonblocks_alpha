@@ -1,5 +1,5 @@
-#ifndef _TREES_H_
-#define _TREES_H_
+#ifndef _TREE_H_
+#define _TREE_H_
 
 #include <dragonstd/list.h>
 #include <stdbool.h>
@@ -32,4 +32,4 @@ typedef struct {
 
 extern TreeDef tree_def[];
 
-#endif // _TREES_H_
+#endif // _TREE_H_

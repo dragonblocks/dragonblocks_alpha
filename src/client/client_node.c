@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "client/client.h"
 #include "client/client_node.h"
 #include "color.h"
@@ -38,7 +39,7 @@ static void render_color(NodeArgsRender *args)
 	args->vertex.color = ((ColorData *) args->node->data)->color;
 }
 
-ClientNodeDef client_node_def[NODE_UNLOADED] = {
+ClientNodeDef client_node_def[COUNT_NODE] = {
 	// unknown
 	{
 		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/unknown.png"),
@@ -215,7 +216,7 @@ ClientNodeDef client_node_def[NODE_UNLOADED] = {
 
 void client_node_init()
 {
-	for (NodeType node = 0; node < NODE_UNLOADED; node++) {
+	for (NodeType node = 0; node < COUNT_NODE; node++) {
 		ClientNodeDef *def = &client_node_def[node];
 
 		if (def->visibility != VISIBILITY_NONE) {
@@ -233,5 +234,29 @@ void client_node_init()
 			for (int i = 0; i < 6; i++)
 				def->tiles.textures[i] = textures[def->tiles.indices[i]];
 		}
+	}
+}
+
+void client_node_delete(TerrainNode *node)
+{
+	switch (node->type) {
+		NODES_TREE
+			free(node->data);
+			break;
+
+		default:
+			break;
+	}
+}
+
+void client_node_deserialize(TerrainNode *node, Blob buffer)
+{
+	switch (node->type) {
+		NODES_TREE
+			ColorData_read(&buffer, node->data = malloc(sizeof(ColorData)));
+			break;
+
+		default:
+			break;
 	}
 }

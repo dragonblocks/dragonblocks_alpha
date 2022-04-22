@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if ! make -j$(nproc); then
+if ! make -j$(nproc) dragonblocks_server; then
 	exit 1
 fi
 
@@ -19,10 +19,10 @@ define hook-stop
         quit
     end
 end
-break gl_error
 "
 
 echo "$COMMON
+break gl_error
 run \"[::1]:4000\" < $DEBUG_DIR/name
 " > $DEBUG_DIR/client_script
 

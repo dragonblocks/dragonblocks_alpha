@@ -8,6 +8,7 @@
 #include "client/client.h"
 #include "client/client_auth.h"
 #include "client/client_inventory.h"
+#include "client/client_node.h"
 #include "client/client_player.h"
 #include "client/client_terrain.h"
 #include "client/debug_menu.h"
@@ -89,7 +90,7 @@ static void on_ToClientChunk(__attribute__((unused)) DragonnetPeer *peer, ToClie
 {
 	TerrainChunk *chunk = terrain_get_chunk(client_terrain, pkt->pos, true);
 
-	terrain_deserialize_chunk(chunk, pkt->data);
+	terrain_deserialize_chunk(client_terrain, chunk, pkt->data, &client_node_deserialize);
 	((TerrainChunkMeta *) chunk->extra)->empty = (pkt->data.siz == 0);
 	client_terrain_chunk_received(chunk);
 }

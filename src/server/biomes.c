@@ -232,14 +232,16 @@ static bool is_boulder(s32 diff, v3s32 pos)
 		smooth3d(U32(pos.x) / 16.0, U32(pos.y) / 12.0, U32(pos.z) / 16.0, 0, seed + OFFSET_BOULDER) > 0.8;
 }
 
-static DepthSearchNodeType boulder_get_node_type(v3s32 pos)
+static void boulder_search_callback(DepthSearchNode *node)
 {
-	s32 diff = pos.y - terrain_gen_get_base_height((v2s32) {pos.x, pos.z});
+	s32 diff = node->pos.y - terrain_gen_get_base_height((v2s32) {node->pos.x, node->pos.z});
 
 	if (diff <= 0)
-		return DEPTH_SEARCH_TARGET;
-
-	return is_boulder(diff, pos) ? DEPTH_SEARCH_PATH : DEPTH_SEARCH_BLOCK;
+		node->type = DEPTH_SEARCH_TARGET;
+	else if (is_boulder(diff, node->pos))
+		node->type = DEPTH_SEARCH_PATH;
+	else
+		node->type = DEPTH_SEARCH_BLOCK;
 }
 
 static NodeType generate_hills(BiomeArgsGenerate *args)
@@ -247,7 +249,7 @@ static NodeType generate_hills(BiomeArgsGenerate *args)
 	HillsChunkData *chunk_data = args->chunk_data;
 
 	if (is_boulder(args->diff, args->pos) && (args->diff <= 0 || voxel_depth_search(args->pos,
-			&boulder_get_node_type,
+			(void *) &boulder_search_callback, NULL,
 			&chunk_data->boulder_success[args->offset.x][args->offset.y][args->offset.z],
 			&chunk_data->boulder_visit)))
 		return NODE_STONE;

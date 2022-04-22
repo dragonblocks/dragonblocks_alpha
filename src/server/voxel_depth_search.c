@@ -15,7 +15,7 @@ static int cmp_depth_search_node(const DepthSearchNode *node, const v3s32 *pos)
 	return v3s32_cmp(&node->pos, pos);
 }
 
-bool voxel_depth_search(v3s32 pos, DepthSearchNodeType (*get_type)(v3s32 pos), bool *success, Tree *visit)
+bool voxel_depth_search(v3s32 pos, void (*callback)(DepthSearchNode *node, void *arg), void *arg, bool *success, Tree *visit)
 {
 	TreeNode **tree_node = tree_nfd(visit, &pos, &cmp_depth_search_node);
 	if (*tree_node)
@@ -23,14 +23,15 @@ bool voxel_depth_search(v3s32 pos, DepthSearchNodeType (*get_type)(v3s32 pos), b
 
 	DepthSearchNode *node = malloc(sizeof *node);
 	tree_nmk(visit, tree_node, node);
-	node->type = get_type(pos);
 	node->pos = pos;
+	node->extra = NULL;
+	callback(node, arg);
 	if ((*(node->success = success) = (node->type == DEPTH_SEARCH_TARGET)))
 		return true;
 
 	if (node->type == DEPTH_SEARCH_PATH)
 		for (int i = 0; i < 6; i++)
-			if (voxel_depth_search(v3s32_add(pos, dirs[i]), get_type, success, visit))
+			if (voxel_depth_search(v3s32_add(pos, dirs[i]), callback, arg, success, visit))
 				return true;
 
 	return false;
