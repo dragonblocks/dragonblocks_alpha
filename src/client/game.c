@@ -24,6 +24,10 @@
 #include "day.h"
 #include "interrupt.h"
 
+#ifdef _WIN32
+#include <pthread_time.h>
+#endif
+
 int game_fps = 0;
 
 void game_render(f64 dtime)
