@@ -16,9 +16,26 @@ endif()
 # Dependencies
 
 find_package(OpenGL REQUIRED)
-find_package(GLEW REQUIRED)
-find_package(glfw3 3.3 REQUIRED)
-find_package(Freetype REQUIRED)
+
+if(NOT GLEW_LIBRARIES OR NOT GLEW_INCLUDE_DIRS)
+	find_package(GLEW REQUIRED)
+endif()
+
+if(NOT GLFW_LIBRARIES OR NOT GLFW_INCLUDE_DIRS)
+	find_package(glfw3 3.3 REQUIRED)
+	set(GLFW_LIBRARIES glfw)
+	set(GLFW_INCLUDE_DIRS)
+endif()
+
+if(NOT FREETYPE_LIBRARIES OR NOT FREETYPE_INCLUDE_DIRS)
+	find_package(Freetype REQUIRED)
+endif()
+
+if(NOT ZLIB_LIBRARIES OR NOT ZLIB_INCLUDE_DIRS)
+	find_package(ZLIB REQUIRED)
+	set(ZLIB_LIBRARIES ZLIB::ZLIB)
+	set(ZLIB_INCLUDE_DIRS)
+endif()
 
 # Options
 
@@ -34,12 +51,13 @@ add_compile_options(-Wall -Wextra -Werror -Wno-address-of-packed-member -Wno-imp
 link_libraries(
 	pthread
 	m
-	z
+	${ZLIB_LIBRARIES}
 )
 
 include_directories(SYSTEM ${DEPS_DIR})
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${ZLIB_INCLUDE_DIRS})
 
 # System specific options
 
@@ -128,11 +146,13 @@ add_executable(dragonblocks
 target_link_libraries(dragonblocks
 	${OPENGL_LIBRARIES}
 	${GLEW_LIBRARIES}
-	glfw
+	${GLFW_LIBRARIES}
 	${FREETYPE_LIBRARIES}
 )
 
 target_include_directories(dragonblocks PUBLIC
+	${GLEW_INCLUDE_DIRS}
+	${GLFW_INCLUDE_DIRS}
 	${FREETYPE_INCLUDE_DIRS}
 )
 
