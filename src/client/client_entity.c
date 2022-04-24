@@ -1,5 +1,6 @@
 #include <asprintf/asprintf.h>
 #include <dragonstd/map.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "client/cube.h"
@@ -261,7 +262,7 @@ void client_entity_add(__attribute__((unused)) void *peer, ToClientEntityAdd *pk
 	pthread_rwlock_init(&entity->lock_box_off, NULL);
 
 	if (!map_add(&entities, &entity->data.id, &entity->rc, &cmp_entity, &refcount_inc))
-		fprintf(stderr, "[warning] failed to add entity %zu\n", entity->data.id);
+		fprintf(stderr, "[warning] failed to add entity %" PRIu64 "\n", entity->data.id);
 
 	refcount_drp(&entity->rc);
 }
