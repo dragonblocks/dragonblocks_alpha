@@ -1,7 +1,6 @@
 #define _GNU_SOURCE // don't worry, GNU extensions are only used when available
 #include <assert.h>
 #include <dragonstd/queue.h>
-#include <features.h>
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stddef.h>
