@@ -11,6 +11,10 @@
 #include "server/server_player.h"
 #include "server/server_terrain.h"
 
+#ifdef _WIN32
+#define random rand
+#endif
+
 static Map players;
 static Map players_named;
 
