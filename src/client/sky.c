@@ -70,7 +70,7 @@ static GLint clouds_loc_VP;
 static GLint clouds_loc_daylight;
 static Mesh clouds_mesh;
 
-bool sky_init()
+void sky_init()
 {
 	clouds_mesh = skybox_mesh;
 	SkyboxVertex skybox_vertices[6][6], clouds_vertices[6][6];
@@ -86,13 +86,8 @@ bool sky_init()
 
 	// skybox
 
-	if (!shader_program_create(RESSOURCE_PATH "shaders/sky/skybox", &skybox_prog, NULL)) {
-		fprintf(stderr, "[error] failed to create skybox shader program\n");
-		return false;
-	}
-
+	skybox_prog = shader_program_create(RESSOURCE_PATH "shaders/sky/skybox", NULL);
 	glProgramUniform1iv(skybox_prog, glGetUniformLocation(skybox_prog, "textures"), 2, (GLint[]) {0, 1}); GL_DEBUG
-
 	skybox_loc_VP = glGetUniformLocation(skybox_prog, "VP"); GL_DEBUG
 	skybox_loc_daylight = glGetUniformLocation(skybox_prog, "daylight"); GL_DEBUG
 	skybox_texture_day = texture_load_cubemap(RESSOURCE_PATH "textures/skybox/day", true)->txo;
@@ -102,27 +97,17 @@ bool sky_init()
 
 	// sun
 
-	if (!shader_program_create(RESSOURCE_PATH "shaders/sky/sun", &sun_prog, NULL)) {
-		fprintf(stderr, "[error] failed to create sun shader program\n");
-		return false;
-	}
-
+	sun_prog = shader_program_create(RESSOURCE_PATH "shaders/sky/sun", NULL);
 	sun_loc_MVP = glGetUniformLocation(sun_prog, "MVP"); GL_DEBUG
 	sun_texture = texture_load(RESSOURCE_PATH "textures/sun.png", false)->txo;
 
 	// clouds
 
-	if (!shader_program_create(RESSOURCE_PATH "shaders/sky/clouds", &clouds_prog, NULL)) {
-		fprintf(stderr, "[error] failed to create clouds shader program\n");
-		return false;
-	}
-
+	clouds_prog = shader_program_create(RESSOURCE_PATH "shaders/sky/clouds", NULL);
 	clouds_loc_VP = glGetUniformLocation(clouds_prog, "VP"); GL_DEBUG
 	clouds_loc_daylight = glGetUniformLocation(clouds_prog, "daylight"); GL_DEBUG
 	clouds_mesh.data = clouds_vertices;
 	mesh_upload(&clouds_mesh);
-
-	return true;
 }
 
 void sky_deinit()

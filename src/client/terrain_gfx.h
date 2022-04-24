@@ -10,7 +10,7 @@ typedef struct {
 	v3f32 color;
 } __attribute__((packed)) TerrainVertex;
 
-bool terrain_gfx_init();
+void terrain_gfx_init();
 void terrain_gfx_deinit();
 void terrain_gfx_update();
 void terrain_gfx_make_chunk_model(TerrainChunk *chunk);

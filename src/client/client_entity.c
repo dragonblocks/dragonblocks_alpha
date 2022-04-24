@@ -165,16 +165,11 @@ void client_entity_deinit()
 	pthread_mutex_destroy(&mtx_nametagged);
 }
 
-bool client_entity_gfx_init()
+void client_entity_gfx_init()
 {
 	char *shader_def;
 	asprintf(&shader_def, "#define VIEW_DISTANCE %lf\n", client_config.view_distance);
-
-	if (!shader_program_create(RESSOURCE_PATH "shaders/3d/entity", &shader_prog, shader_def)) {
-		fprintf(stderr, "[error] failed to create entity shader program\n");
-		return false;
-	}
-
+	shader_prog = shader_program_create(RESSOURCE_PATH "shaders/3d/entity", shader_def);
 	free(shader_def);
 
 	loc_VP = glGetUniformLocation(shader_prog, "VP"); GL_DEBUG
@@ -198,8 +193,6 @@ bool client_entity_gfx_init()
 	light_shader_locate(&light_shader);
 
 	client_entity_depth_offset(0.0f);
-
-	return true;
 }
 
 void client_entity_gfx_deinit()

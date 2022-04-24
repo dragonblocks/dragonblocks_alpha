@@ -15,7 +15,7 @@ typedef struct {
 	GLuint *textures;
 } Font;
 
-bool font_init();
+void font_init();
 void font_deinit();
 Font *font_create(const char *text);
 void font_delete(Font *font);

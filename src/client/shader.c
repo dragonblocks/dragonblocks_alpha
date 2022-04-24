@@ -72,7 +72,7 @@ static GLuint compile_shader(GLenum type, const char *path, const char *name, GL
 	if (!success) {
 		char errbuf[BUFSIZ];
 		glGetShaderInfoLog(id, BUFSIZ, NULL, errbuf); GL_DEBUG
-		fprintf(stderr, "[error] failed to compile %s shader: %s", name, errbuf);
+		fprintf(stderr, "[error] failed to compile shader %s: %s", full_path, errbuf);
 		glDeleteShader(id); GL_DEBUG
 		return 0;
 	}
@@ -82,7 +82,7 @@ static GLuint compile_shader(GLenum type, const char *path, const char *name, GL
 	return id;
 }
 
-bool shader_program_create(const char *path, GLuint *idptr, const char *def)
+GLuint shader_program_create(const char *path, const char *def)
 {
 	GLuint id = glCreateProgram(); GL_DEBUG
 
@@ -93,13 +93,13 @@ bool shader_program_create(const char *path, GLuint *idptr, const char *def)
 
 	if (!(vert = compile_shader(GL_VERTEX_SHADER, path, "vertex", id, def))) {
 		glDeleteProgram(id); GL_DEBUG
-		return false;
+		abort();
 	}
 
 	if (!(frag = compile_shader(GL_FRAGMENT_SHADER, path, "fragment", id, def))) {
 		glDeleteShader(vert); GL_DEBUG
 		glDeleteProgram(id); GL_DEBUG
-		return false;
+		abort();
 	}
 
 	glLinkProgram(id); GL_DEBUG
@@ -111,11 +111,10 @@ bool shader_program_create(const char *path, GLuint *idptr, const char *def)
 	if (!success) {
 		char errbuf[BUFSIZ];
 		glGetProgramInfoLog(id, BUFSIZ, NULL, errbuf); GL_DEBUG
-		fprintf(stderr, "[error] failed to link shader program: %s\n", errbuf);
+		fprintf(stderr, "[error] failed to link shader program %s: %s\n", path, errbuf);
 		glDeleteProgram(id); GL_DEBUG
 		return false;
 	}
 
-	*idptr = id;
-	return true;
+	return id;
 }

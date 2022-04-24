@@ -6,7 +6,7 @@
 
 extern int game_fps;
 
-bool game(Flag *gfx_init);
+void game(Flag *gfx_init);
 void game_render(f64 dtime);
 
 #endif // _GAME_H_

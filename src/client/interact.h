@@ -11,7 +11,7 @@ extern struct InteractPointed {
 	NodeType node;
 } interact_pointed;
 
-bool interact_init();
+void interact_init();
 void interact_deinit();
 void interact_tick();
 void interact_render();

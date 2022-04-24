@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include "client/client_config.h"
@@ -73,11 +74,11 @@ void window_exit_fullscreen()
 	debug_menu_changed(ENTRY_FULLSCREEN);
 }
 
-bool window_init()
+void window_init()
 {
 	if(!glfwInit()) {
 		fprintf(stderr, "[error] failed to initialize GLFW\n");
-		return false;
+		abort();
 	}
 
 	glfwWindowHint(GLFW_SAMPLES, client_config.antialiasing);
@@ -98,7 +99,7 @@ bool window_init()
 	if (!window.handle) {
 		fprintf(stderr, "[error] failed to create window\n");
 		glfwTerminate();
-		return false;
+		abort();
 	}
 
 	glfwMakeContextCurrent(window.handle);
@@ -108,13 +109,11 @@ bool window_init()
 
 	if (glewInit() != GLEW_OK) {
 		fprintf(stderr, "[error] failed to initialize GLEW\n");
-		return false;
+		abort();
 	}
 
 	glfwSetFramebufferSizeCallback(window.handle, &framebuffer_size_callback);
 	glfwSetCursorPosCallback(window.handle, &cursor_pos_callback);
 	glfwSetWindowPosCallback(window.handle, &window_pos_callback);
 	glfwSetMouseButtonCallback(window.handle, &mouse_button_callback);
-
-	return true;
 }

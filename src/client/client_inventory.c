@@ -15,16 +15,11 @@ static GLint _3d_loc_depthOffset;
 static ModelShader _3d_model_shader;
 static LightShader _3d_light_shader;
 
-bool client_inventory_init()
+void client_inventory_init()
 {
 	char *_3d_shader_def;
 	asprintf(&_3d_shader_def, "#define VIEW_DISTANCE %lf\n", client_config.view_distance);
-
-	if (!shader_program_create(RESSOURCE_PATH "shaders/3d/item", &_3d_shader_prog, _3d_shader_def)) {
-		fprintf(stderr, "[error] failed to create 3D item shader program\n");
-		return false;
-	}
-
+	_3d_shader_prog = shader_program_create(RESSOURCE_PATH "shaders/3d/item", _3d_shader_def);
 	free(_3d_shader_def);
 
 	_3d_loc_VP = glGetUniformLocation(_3d_shader_prog, "VP");
@@ -37,8 +32,6 @@ bool client_inventory_init()
 	light_shader_locate(&_3d_light_shader);
 
 	client_inventory_depth_offset(0.0f);
-
-	return true;
 }
 
 void client_inventory_deinit()

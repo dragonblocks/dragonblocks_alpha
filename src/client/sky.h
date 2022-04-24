@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-bool sky_init();
+void sky_init();
 void sky_deinit();
 void sky_render();
 

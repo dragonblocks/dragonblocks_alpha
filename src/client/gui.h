@@ -43,7 +43,7 @@ typedef struct GUIElement {
 	Array children;
 } GUIElement;
 
-bool gui_init();
+void gui_init();
 void gui_deinit();
 void gui_update_projection();
 void gui_render();

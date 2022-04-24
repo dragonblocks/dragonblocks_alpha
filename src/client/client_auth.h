@@ -16,7 +16,7 @@ extern struct ClientAuth {
 	pthread_mutex_t mtx;
 } client_auth;
 
-bool client_auth_init();
+void client_auth_init();
 void client_auth_deinit();
 
 #endif // _CLIENT_AUTH_H_

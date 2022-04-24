@@ -32,16 +32,16 @@ static VertexLayout font_vertex_layout = {
 	.size = sizeof(FontVertex),
 };
 
-bool font_init()
+void font_init()
 {
 	if (FT_Init_FreeType(&font_library)) {
 		fprintf(stderr, "[error] failed to initialize Freetype\n");
-		return false;
+		abort();
 	}
 
 	if (FT_New_Face(font_library, RESSOURCE_PATH "fonts/Minecraftia.ttf", 0, &font_face)) {
 		fprintf(stderr, "[error] failed to load Minecraftia.ttf\n");
-		return false;
+		abort();
 	}
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1); GL_DEBUG
@@ -66,8 +66,6 @@ bool font_init()
 
 	FT_Done_Face(font_face);
 	FT_Done_FreeType(font_library);
-
-	return true;
 }
 
 void font_deinit()

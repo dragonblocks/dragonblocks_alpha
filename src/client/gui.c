@@ -11,7 +11,26 @@
 #include "client/shader.h"
 #include "client/window.h"
 
-static GUIElement root_element;
+static GUIElement root_element = {
+	.def = {
+		.pos = {0.0f, 0.0f},
+		.z_index = 0.0f,
+		.offset = {0, 0},
+		.align = {0.0f, 0.0f},
+		.scale = {0.0f, 0.0f},
+		.scale_type = SCALE_NONE,
+		.affect_parent_scale = false,
+		.text = NULL,
+		.image = NULL,
+		.text_color = {0.0f, 0.0f, 0.0f, 0.0f},
+		.bg_color = {0.0f, 0.0f, 0.0f, 0.0f},
+	},
+	.visible = true,
+	.pos = (v2f32)  {0.0f, 0.0f},
+	.scale = (v2f32) {0.0f, 0.0f},
+	.text = NULL,
+	.parent = &root_element,
+};
 
 static GLuint background_prog;
 static GLint background_loc_model;
@@ -231,63 +250,28 @@ static void transform_element(GUIElement *element)
 
 // public functions
 
-bool gui_init()
+void gui_init()
 {
 	// initialize background pipeline
-
-	if (!shader_program_create(RESSOURCE_PATH "shaders/gui/background", &background_prog, NULL)) {
-		fprintf(stderr, "[error] failed to create GUI background shader program\n");
-		return false;
-	}
-
+	background_prog = shader_program_create(RESSOURCE_PATH "shaders/gui/background", NULL);
 	background_loc_model = glGetUniformLocation(background_prog, "model"); GL_DEBUG
 	background_loc_projection = glGetUniformLocation(background_prog, "projection"); GL_DEBUG
 	background_loc_color = glGetUniformLocation(background_prog, "color"); GL_DEBUG
 
 	// initialize image pipeline
-
-	if (!shader_program_create(RESSOURCE_PATH "shaders/gui/image", &image_prog, NULL)) {
-		fprintf(stderr, "[error] failed to create GUI image shader program\n");
-		return false;
-	}
-
+	image_prog = shader_program_create(RESSOURCE_PATH "shaders/gui/image", NULL);
 	image_loc_model = glGetUniformLocation(image_prog, "model"); GL_DEBUG
 	image_loc_projection = glGetUniformLocation(image_prog, "projection"); GL_DEBUG
 
 	// initialize font pipeline
-
-	if (!shader_program_create(RESSOURCE_PATH "shaders/gui/font", &font_prog, NULL)) {
-		fprintf(stderr, "[error] failed to create GUI font shader program\n");
-		return false;
-	}
-
+	font_prog = shader_program_create(RESSOURCE_PATH "shaders/gui/font", NULL);
 	font_loc_model = glGetUniformLocation(font_prog, "model"); GL_DEBUG
 	font_loc_projection = glGetUniformLocation(font_prog, "projection"); GL_DEBUG
 	font_loc_color = glGetUniformLocation(font_prog, "color"); GL_DEBUG
 
 	// initialize GUI root element
-
-	root_element.def.pos = (v2f32) {0.0f, 0.0f};
-	root_element.def.z_index = 0.0f;
-	root_element.def.offset = (v2s32) {0, 0};
-	root_element.def.align = (v2f32) {0.0f, 0.0f};
-	root_element.def.scale = (v2f32) {0.0f, 0.0f};
-	root_element.def.scale_type = SCALE_NONE;
-	root_element.def.affect_parent_scale = false;
-	root_element.def.text = NULL;
-	root_element.def.image = NULL;
-	root_element.def.text_color = (v4f32) {0.0f, 0.0f, 0.0f, 0.0f};
-	root_element.def.bg_color = (v4f32) {0.0f, 0.0f, 0.0f, 0.0f};
-	root_element.visible = true;
-	root_element.pos = (v2f32)  {0.0f, 0.0f};
-	root_element.scale = (v2f32) {0.0f, 0.0f};
-	root_element.text = NULL;
-	root_element.parent = &root_element;
 	array_ini(&root_element.children, sizeof(GUIElement *), 0);
-
 	gui_update_projection();
-
-	return true;
 }
 
 void gui_deinit()

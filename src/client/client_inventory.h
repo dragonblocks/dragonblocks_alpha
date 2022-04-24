@@ -5,7 +5,7 @@
 #include "client/client_player.h"
 #include "client/model.h"
 
-bool client_inventory_init();
+void client_inventory_init();
 void client_inventory_deinit();
 void client_inventory_update();
 

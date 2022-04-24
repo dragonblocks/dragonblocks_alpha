@@ -146,12 +146,9 @@ int main(int argc, char **argv)
 	client_player_init();
 	client_entity_init();
 	dragonnet_peer_run(client);
+	client_auth_init();
 
-	if (!client_auth_init())
-		return EXIT_FAILURE;
-
-	if (!game(&gfx_init))
-		return EXIT_FAILURE;
+	game(&gfx_init);
 
 	dragonnet_peer_shutdown(client);
 	client_auth_deinit();

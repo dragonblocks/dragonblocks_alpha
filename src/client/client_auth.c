@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <linenoise/linenoise.h>
 #include "client.h"
 #include "client_auth.h"
@@ -37,7 +38,7 @@ static void auth_loop()
 	}
 }
 
-bool client_auth_init()
+void client_auth_init()
 {
 	client_auth.name = NULL;
 	pthread_cond_init(&client_auth.cv, NULL);
@@ -50,10 +51,13 @@ bool client_auth_init()
 	auth_loop();
 
 	flag_uns(&interrupt, &client_auth.cv);
-	bool success = client_auth.state == AUTH_SUCCESS;
-	pthread_mutex_unlock(&client_auth.mtx);
 
-	return success;
+	if (client_auth.state != AUTH_SUCCESS) {
+		fprintf(stderr, "[error] authentication failed due to interruption or read failure\n");
+		abort();
+	}
+
+	pthread_mutex_unlock(&client_auth.mtx);
 }
 
 void client_auth_deinit()

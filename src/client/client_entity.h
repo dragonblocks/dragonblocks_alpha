@@ -47,7 +47,7 @@ extern ModelShader client_entity_shader;
 void client_entity_init();
 void client_entity_deinit();
 
-bool client_entity_gfx_init();
+void client_entity_gfx_init();
 void client_entity_gfx_deinit();
 void client_entity_gfx_update();
 void client_entity_depth_offset(f32 offset);

@@ -88,52 +88,29 @@ static void game_loop()
 	}
 }
 
-bool game(Flag *gfx_init)
+void game(Flag *gfx_init)
 {
-	if (!window_init())
-		return false;
-
-	if (!font_init())
-		return false;
-
+	window_init();
+	font_init();
 	model_init();
-
-	if (!sky_init())
-		return false;
-
-	if (!terrain_gfx_init())
-		return false;
-
-	if (!client_entity_gfx_init())
-		return false;
-
+	sky_init();
+	terrain_gfx_init();
+	client_entity_gfx_init();
 	client_player_gfx_init();
-
 	camera_init();
-
-	if (!gui_init())
-		return false;
-
-	if (!interact_init())
-		return false;
-
+	gui_init();
+	interact_init();
 	client_item_init();
-
-	if (!client_inventory_init())
-		return false;
-
+	client_inventory_init();
 	client_node_init();
 	client_terrain_start();
-
 	debug_menu_init();
 	input_init();
 
 	flag_set(gfx_init);
-
 	game_loop();
 
 	client_terrain_stop();
-
 	font_deinit();
 	gui_deinit();
 	model_deinit();
@@ -144,7 +121,5 @@ bool game(Flag *gfx_init)
 	interact_deinit();
 	client_item_deinit();
 	client_inventory_deinit();
-
-	return true;
 }
 

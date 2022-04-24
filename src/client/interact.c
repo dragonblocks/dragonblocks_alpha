@@ -40,13 +40,9 @@ static Mesh selection_mesh = {
 	.free_data = false,
 };
 
-bool interact_init()
+void interact_init()
 {
-	if (!shader_program_create(RESSOURCE_PATH "shaders/3d/selection", &shader_prog, NULL)) {
-		fprintf(stderr, "[error] failed to create selection shader program\n");
-		return false;
-	}
-
+	shader_prog = shader_program_create(RESSOURCE_PATH "shaders/3d/selection", NULL);
 	loc_MVP = glGetUniformLocation(shader_prog, "MVP"); GL_DEBUG
 	loc_color = glGetUniformLocation(shader_prog, "color"); GL_DEBUG
 
@@ -72,8 +68,6 @@ bool interact_init()
 		.text_color = {0.0f, 0.0f, 0.0f, 0.0f},
 		.bg_color = {0.0f, 0.0f, 0.0f, 0.0f},
 	});
-
-	return true;
 }
 
 void interact_deinit()

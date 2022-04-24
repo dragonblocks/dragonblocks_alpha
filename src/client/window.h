@@ -14,7 +14,7 @@ extern struct Window {
 	mat4x4 projection;
 } window;
 
-bool window_init();
+void window_init();
 void window_enter_fullscreen();
 void window_exit_fullscreen();
 

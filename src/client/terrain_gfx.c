@@ -213,7 +213,7 @@ static Model *create_chunk_model(ChunkRenderData *data)
 	return model;
 }
 
-bool terrain_gfx_init()
+void terrain_gfx_init()
 {
 	GLint texture_units;
 	glGetIntegerv(GL_MAX_TEXTURE_UNITS, &texture_units); GL_DEBUG
@@ -225,12 +225,7 @@ bool terrain_gfx_init()
 		texture_units,
 		client_config.view_distance
 	);
-
-	if (!shader_program_create(RESSOURCE_PATH "shaders/3d/terrain", &shader_prog, shader_def)) {
-		fprintf(stderr, "[error] failed to create terrain shader program\n");
-		return false;
-	}
-
+	shader_prog = shader_program_create(RESSOURCE_PATH "shaders/3d/terrain", shader_def);
 	free(shader_def);
 
 	loc_VP = glGetUniformLocation(shader_prog, "VP"); GL_DEBUG
@@ -246,8 +241,6 @@ bool terrain_gfx_init()
 
 	light_shader.prog = shader_prog;
 	light_shader_locate(&light_shader);
-
-	return true;
 }
 
 void terrain_gfx_deinit()
