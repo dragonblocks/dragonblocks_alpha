@@ -8,9 +8,9 @@
 #include "types.h"
 
 typedef enum {
-	CHUNK_CREATED,    // chunk exists but was not yet generated
-	CHUNK_GENERATING, // currently generating in a seperate thread
-	CHUNK_READY,      // generation finished
+	CHUNK_STATE_CREATED,    // chunk exists but was not yet generated
+	CHUNK_STATE_GENERATING, // currently generating in a seperate thread
+	CHUNK_STATE_READY,      // generation finished
 } TerrainChunkState;
 
 typedef enum {
@@ -35,22 +35,22 @@ typedef struct {
 
 /*
 	Locking conventions:
-	- chunk mutex protects chunk->data and meta->tgsb
+	- chunk lock protects chunk->data and meta->tgsb
 	- meta mutex protects everything else in meta
-	- if both meta and chunk mutex are locked, meta must be locked first
+	- if both meta mutex and chunk are going to be locked, meta must be locked first
 	- you may not lock multiple meta mutexes at once
-	- if multiple chunk mutexes are being locked at once, EDEADLK must be handled
-	- when locking a single chunk mtx, check return value and crash on failure (terrain_lock_chunk())
+	- if multiple chunk locks are being obtained at once, EDEADLK must be handled
+	- when locking a single chunk, assert return value of zero
 
 	After changing the data in a chunk:
-	1. release chunk mtx
+	1. release chunk lock
 	2.
 		- if meta mutex is currently locked: use server_terrain_send_chunk
 		- if meta mutex is not locked: use server_terrain_lock_and_send_chunk
 
 	If an operation affects multiple nodes (potentially in multiple chunks):
 		- create a list changed_chunks
-		- do job as normal, release individual chunk mutexes immediately after modifying their data
+		- do job as normal, release individual chunk locks immediately after modifying their data
 		- use server_terrain_lock_and_send_chunks to clear the list
 
 	Note: Unless changed_chunks is given to server_terrain_gen_node, it sends chunks automatically

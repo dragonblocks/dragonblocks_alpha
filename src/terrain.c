@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -18,10 +19,7 @@ static TerrainChunk *allocate_chunk(v3s32 pos)
 	chunk->level = pos.y;
 	chunk->pos = pos;
 	chunk->extra = NULL;
-	pthread_mutexattr_t attr;
-	pthread_mutexattr_init(&attr);
-	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
-	pthread_mutex_init(&chunk->mtx, &attr);
+	pthread_rwlock_init(&chunk->lock, NULL);
 
 	CHUNK_ITERATE
 		chunk->data[x][y][z] = (TerrainNode) {NODE_UNKNOWN, NULL};
@@ -34,7 +32,7 @@ static void free_chunk(Terrain *terrain, TerrainChunk *chunk)
 	if (terrain->callbacks.delete_node) CHUNK_ITERATE
 		terrain->callbacks.delete_node(&chunk->data[x][y][z]);
 
-	pthread_mutex_destroy(&chunk->mtx);
+	pthread_rwlock_destroy(&chunk->lock);
 	free(chunk);
 }
 
@@ -53,9 +51,9 @@ static void delete_sector(TerrainSector *sector, Terrain *terrain)
 	free(sector);
 }
 
-static TerrainSector *get_sector(Terrain *terrain, v2s32 pos, bool create)
+static TerrainSector *get_sector(Terrain *terrain, v2s32 pos, int mode)
 {
-	if (create)
+	if (mode == CHUNK_MODE_CREATE)
 		pthread_rwlock_wrlock(&terrain->lock);
 	else
 		pthread_rwlock_rdlock(&terrain->lock);
@@ -65,7 +63,7 @@ static TerrainSector *get_sector(Terrain *terrain, v2s32 pos, bool create)
 
 	if (*loc) {
 		sector = (*loc)->dat;
-	} else if (create) {
+	} else if (mode == CHUNK_MODE_CREATE) {
 		sector = malloc(sizeof *sector);
 		sector->pos = pos;
 		tree_ini(&sector->chunks);
@@ -97,7 +95,7 @@ void terrain_delete(Terrain *terrain)
 	free(terrain);
 }
 
-TerrainChunk *terrain_get_chunk(Terrain *terrain, v3s32 pos, bool create)
+TerrainChunk *terrain_get_chunk(Terrain *terrain, v3s32 pos, int mode)
 {
 	TerrainChunk *cache = NULL;
 
@@ -108,11 +106,11 @@ TerrainChunk *terrain_get_chunk(Terrain *terrain, v3s32 pos, bool create)
 	if (cache && v3s32_equals(cache->pos, pos))
 		return cache;
 
-	TerrainSector *sector = get_sector(terrain, (v2s32) {pos.x, pos.z}, create);
+	TerrainSector *sector = get_sector(terrain, (v2s32) {pos.x, pos.z}, mode);
 	if (!sector)
 		return NULL;
 
-	if (create)
+	if (mode == CHUNK_MODE_CREATE)
 		pthread_rwlock_wrlock(&sector->lock);
 	else
 		pthread_rwlock_rdlock(&sector->lock);
@@ -123,14 +121,14 @@ TerrainChunk *terrain_get_chunk(Terrain *terrain, v3s32 pos, bool create)
 	if (*loc) {
 		chunk = (*loc)->dat;
 
-		if (terrain->callbacks.get_chunk && !terrain->callbacks.get_chunk(chunk, create)) {
+		if (terrain->callbacks.get_chunk && !terrain->callbacks.get_chunk(chunk, mode)) {
 			chunk = NULL;
 		} else {
 			pthread_rwlock_wrlock(&terrain->cache_lock);
 			terrain->cache = chunk;
 			pthread_rwlock_unlock(&terrain->cache_lock);
 		}
-	} else if (create) {
+	} else if (mode == CHUNK_MODE_CREATE) {
 		tree_nmk(&sector->chunks, loc, chunk = allocate_chunk(pos));
 
 		if (terrain->callbacks.create_chunk)
@@ -142,9 +140,9 @@ TerrainChunk *terrain_get_chunk(Terrain *terrain, v3s32 pos, bool create)
 	return chunk;
 }
 
-TerrainChunk *terrain_get_chunk_nodep(Terrain *terrain, v3s32 nodep, v3s32 *offset, bool create)
+TerrainChunk *terrain_get_chunk_nodep(Terrain *terrain, v3s32 nodep, v3s32 *offset, int mode)
 {
-	TerrainChunk *chunk = terrain_get_chunk(terrain, terrain_chunkp(nodep), create);
+	TerrainChunk *chunk = terrain_get_chunk(terrain, terrain_chunkp(nodep), mode);
 	if (!chunk)
 		return NULL;
 	*offset = terrain_offset(nodep);
@@ -193,6 +191,7 @@ bool terrain_deserialize_chunk(Terrain *terrain, TerrainChunk *chunk, Blob buffe
 
 			chunk->data[x][y][z] = (TerrainNode) {NODE_AIR, NULL};
 		}
+
 		return true;
 	}
 
@@ -219,25 +218,16 @@ bool terrain_deserialize_chunk(Terrain *terrain, TerrainChunk *chunk, Blob buffe
 	return success;
 }
 
-void terrain_lock_chunk(TerrainChunk *chunk)
-{
-	if (pthread_mutex_lock(&chunk->mtx) == 0)
-		return;
-
-	fprintf(stderr, "[error] failed to lock terrain chunk mutex\n");
-	abort();
-}
-
 TerrainNode terrain_get_node(Terrain *terrain, v3s32 pos)
 {
 	v3s32 offset;
-	TerrainChunk *chunk = terrain_get_chunk_nodep(terrain, pos, &offset, false);
+	TerrainChunk *chunk = terrain_get_chunk_nodep(terrain, pos, &offset, CHUNK_MODE_PASSIVE);
 	if (!chunk)
 		return (TerrainNode) {COUNT_NODE, NULL};
 
-	terrain_lock_chunk(chunk);
+	assert(pthread_rwlock_rdlock(&chunk->lock) == 0);
 	TerrainNode node = chunk->data[offset.x][offset.y][offset.z];
-	pthread_mutex_unlock(&chunk->mtx);
+	pthread_rwlock_unlock(&chunk->lock);
 
 	return node;
 }

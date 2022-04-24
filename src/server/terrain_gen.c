@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <math.h>
 #include <stdlib.h>
 #include "environment.h"
@@ -106,12 +107,12 @@ void terrain_gen_chunk(TerrainChunk *chunk, List *changed_chunks)
 					}
 				}
 
-				terrain_lock_chunk(chunk);
+				assert(pthread_rwlock_wrlock(&chunk->lock) == 0);
 				if (meta->tgsb.raw.nodes[x][y][z] <= STAGE_TERRAIN) {
 					chunk->data[x][y][z] = server_node_create(node);
 					meta->tgsb.raw.nodes[x][y][z] = STAGE_TERRAIN;
 				}
-				pthread_mutex_unlock(&chunk->mtx);
+				pthread_rwlock_unlock(&chunk->lock);
 			}
 
 			if (biome_def->after_row)

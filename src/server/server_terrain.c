@@ -1,4 +1,5 @@
 #define _GNU_SOURCE // don't worry, GNU extensions are only used when available
+#include <assert.h>
 #include <dragonstd/queue.h>
 #include <features.h>
 #include <stdatomic.h>
@@ -74,7 +75,7 @@ static void terrain_gen_step()
 	terrain_gen_chunk(chunk, &changed_chunks);
 
 	pthread_mutex_lock(&meta->mtx);
-	meta->state = CHUNK_READY;
+	meta->state = CHUNK_STATE_READY;
 	pthread_mutex_unlock(&meta->mtx);
 
 	server_terrain_lock_and_send_chunks(&changed_chunks);
@@ -110,7 +111,7 @@ static void generate_chunk(TerrainChunk *chunk)
 
 	TerrainChunkMeta *meta = chunk->extra;
 
-	meta->state = CHUNK_GENERATING;
+	meta->state = CHUNK_STATE_GENERATING;
 	queue_enq(&terrain_gen_tasks, chunk);
 }
 
@@ -124,7 +125,7 @@ static void on_create_chunk(TerrainChunk *chunk)
 	if (database_load_chunk(chunk)) {
 		meta->data = terrain_serialize_chunk(server_terrain, chunk, &server_node_serialize_client);
 	} else {
-		meta->state = CHUNK_CREATED;
+		meta->state = CHUNK_STATE_CREATED;
 		meta->data = (Blob) {0, NULL};
 
 		CHUNK_ITERATE {
@@ -147,15 +148,15 @@ static void on_delete_chunk(TerrainChunk *chunk)
 
 // callback for determining whether a chunk should be returned by terrain_get_chunk
 // hold back chunks that are not fully generated except when the create flag is set to true
-static bool on_get_chunk(TerrainChunk *chunk, bool create)
+static bool on_get_chunk(TerrainChunk *chunk, int mode)
 {
-	if (create)
+	if (mode == CHUNK_MODE_CREATE)
 		return true;
 
 	TerrainChunkMeta *meta = chunk->extra;
 	pthread_mutex_lock(&meta->mtx);
 
-	bool ret = meta->state == CHUNK_READY;
+	bool ret = meta->state == CHUNK_STATE_READY;
 
 	pthread_mutex_unlock(&meta->mtx);
 	return ret;
@@ -268,19 +269,19 @@ void server_terrain_deinit()
 void server_terrain_requested_chunk(ServerPlayer *player, v3s32 pos)
 {
 	if (within_load_distance(player, pos, server_config.load_distance)) {
-		TerrainChunk *chunk = terrain_get_chunk(server_terrain, pos, true);
+		TerrainChunk *chunk = terrain_get_chunk(server_terrain, pos, CHUNK_MODE_CREATE);
 		TerrainChunkMeta *meta = chunk->extra;
 
 		pthread_mutex_lock(&meta->mtx);
 		switch (meta->state) {
-			case CHUNK_CREATED:
+			case CHUNK_STATE_CREATED:
 				generate_chunk(chunk);
 				break;
 
-			case CHUNK_GENERATING:
+			case CHUNK_STATE_GENERATING:
 				break;
 
-			case CHUNK_READY:
+			case CHUNK_STATE_READY:
 				send_chunk_to_client(player, chunk);
 				break;
 		};
@@ -320,11 +321,11 @@ void server_terrain_prepare_spawn()
 				if (interrupt.set)
 					return;
 
-				TerrainChunk *chunk = terrain_get_chunk(server_terrain, (v3s32) {x, y, z}, true);
+				TerrainChunk *chunk = terrain_get_chunk(server_terrain, (v3s32) {x, y, z}, CHUNK_MODE_CREATE);
 				TerrainChunkMeta *meta = chunk->extra;
 
 				pthread_mutex_lock(&meta->mtx);
-				if (meta->state == CHUNK_CREATED)
+				if (meta->state == CHUNK_STATE_CREATED)
 					generate_chunk(chunk);
 				pthread_mutex_unlock(&meta->mtx);
 
@@ -362,15 +363,15 @@ void server_terrain_prepare_spawn()
 void server_terrain_gen_node(v3s32 pos, TerrainNode node, TerrainGenStage new_tgs, List *changed_chunks)
 {
 	v3s32 offset;
-	TerrainChunk *chunk = terrain_get_chunk_nodep(server_terrain, pos, &offset, true);
+	TerrainChunk *chunk = terrain_get_chunk_nodep(server_terrain, pos, &offset, CHUNK_MODE_CREATE);
 	TerrainChunkMeta *meta = chunk->extra;
 
-	terrain_lock_chunk(chunk);
+	assert(pthread_rwlock_wrlock(&chunk->lock) == 0);
 
 	u32 *tgs = &meta->tgsb.raw.nodes[offset.x][offset.y][offset.z];
 
 	if (new_tgs < *tgs) {
-		pthread_mutex_unlock(&chunk->mtx);
+		pthread_rwlock_unlock(&chunk->lock);
 		server_node_delete(&node);
 		return;
 	}
@@ -383,7 +384,7 @@ void server_terrain_gen_node(v3s32 pos, TerrainNode node, TerrainGenStage new_tg
 	else
 		server_terrain_send_chunk(chunk);
 
-	pthread_mutex_unlock(&chunk->mtx);
+	pthread_rwlock_unlock(&chunk->lock);
 }
 
 s32 server_terrain_spawn_height()
@@ -398,18 +399,18 @@ void server_terrain_send_chunk(TerrainChunk *chunk)
 {
 	TerrainChunkMeta *meta = chunk->extra;
 
-	if (meta->state == CHUNK_GENERATING)
+	if (meta->state == CHUNK_STATE_GENERATING)
 		return;
 
-	terrain_lock_chunk(chunk);
+	assert(pthread_rwlock_rdlock(&chunk->lock) == 0);
 
 	Blob_free(&meta->data);
 	meta->data = terrain_serialize_chunk(server_terrain, chunk, &server_node_serialize_client);
 	database_save_chunk(chunk);
 
-	pthread_mutex_unlock(&chunk->mtx);
+	pthread_rwlock_unlock(&chunk->lock);
 
-	if (meta->state == CHUNK_CREATED)
+	if (meta->state == CHUNK_STATE_CREATED)
 		return;
 
 	server_player_iterate(&send_chunk_to_client, chunk);

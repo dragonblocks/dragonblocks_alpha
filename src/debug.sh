@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if ! make -j$(nproc) dragonblocks_server; then
+if ! make -j$(nproc); then
 	exit 1
 fi
 

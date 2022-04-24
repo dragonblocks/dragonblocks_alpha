@@ -7,13 +7,13 @@
 static void gl_error(GLenum err, const char *file, int line)
 {
 	switch (err) {
-		case GL_INVALID_ENUM:                  printf("INVALID_ENUM %s:%d\n", file, line); break;
-		case GL_INVALID_VALUE:                 printf("INVALID_VALUE %s:%d\n", file, line); break;
-		case GL_INVALID_OPERATION:             printf("INVALID_OPERATION %s:%d\n", file, line); break;
-		case GL_STACK_OVERFLOW:                printf("STACK_OVERFLOW %s:%d\n", file, line); break;
-		case GL_STACK_UNDERFLOW:               printf("STACK_UNDERFLOW %s:%d\n", file, line); break;
-		case GL_OUT_OF_MEMORY:                 printf("OUT_OF_MEMORY %s:%d\n", file, line); break;
-		case GL_INVALID_FRAMEBUFFER_OPERATION: printf("INVALID_FRAMEBUFFER_OPERATION %s:%d\n", file, line); break;
+		case GL_INVALID_ENUM:                  fprintf(stderr, "[warning] OpenGL error: INVALID_ENUM %s:%d\n", file, line); break;
+		case GL_INVALID_VALUE:                 fprintf(stderr, "[warning] OpenGL error: INVALID_VALUE %s:%d\n", file, line); break;
+		case GL_INVALID_OPERATION:             fprintf(stderr, "[warning] OpenGL error: INVALID_OPERATION %s:%d\n", file, line); break;
+		case GL_STACK_OVERFLOW:                fprintf(stderr, "[warning] OpenGL error: STACK_OVERFLOW %s:%d\n", file, line); break;
+		case GL_STACK_UNDERFLOW:               fprintf(stderr, "[warning] OpenGL error: STACK_UNDERFLOW %s:%d\n", file, line); break;
+		case GL_OUT_OF_MEMORY:                 fprintf(stderr, "[warning] OpenGL error: OUT_OF_MEMORY %s:%d\n", file, line); break;
+		case GL_INVALID_FRAMEBUFFER_OPERATION: fprintf(stderr, "[warning] OpenGL error: INVALID_FRAMEBUFFER_OPERATION %s:%d\n", file, line); break;
 		default: break;
 	}
 }

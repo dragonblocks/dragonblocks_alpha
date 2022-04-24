@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <dragonstd/array.h>
 #include <dragonstd/list.h>
 #include <dragonstd/tree.h>
@@ -42,7 +43,7 @@ static int cmp_chunk(const TerrainChunk *chunk, const v3s32 *pos)
 
 static void unlock_chunk(TerrainChunk *chunk)
 {
-	pthread_mutex_unlock(&chunk->mtx);
+	pthread_rwlock_unlock(&chunk->lock);
 }
 
 static void init_search_node(DepthSearchNode *search_node, CheckTreeArg *arg)
@@ -55,7 +56,7 @@ static void init_search_node(DepthSearchNode *search_node, CheckTreeArg *arg)
 
 	// if not found in cache, get it from server_terrain and lock it
 	if (!chunk) {
-		chunk = terrain_get_chunk(server_terrain, chunkp, false);
+		chunk = terrain_get_chunk(server_terrain, chunkp, CHUNK_MODE_PASSIVE);
 
 		// check if chunk is unloaded
 		if (!chunk) {
@@ -66,8 +67,8 @@ static void init_search_node(DepthSearchNode *search_node, CheckTreeArg *arg)
 			return;
 		}
 
-		// try to obtain the chunk mutex
-		int lock_err = pthread_mutex_lock(&chunk->mtx);
+		// try to obtain the chunk lock
+		int lock_err = pthread_rwlock_wrlock(&chunk->lock);
 
 		// a deadlock might occur because of the order the chunks are locked
 		if (lock_err == EDEADLK) {
@@ -79,16 +80,10 @@ static void init_search_node(DepthSearchNode *search_node, CheckTreeArg *arg)
 
 			// done
 			return;
-		} else if (lock_err != 0) {
-			// a different error has occured while trying to obtain the lock
-			// this should never happen
-
-			// print error message
-			fprintf(stderr, "[error] failed to lock terrain chunk mutex\n");
-
-			// exit program
-			abort();
 		}
+
+		// assert that no different error has occured while trying to obtain the lock
+		assert(lock_err == 0);
 
 		// insert chunk into cache
 		tree_add(&arg->chunks, &chunk->pos, chunk, &cmp_chunk, NULL);
@@ -239,7 +234,7 @@ static bool check_tree(v3s32 root, Array *positions, Array *chunks)
 
 	- select neighbor nodes that are leaves or wood
 	- in every iteration, select only the nodes that belong to the same tree (have the same root)
-	- in every iteration, keep the mutexes of the chunks the selected nodes belong to locked
+	- in every iteration, keep the chunks the selected nodes belong to locked
 	- skip nodes that don't match the currently selected root, process them in a later iteration
 */
 void tree_physics_check(v3s32 center)
@@ -276,7 +271,7 @@ void tree_physics_check(v3s32 center)
 
 			// get chunk
 			v3s32 offset;
-			TerrainChunk *chunk = terrain_get_chunk_nodep(server_terrain, pos, &offset, false);
+			TerrainChunk *chunk = terrain_get_chunk_nodep(server_terrain, pos, &offset, CHUNK_MODE_PASSIVE);
 			if (!chunk)
 				continue;
 
@@ -284,8 +279,9 @@ void tree_physics_check(v3s32 center)
 			bool locked_before = array_idx(&chunks, &chunk) != -1;
 
 			// lock if not locked
+			// fixme: a deadlock can happen here lol
 			if (!locked_before)
-				terrain_lock_chunk(chunk);
+				assert(pthread_rwlock_wrlock(&chunk->lock) == 0);
 
 			// now that chunk is locked, actually get node
 			TerrainNode *node = &chunk->data[offset.x][offset.y][offset.z];
@@ -313,10 +309,10 @@ void tree_physics_check(v3s32 center)
 					// remember index was selected
 					selected[i] = true;
 
-					// don't run rest of loop body: don't unlock chunk mutex
+					// don't run rest of loop body to not unlock chunk
 					continue;
 				} else {
-					// doesn't match selected root: mark as skipped
+					// if it doesn't match selected root, mark as skipped
 					skipped = true;
 					dirs[i] = false;
 				}
@@ -324,7 +320,7 @@ void tree_physics_check(v3s32 center)
 
 			// only unlock if it wasn't locked before
 			if (!locked_before)
-				pthread_mutex_unlock(&chunk->mtx);
+				pthread_rwlock_unlock(&chunk->lock);
 		}
 
 		if (selected_root) {

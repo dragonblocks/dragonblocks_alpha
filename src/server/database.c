@@ -138,7 +138,7 @@ bool database_load_chunk(TerrainChunk *chunk)
 	if (found) {
 		TerrainChunkMeta *meta = chunk->extra;
 
-		meta->state = sqlite3_column_int(stmt, 0) ? CHUNK_READY : CHUNK_CREATED;
+		meta->state = sqlite3_column_int(stmt, 0) ? CHUNK_STATE_READY : CHUNK_STATE_CREATED;
 		Blob data = {sqlite3_column_bytes(stmt, 1), (void *) sqlite3_column_blob(stmt, 1)};
 		Blob tgsb = {sqlite3_column_bytes(stmt, 2), (void *) sqlite3_column_blob(stmt, 2)};
 
@@ -170,7 +170,7 @@ void database_save_chunk(TerrainChunk *chunk)
 	Blob tgsb = {0, NULL};
 	TerrainGenStageBuffer_write(&tgsb, &meta->tgsb);
 
-	sqlite3_bind_int(stmt, 2, meta->state > CHUNK_CREATED);
+	sqlite3_bind_int(stmt, 2, meta->state > CHUNK_STATE_CREATED);
 	sqlite3_bind_blob(stmt, 3, data.data, data.siz, &free);
 	sqlite3_bind_blob(stmt, 4, tgsb.data, tgsb.siz, &free);
 

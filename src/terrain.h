@@ -13,17 +13,22 @@
 	for (s32 y = 0; y < CHUNK_SIZE; y++) \
 	for (s32 z = 0; z < CHUNK_SIZE; z++)
 
+#define CHUNK_MODE_PASSIVE 0
+#define CHUNK_MODE_CREATE 1
+
 typedef struct TerrainNode {
 	NodeType type;
 	void *data;
 } TerrainNode;
 
+typedef TerrainNode TerrainChunkData[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
+
 typedef struct {
 	s32 level;
 	v3s32 pos;
-	TerrainNode data[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
+	TerrainChunkData data;
 	void *extra;
-	pthread_mutex_t mtx;
+	pthread_rwlock_t lock;
 } TerrainChunk;
 
 typedef struct {
@@ -34,7 +39,7 @@ typedef struct {
 	struct {
 		void (*create_chunk)(TerrainChunk *chunk);
 		void (*delete_chunk)(TerrainChunk *chunk);
-		bool (*get_chunk)(TerrainChunk *chunk, bool create);
+		bool (*get_chunk)(TerrainChunk *chunk, int mode);
 		void (*delete_node)(TerrainNode *node);
 	} callbacks;
 } Terrain;
@@ -42,15 +47,13 @@ typedef struct {
 Terrain *terrain_create();
 void terrain_delete(Terrain *terrain);
 
-TerrainChunk *terrain_get_chunk(Terrain *terrain, v3s32 pos, bool create);
-TerrainChunk *terrain_get_chunk_nodep(Terrain *terrain, v3s32 node_pos, v3s32 *offset, bool create);
+TerrainChunk *terrain_get_chunk(Terrain *terrain, v3s32 pos, int mode);
+TerrainChunk *terrain_get_chunk_nodep(Terrain *terrain, v3s32 node_pos, v3s32 *offset, int mode);
 
 Blob terrain_serialize_chunk(Terrain *terrain, TerrainChunk *chunk, void (*callback)(TerrainNode *node, Blob *buffer));
 bool terrain_deserialize_chunk(Terrain *terrain, TerrainChunk *chunk, Blob buffer, void (*callback)(TerrainNode *node, Blob buffer));
 
 TerrainNode terrain_get_node(Terrain *terrain, v3s32 pos);
-
-void terrain_lock_chunk(TerrainChunk *chunk);
 
 v3s32 terrain_chunkp(v3s32 pos);
 v3s32 terrain_offset(v3s32 pos);

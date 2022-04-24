@@ -82,6 +82,8 @@ void interact_deinit()
 	mesh_destroy(&selection_mesh);
 }
 
+#include "client/client_terrain.h"
+
 void interact_tick()
 {
 	bool old_exists = interact_pointed.exists;

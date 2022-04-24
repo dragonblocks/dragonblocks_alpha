@@ -86,15 +86,6 @@ static void on_ToClientAuth(__attribute__((unused)) DragonnetPeer *peer, ToClien
 		flag_slp(&gfx_init);
 }
 
-static void on_ToClientChunk(__attribute__((unused)) DragonnetPeer *peer, ToClientChunk *pkt)
-{
-	TerrainChunk *chunk = terrain_get_chunk(client_terrain, pkt->pos, true);
-
-	terrain_deserialize_chunk(client_terrain, chunk, pkt->data, &client_node_deserialize);
-	((TerrainChunkMeta *) chunk->extra)->empty = (pkt->data.siz == 0);
-	client_terrain_chunk_received(chunk);
-}
-
 static void on_ToClientInfo(__attribute__((unused)) DragonnetPeer *peer, ToClientInfo *pkt)
 {
 	client_terrain_set_load_distance(pkt->load_distance);
@@ -137,7 +128,7 @@ int main(int argc, char **argv)
 	client->on_disconnect = &on_disconnect;
 	client->on_recv                                                  = (void *) &on_recv;
 	client->on_recv_type[DRAGONNET_TYPE_ToClientAuth               ] = (void *) &on_ToClientAuth;
-	client->on_recv_type[DRAGONNET_TYPE_ToClientChunk              ] = (void *) &on_ToClientChunk;
+	client->on_recv_type[DRAGONNET_TYPE_ToClientChunk              ] = (void *) &client_terrain_receive_chunk;
 	client->on_recv_type[DRAGONNET_TYPE_ToClientInfo               ] = (void *) &on_ToClientInfo;
 	client->on_recv_type[DRAGONNET_TYPE_ToClientTimeOfDay          ] = (void *) &on_ToClientTimeOfDay;
 	client->on_recv_type[DRAGONNET_TYPE_ToClientMovement           ] = (void *) &on_ToClientMovement;

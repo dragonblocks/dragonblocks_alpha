@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "node.h"
 #include "server/server_item.h"
 #include "server/server_node.h"
@@ -9,24 +10,24 @@ static void use_dig(__attribute__((unused)) ServerPlayer *player, ItemStack *sta
 	if (!pointed)
 		return;
 
-	v3s32 off;
-	TerrainChunk *chunk = terrain_get_chunk_nodep(server_terrain, pos, &off, false);
+	v3s32 offset;
+	TerrainChunk *chunk = terrain_get_chunk_nodep(server_terrain, pos, &offset, CHUNK_MODE_PASSIVE);
 	if (!chunk)
 		return;
 	TerrainChunkMeta *meta = chunk->extra;
-	terrain_lock_chunk(chunk);
+	assert(pthread_rwlock_wrlock(&chunk->lock) == 0);
 
-	TerrainNode *node = &chunk->data[off.x][off.y][off.z];
+	TerrainNode *node = &chunk->data[offset.x][offset.y][offset.z];
 
 	if (!(node_def[node->type].dig_class & item_def[stack->type].dig_class)) {
-		pthread_mutex_unlock(&chunk->mtx);
+		pthread_rwlock_unlock(&chunk->lock);
 		return;
 	}
 
 	*node = server_node_create(NODE_AIR);
-	meta->tgsb.raw.nodes[off.x][off.y][off.z] = STAGE_PLAYER;
+	meta->tgsb.raw.nodes[offset.x][offset.y][offset.z] = STAGE_PLAYER;
 
-	pthread_mutex_unlock(&chunk->mtx);
+	pthread_rwlock_unlock(&chunk->lock);
 
 	server_terrain_lock_and_send_chunk(chunk);
 
