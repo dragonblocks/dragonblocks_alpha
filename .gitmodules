@@ -21,7 +21,7 @@
 	url = https://github.com/dragonblocks/dragonnet
 [submodule "deps/linenoise"]
 	path = deps/linenoise
-	url = https://github.com/antirez/linenoise
+	url = https://github.com/msteveb/linenoise
 [submodule "deps/protogen"]
 	path = deps/protogen
 	url = https://github.com/dragonblocks/protogen

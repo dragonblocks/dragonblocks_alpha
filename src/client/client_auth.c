@@ -15,7 +15,7 @@ static void auth_loop()
 	while (!interrupt.set) switch (client_auth.state) {
 		case AUTH_INIT:
 			if (client_auth.name)
-				linenoiseFree(client_auth.name);
+				free(client_auth.name);
 
 			if (!(client_auth.name = linenoise("Enter name: ")))
 				return;
@@ -64,5 +64,5 @@ void client_auth_deinit()
 {
 	pthread_cond_destroy(&client_auth.cv);
 	pthread_mutex_destroy(&client_auth.mtx);
-	linenoiseFree(client_auth.name);
+	free(client_auth.name);
 }
