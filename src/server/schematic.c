@@ -1,3 +1,4 @@
+#include <getline/getline.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "server/schematic.h"

@@ -46,7 +46,7 @@ endif()
 add_compile_definitions("USE_DRAGONNET")
 add_compile_definitions("RESSOURCE_PATH=\"${RESSOURCE_PATH}\"")
 
-add_compile_options(-Wall -Wextra -Werror -Wno-address-of-packed-member -Wno-implicit-fallthrough -fmax-errors=4)
+add_compile_options(-Wall -Wextra -Werror -Wno-address-of-packed-member -Wno-implicit-fallthrough -Wno-unused-parameter -Wno-maybe-uninitialized -fmax-errors=4)
 
 link_libraries(
 	pthread
@@ -90,6 +90,7 @@ set(COMMON_SOURCES
 	"${DEPS_DIR}/dragonstd/refcount.c"
 	"${DEPS_DIR}/dragonstd/tree.c"
 	"${DEPS_DIR}/dragonstd/bits/compare.c"
+	"${DEPS_DIR}/getline/getline.c"
 	"${DEPS_DIR}/linenoise/linenoise.c"
 	"${DEPS_DIR}/linenoise/stringbuf.c"
 	"${DEPS_DIR}/linenoise/utf8.c"

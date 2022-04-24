@@ -25,3 +25,6 @@
 [submodule "deps/protogen"]
 	path = deps/protogen
 	url = https://github.com/dragonblocks/protogen
+[submodule "deps/getline"]
+	path = deps/getline
+	url = https://github.com/dragonblocks/getline
