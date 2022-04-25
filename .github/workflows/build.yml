@@ -11,7 +11,7 @@ jobs:
       - name: Install deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake lua5.3 xorg-dev libgl-dev
+          sudo apt-get install -y build-essential cmake lua5.3 xorg-dev libgl1-mesa-dev
       - name: Build
         run: |
           cmake -B build -S src

@@ -12,7 +12,7 @@ git clone --recurse-submodules https://github.com/dragonblocks/dragonblocks_alph
 
 ## Client dependencies
 
-If you want to build the client, it is required to install the build dependencies for GLEW and GLFW (on X11/Debian based systems: `apt install xorg-dev libgl-dev`).
+If you want to build the client, it is required to install the build dependencies for GLEW and GLFW (on X11/Debian based systems: `apt install xorg-dev libgl1-mesa-dev`).
 
 Refer to:
 - https://www.glfw.org/docs/3.3/compile.html
