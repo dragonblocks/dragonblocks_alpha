@@ -11,12 +11,14 @@ SNAPSHOT=dragonblocks_alpha-$VERSION
 TOOLCHAIN=
 DOTEXE=
 DOTSH=".sh"
-if [[ "$1" == "mingw" ]]; then
-	BUILD=build-mingw
-	SNAPSHOT=dragonblocks_alpha-win64-$VERSION
-	TOOLCHAIN=mingw.cmake
+FLAGS="-Ofast"
+if [[ "$1" != "" ]]; then
+	BUILD=build-$1
+	SNAPSHOT=dragonblocks_alpha-$1-$VERSION
+	TOOLCHAIN=$1.cmake
 	DOTEXE=".exe"
 	DOTSH=".bat"
+	FLAGS="$FLAGS -static"
 fi
 
 mkdir -p $BUILD
@@ -24,7 +26,8 @@ mkdir -p $BUILD
 cmake -B $BUILD -S src \
 	-DCMAKE_BUILD_TYPE="Release" \
 	-DASSET_PATH="assets/" \
-	-DCMAKE_C_FLAGS="-Ofast" \
+	-DCMAKE_C_FLAGS="$FLAGS" \
+	-DCMAKE_CXX_FLAGS="$FLAGS" \
 	-DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN"
 
 make --no-print-directory -C $BUILD -j$(nproc)

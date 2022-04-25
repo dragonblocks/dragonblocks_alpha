@@ -13,6 +13,7 @@ curl -f -i -X POST -H "Content-Type: multipart/form-data" \
 	-F "secret=$SECRET" \
 	-F "name=$VERSION" \
 	-F "is_release=$IS_RELEASE" \
-	-F "ubuntu=@dragonblocks_alpha-$VERSION.zip" \
-	-F "windows=@dragonblocks_alpha-win64-$VERSION.zip" \
+	-F "linux=@dragonblocks_alpha-$VERSION.zip" \
+	-F "win32=@dragonblocks_alpha-win32-$VERSION.zip" \
+	-F "win64=@dragonblocks_alpha-win64-$VERSION.zip" \
 	https://elidragon.tk/dragonblocks_alpha/upload.php

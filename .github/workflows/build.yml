@@ -11,9 +11,9 @@ jobs:
       - name: Install deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake libgl1-mesa-dev libglfw3-dev libglew-dev libsqlite3-dev zlib1g-dev lua5.3
+          sudo apt-get install -y build-essential cmake lua5.3 xorg-dev libgl-dev
       - name: Build
         run: |
-          cd src
-          cmake .
+          cmake -B build -S src
+          cd build
           make -j$(nproc)

@@ -15,11 +15,13 @@ endif()
 
 # Dependencies
 
-cmake_policy(SET CMP0077 NEW)
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
 set(SKIP_INSTALL_ALL ON)
 set(BUILD_SHARED_LIBS OFF)
+
 set(ZLIB_LIBRARY zlibstatic)
+set(ZLIB_INCLUDE_DIR "${DEPS_DIR}/zlib")
 
 set(FT_DISABLE_ZLIB OFF)
 set(FT_DISABLE_BZIP2 ON)

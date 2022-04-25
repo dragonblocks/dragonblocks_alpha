@@ -11,13 +11,16 @@ jobs:
       - name: Install deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake lua5.3 curl zip
-      - name: Build ubuntu snapshot
+          sudo apt-get install -y build-essential cmake lua5.3 xorg-dev libgl-dev mingw-w64 curl zip
+      - name: Build linux snapshot
         run: |
           ./snapshot.sh
-      - name: Build windows snapshot
+      - name: Build win32 snapshot
         run: |
-          ./snapshot.sh mingw
+          ./snapshot.sh win32
+      - name: Build win64 snapshot
+        run: |
+          ./snapshot.sh win64
       - name: Upload snapshots
         env:
           SECRET: ${{ secrets.ELIDRAGON_UPLOAD_TOKEN }}
