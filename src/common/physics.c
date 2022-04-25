@@ -1,5 +1,5 @@
 #include <math.h>
-#include "physics.h"
+#include "common/physics.h"
 
 static aabb3f64 move_box(aabb3f32 box, v3f64 pos)
 {

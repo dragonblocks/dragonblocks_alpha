@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
-#include "dig.h"
+#include "common/dig.h"
 #include "types.h"
 
 typedef enum {

@@ -2,7 +2,7 @@
 #define _DATABASE_H_
 
 #include <stdbool.h>
-#include "terrain.h"
+#include "common/terrain.h"
 #include "types.h"
 
 bool database_init();                                                  // open and initialize SQLite3 databases

@@ -3,7 +3,7 @@
 
 #include "client/terrain_gfx.h"
 #include "client/texture.h"
-#include "terrain.h"
+#include "common/terrain.h"
 
 typedef enum {
 	VISIBILITY_NONE,

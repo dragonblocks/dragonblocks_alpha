@@ -1,4 +1,4 @@
-#include "config.h"
+#include "common/config.h"
 #include "server/server_config.h"
 
 struct ServerConfig server_config = {

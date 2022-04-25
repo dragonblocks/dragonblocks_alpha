@@ -1,10 +1,10 @@
 #include <stdlib.h>
 #include "client/client.h"
 #include "client/client_node.h"
-#include "color.h"
-#include "environment.h"
-#include "node.h"
-#include "perlin.h"
+#include "common/color.h"
+#include "common/environment.h"
+#include "common/node.h"
+#include "common/perlin.h"
 
 #define TILES_SIMPLE(path) {.paths = {path, NULL, NULL, NULL, NULL, NULL}, .indices = {0, 0, 0, 0, 0, 0}, .textures = {NULL}}
 #define TILES_NONE {.paths = {NULL}, .indices = {0}, .textures = {NULL}}
@@ -42,7 +42,7 @@ static void render_color(NodeArgsRender *args)
 ClientNodeDef client_node_def[COUNT_NODE] = {
 	// unknown
 	{
-		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/unknown.png"),
+		.tiles = TILES_SIMPLE(ASSET_PATH "textures/unknown.png"),
 		.visibility = VISIBILITY_SOLID,
 		.mipmap = true,
 		.render = NULL,
@@ -62,7 +62,7 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	},
 	// grass
 	{
-		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/grass.png"),
+		.tiles = TILES_SIMPLE(ASSET_PATH "textures/grass.png"),
 		.visibility = VISIBILITY_SOLID,
 		.mipmap = true,
 		.render = &render_grass,
@@ -72,7 +72,7 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	},
 	// dirt
 	{
-		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/dirt.png"),
+		.tiles = TILES_SIMPLE(ASSET_PATH "textures/dirt.png"),
 		.visibility = VISIBILITY_SOLID,
 		.mipmap = true,
 		.render = NULL,
@@ -82,7 +82,7 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	},
 	// stone
 	{
-		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/stone.png"),
+		.tiles = TILES_SIMPLE(ASSET_PATH "textures/stone.png"),
 		.visibility = VISIBILITY_SOLID,
 		.mipmap = true,
 		.render = &render_stone,
@@ -92,7 +92,7 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	},
 	// snow
 	{
-		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/snow.png"),
+		.tiles = TILES_SIMPLE(ASSET_PATH "textures/snow.png"),
 		.visibility = VISIBILITY_SOLID,
 		.mipmap = true,
 		.render = NULL,
@@ -103,7 +103,7 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	// oak wood
 	{
 		.tiles = {
-			.paths = {RESSOURCE_PATH "textures/oak_wood.png", RESSOURCE_PATH "textures/oak_wood_top.png", NULL, NULL, NULL, NULL},
+			.paths = {ASSET_PATH "textures/oak_wood.png", ASSET_PATH "textures/oak_wood_top.png", NULL, NULL, NULL, NULL},
 			.indices = {0, 0, 0, 0, 1, 1},
 			.textures = {NULL},
 		},
@@ -116,7 +116,7 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	},
 	// oak leaves
 	{
-		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/oak_leaves.png"),
+		.tiles = TILES_SIMPLE(ASSET_PATH "textures/oak_leaves.png"),
 		.visibility = VISIBILITY_SOLID,
 		.mipmap = true,
 		.render = &render_color,
@@ -127,7 +127,7 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	// pine wood
 	{
 		.tiles = {
-			.paths = {RESSOURCE_PATH "textures/pine_wood.png", RESSOURCE_PATH "textures/pine_wood_top.png", NULL, NULL, NULL, NULL},
+			.paths = {ASSET_PATH "textures/pine_wood.png", ASSET_PATH "textures/pine_wood_top.png", NULL, NULL, NULL, NULL},
 			.indices = {0, 0, 0, 0, 1, 1},
 			.textures = {NULL},
 		},
@@ -140,7 +140,7 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	},
 	// pine leaves
 	{
-		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/pine_leaves.png"),
+		.tiles = TILES_SIMPLE(ASSET_PATH "textures/pine_leaves.png"),
 		.visibility = VISIBILITY_CLIP,
 		.mipmap = true,
 		.render = &render_color,
@@ -151,7 +151,7 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	// palm wood
 	{
 		.tiles = {
-			.paths = {RESSOURCE_PATH "textures/palm_wood.png", RESSOURCE_PATH "textures/palm_wood_top.png", NULL, NULL, NULL, NULL},
+			.paths = {ASSET_PATH "textures/palm_wood.png", ASSET_PATH "textures/palm_wood_top.png", NULL, NULL, NULL, NULL},
 			.indices = {0, 0, 0, 0, 1, 1},
 			.textures = {NULL},
 		},
@@ -164,7 +164,7 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	},
 	// palm leaves
 	{
-		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/palm_leaves.png"),
+		.tiles = TILES_SIMPLE(ASSET_PATH "textures/palm_leaves.png"),
 		.visibility = VISIBILITY_SOLID,
 		.mipmap = true,
 		.render = &render_color,
@@ -174,7 +174,7 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	},
 	// sand
 	{
-		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/sand.png"),
+		.tiles = TILES_SIMPLE(ASSET_PATH "textures/sand.png"),
 		.visibility = VISIBILITY_SOLID,
 		.mipmap = true,
 		.render = NULL,
@@ -184,7 +184,7 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	},
 	// water
 	{
-		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/water.png"),
+		.tiles = TILES_SIMPLE(ASSET_PATH "textures/water.png"),
 		.visibility = VISIBILITY_BLEND,
 		.mipmap = true,
 		.render = NULL,
@@ -194,7 +194,7 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	},
 	// lava
 	{
-		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/lava.png"),
+		.tiles = TILES_SIMPLE(ASSET_PATH "textures/lava.png"),
 		.visibility = VISIBILITY_BLEND,
 		.mipmap = true,
 		.render = NULL,
@@ -204,7 +204,7 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	},
 	// vulcano_stone
 	{
-		.tiles = TILES_SIMPLE(RESSOURCE_PATH "textures/vulcano_stone.png"),
+		.tiles = TILES_SIMPLE(ASSET_PATH "textures/vulcano_stone.png"),
 		.visibility = VISIBILITY_SOLID,
 		.mipmap = true,
 		.render = NULL,

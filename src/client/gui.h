@@ -2,7 +2,7 @@
 #define _GUI_H_
 
 #include <dragonstd/array.h>
-#include <linmath.h/linmath.h>
+#include <linmath.h>
 #include <stdbool.h>
 #include "client/font.h"
 #include "client/texture.h"

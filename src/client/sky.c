@@ -10,7 +10,7 @@
 #include "client/sky.h"
 #include "client/texture.h"
 #include "client/window.h"
-#include "day.h"
+#include "common/day.h"
 
 static GLuint sun_prog;
 static GLint sun_loc_MVP;
@@ -86,24 +86,24 @@ void sky_init()
 
 	// skybox
 
-	skybox_prog = shader_program_create(RESSOURCE_PATH "shaders/sky/skybox", NULL);
+	skybox_prog = shader_program_create(ASSET_PATH "shaders/sky/skybox", NULL);
 	glProgramUniform1iv(skybox_prog, glGetUniformLocation(skybox_prog, "textures"), 2, (GLint[]) {0, 1}); GL_DEBUG
 	skybox_loc_VP = glGetUniformLocation(skybox_prog, "VP"); GL_DEBUG
 	skybox_loc_daylight = glGetUniformLocation(skybox_prog, "daylight"); GL_DEBUG
-	skybox_texture_day = texture_load_cubemap(RESSOURCE_PATH "textures/skybox/day", true)->txo;
-	skybox_texture_night = texture_load_cubemap(RESSOURCE_PATH "textures/skybox/night", true)->txo;
+	skybox_texture_day = texture_load_cubemap(ASSET_PATH "textures/skybox/day", true)->txo;
+	skybox_texture_night = texture_load_cubemap(ASSET_PATH "textures/skybox/night", true)->txo;
 	skybox_mesh.data = skybox_vertices;
 	mesh_upload(&skybox_mesh);
 
 	// sun
 
-	sun_prog = shader_program_create(RESSOURCE_PATH "shaders/sky/sun", NULL);
+	sun_prog = shader_program_create(ASSET_PATH "shaders/sky/sun", NULL);
 	sun_loc_MVP = glGetUniformLocation(sun_prog, "MVP"); GL_DEBUG
-	sun_texture = texture_load(RESSOURCE_PATH "textures/sun.png", false)->txo;
+	sun_texture = texture_load(ASSET_PATH "textures/sun.png", false)->txo;
 
 	// clouds
 
-	clouds_prog = shader_program_create(RESSOURCE_PATH "shaders/sky/clouds", NULL);
+	clouds_prog = shader_program_create(ASSET_PATH "shaders/sky/clouds", NULL);
 	clouds_loc_VP = glGetUniformLocation(clouds_prog, "VP"); GL_DEBUG
 	clouds_loc_daylight = glGetUniformLocation(clouds_prog, "daylight"); GL_DEBUG
 	clouds_mesh.data = clouds_vertices;

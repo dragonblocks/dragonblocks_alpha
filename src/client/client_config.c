@@ -1,5 +1,5 @@
-#include "config.h"
 #include "client/client_config.h"
+#include "common/config.h"
 
 struct ClientConfig client_config = {
 	.antialiasing = 4,

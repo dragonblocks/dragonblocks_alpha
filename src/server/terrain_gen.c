@@ -1,8 +1,8 @@
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
-#include "environment.h"
-#include "perlin.h"
+#include "common/environment.h"
+#include "common/perlin.h"
 #include "server/biomes.h"
 #include "server/server_node.h"
 #include "server/server_terrain.h"

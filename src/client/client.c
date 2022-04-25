@@ -14,9 +14,9 @@
 #include "client/debug_menu.h"
 #include "client/game.h"
 #include "client/input.h"
-#include "day.h"
-#include "interrupt.h"
-#include "perlin.h"
+#include "common/day.h"
+#include "common/interrupt.h"
+#include "common/perlin.h"
 #include "types.h"
 
 DragonnetPeer *client;

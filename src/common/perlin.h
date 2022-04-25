@@ -1,7 +1,7 @@
 #ifndef _PERLIN_H_
 #define _PERLIN_H_
 
-#include <perlin/perlin.h>
+#include_next <perlin.h>
 #include "types.h"
 
 #define U32(x) (((u32) 1 << 31) + (x))

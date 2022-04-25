@@ -1,7 +1,7 @@
 #ifndef _CAMERA_H_
 #define _CAMERA_H_
 
-#include <linmath.h/linmath.h>
+#include <linmath.h>
 #include "types.h"
 
 extern struct Camera {

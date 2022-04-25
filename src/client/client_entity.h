@@ -5,8 +5,8 @@
 #include <pthread.h>
 #include "client/gui.h"
 #include "client/model.h"
-#include "entity.h"
-#include "item.h"
+#include "common/entity.h"
+#include "common/item.h"
 #include "types.h"
 
 typedef struct {

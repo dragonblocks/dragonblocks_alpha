@@ -1,7 +1,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
-#include <stb/stb_image.h>
-#include <stb/stb_image_resize.h>
+#include <stb_image.h>
+#include <stb_image_resize.h>
 #include <stdbool.h>
 #include <dragonstd/tree.h>
 #include "client/client_config.h"

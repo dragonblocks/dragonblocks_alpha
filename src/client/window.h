@@ -2,7 +2,7 @@
 #define _WINDOW_H_
 
 #include <GLFW/glfw3.h>
-#include <linmath.h/linmath.h>
+#include <linmath.h>
 #include <stdbool.h>
 #include "types.h"
 

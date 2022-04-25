@@ -1,7 +1,7 @@
 #ifndef _SERVER_NODE_H_
 #define _SERVER_NODE_H_
 
-#include "terrain.h"
+#include "common/terrain.h"
 #include "types.h"
 
 TerrainNode server_node_create(NodeType type);

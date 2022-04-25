@@ -1,8 +1,8 @@
 #ifndef _BIOMES_H_
 #define _BIOMES_H_
 
-#include "perlin.h"
-#include "terrain.h"
+#include "common/perlin.h"
+#include "common/terrain.h"
 #include "types.h"
 
 typedef enum {

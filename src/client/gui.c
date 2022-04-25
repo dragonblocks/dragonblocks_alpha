@@ -253,18 +253,18 @@ static void transform_element(GUIElement *element)
 void gui_init()
 {
 	// initialize background pipeline
-	background_prog = shader_program_create(RESSOURCE_PATH "shaders/gui/background", NULL);
+	background_prog = shader_program_create(ASSET_PATH "shaders/gui/background", NULL);
 	background_loc_model = glGetUniformLocation(background_prog, "model"); GL_DEBUG
 	background_loc_projection = glGetUniformLocation(background_prog, "projection"); GL_DEBUG
 	background_loc_color = glGetUniformLocation(background_prog, "color"); GL_DEBUG
 
 	// initialize image pipeline
-	image_prog = shader_program_create(RESSOURCE_PATH "shaders/gui/image", NULL);
+	image_prog = shader_program_create(ASSET_PATH "shaders/gui/image", NULL);
 	image_loc_model = glGetUniformLocation(image_prog, "model"); GL_DEBUG
 	image_loc_projection = glGetUniformLocation(image_prog, "projection"); GL_DEBUG
 
 	// initialize font pipeline
-	font_prog = shader_program_create(RESSOURCE_PATH "shaders/gui/font", NULL);
+	font_prog = shader_program_create(ASSET_PATH "shaders/gui/font", NULL);
 	font_loc_model = glGetUniformLocation(font_prog, "model"); GL_DEBUG
 	font_loc_projection = glGetUniformLocation(font_prog, "projection"); GL_DEBUG
 	font_loc_color = glGetUniformLocation(font_prog, "color"); GL_DEBUG

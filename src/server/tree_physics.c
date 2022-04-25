@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include "facedir.h"
+#include "common/facedir.h"
 #include "server/server_node.h"
 #include "server/server_terrain.h"
 #include "server/tree_physics.h"

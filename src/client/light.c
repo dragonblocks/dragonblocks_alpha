@@ -1,8 +1,8 @@
-#include <linmath.h/linmath.h>
+#include <linmath.h>
 #include "client/camera.h"
 #include "client/gl_debug.h"
 #include "client/light.h"
-#include "day.h"
+#include "common/day.h"
 
 void light_shader_locate(LightShader *shader)
 {

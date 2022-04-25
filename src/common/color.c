@@ -1,4 +1,4 @@
-#include "color.h"
+#include "common/color.h"
 
 static f32 hue_to_rgb(f32 p, f32 q, f32 t)
 {

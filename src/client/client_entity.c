@@ -1,4 +1,4 @@
-#include <asprintf/asprintf.h>
+#include <asprintf.h>
 #include <dragonstd/map.h>
 #include <inttypes.h>
 #include <stdio.h>
@@ -170,7 +170,7 @@ void client_entity_gfx_init()
 {
 	char *shader_def;
 	asprintf(&shader_def, "#define VIEW_DISTANCE %lf\n", client_config.view_distance);
-	shader_prog = shader_program_create(RESSOURCE_PATH "shaders/3d/entity", shader_def);
+	shader_prog = shader_program_create(ASSET_PATH "shaders/3d/entity", shader_def);
 	free(shader_def);
 
 	loc_VP = glGetUniformLocation(shader_prog, "VP"); GL_DEBUG

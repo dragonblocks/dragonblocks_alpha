@@ -2,7 +2,7 @@
 #define _TERRAIN_GFX_H_
 
 #include "client/cube.h"
-#include "terrain.h"
+#include "common/terrain.h"
 
 typedef struct {
 	CubeVertex cube;

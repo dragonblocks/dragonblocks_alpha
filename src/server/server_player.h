@@ -5,7 +5,7 @@
 #include <dragonstd/refcount.h>
 #include <pthread.h>
 #include <stdbool.h>
-#include "item.h"
+#include "common/item.h"
 #include "types.h"
 
 typedef struct {

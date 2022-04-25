@@ -2,7 +2,7 @@
 #define _VOXEL_PROCEDURAL_H_
 
 #include <dragonstd/list.h>
-#include <linmath.h/linmath.h>
+#include <linmath.h>
 #include "server/server_terrain.h"
 #include "types.h"
 

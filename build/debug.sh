@@ -37,7 +37,7 @@ alacritty -e bash -c "
 " &
 sleep 0.5
 
-gdb --command $DEBUG_DIR/client_script ./dragonblocks
+gdb --command $DEBUG_DIR/client_script ./dragonblocks_client
 
 kill `cat $DEBUG_DIR/server_pid`
 

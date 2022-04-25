@@ -1,23 +1,44 @@
 #!/bin/bash
+set -e
+
 VERSION=`git tag --points-at HEAD`
 if [[ $VERSION = "" ]]; then
 	VERSION=`git rev-parse --short HEAD`
 fi
-DIR=dragonblocks_alpha-$VERSION
-mkdir .build
-cp -r * .build/
-cd .build/
-mkdir build
-cd build
-if ! (cmake -B . -S ../src -DCMAKE_BUILD_TYPE=Release -DRESSOURCE_PATH="\"\"" -DCMAKE_C_FLAGS="-Ofast" && make clean && make -j$(nproc)); then
-	cd ../..
-	rm -rf .build
-	exit 1
+
+BUILD=build-release
+SNAPSHOT=dragonblocks_alpha-$VERSION
+TOOLCHAIN=
+DOTEXE=
+DOTSH=".sh"
+if [[ "$1" == "mingw" ]]; then
+	BUILD=build-mingw
+	SNAPSHOT=dragonblocks_alpha-win64-$VERSION
+	TOOLCHAIN=mingw.cmake
+	DOTEXE=".exe"
+	DOTSH=".bat"
 fi
-cp dragonblocks dragonblocks_server ..
-cd ..
-rm -rf .git* deps src build BUILDING.md snapshot.sh upload.sh dragonblocks_alpha-* screenshot-*.png
-cd ..
-mv .build $DIR
-zip -r $DIR.zip $DIR/*
-rm -rf $DIR
+
+mkdir -p $BUILD
+
+cmake -B $BUILD -S src \
+	-DCMAKE_BUILD_TYPE="Release" \
+	-DASSET_PATH="assets/" \
+	-DCMAKE_C_FLAGS="-Ofast" \
+	-DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN"
+
+make --no-print-directory -C $BUILD -j$(nproc)
+
+rm -rf $SNAPSHOT
+mkdir $SNAPSHOT
+
+cp -r \
+	assets \
+	$BUILD/dragonblocks_client$DOTEXE \
+	$BUILD/dragonblocks_server$DOTEXE \
+	singleplayer$DOTSH \
+	LICENSE \
+	README.md \
+	$SNAPSHOT
+
+zip -r $SNAPSHOT.zip $SNAPSHOT/*

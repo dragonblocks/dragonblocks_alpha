@@ -1,6 +1,6 @@
 #include <math.h>
 #include <time.h>
-#include "day.h"
+#include "common/day.h"
 
 bool timelapse = false;
 static f64 time_of_day_offset;

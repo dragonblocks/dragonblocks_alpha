@@ -4,7 +4,7 @@
 #include <dragonstd/list.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include "node.h"
+#include "common/node.h"
 #include "server/server_terrain.h"
 #include "types.h"
 

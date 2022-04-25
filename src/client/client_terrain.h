@@ -4,7 +4,7 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 #include "client/model.h"
-#include "terrain.h"
+#include "common/terrain.h"
 #include "types.h"
 
 #define CHUNK_MODE_NOCREATE 2

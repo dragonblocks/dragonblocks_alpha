@@ -2,7 +2,7 @@
 #define _FRUSTUM_H_
 
 #include <stdbool.h>
-#include <linmath.h/linmath.h>
+#include <linmath.h>
 #include "types.h"
 
 extern mat4x4 frustum;

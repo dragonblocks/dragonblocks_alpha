@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include "interrupt.h"
+#include "common/interrupt.h"
 #include "server/database.h"
 #include "server/server.h"
 #include "server/server_item.h"

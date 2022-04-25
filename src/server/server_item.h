@@ -2,7 +2,7 @@
 #define _SERVER_ITEM_H_
 
 #include <stdbool.h>
-#include "item.h"
+#include "common/item.h"
 #include "server/server_player.h"
 #include "types.h"
 

@@ -3,8 +3,8 @@
 
 #include <dragonstd/list.h>
 #include <pthread.h>
+#include "common/terrain.h"
 #include "server/server_player.h"
-#include "terrain.h"
 #include "types.h"
 
 typedef enum {

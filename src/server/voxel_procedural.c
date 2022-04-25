@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <pthread.h>
-#include "color.h"
-#include "perlin.h"
+#include "common/color.h"
+#include "common/perlin.h"
 #include "server/terrain_gen.h"
 #include "server/voxel_procedural.h"
 

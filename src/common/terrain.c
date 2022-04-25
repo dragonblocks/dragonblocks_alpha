@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "terrain.h"
+#include "common/terrain.h"
 
 typedef struct {
 	v2s32 pos;

@@ -3,8 +3,8 @@
 
 #include <dragonstd/list.h>
 #include <stdbool.h>
-#include "perlin.h"
-#include "terrain.h"
+#include "common/perlin.h"
+#include "common/terrain.h"
 #include "types.h"
 
 #define NUM_TREES 3

@@ -2,7 +2,7 @@
 #define _INTERACT_H_
 
 #include <stdbool.h>
-#include "node.h"
+#include "common/node.h"
 #include "types.h"
 
 extern struct InteractPointed {

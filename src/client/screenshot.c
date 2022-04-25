@@ -1,7 +1,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <GL/glew.h>
 #include <GL/gl.h>
-#include <stb/stb_image_write.h>
+#include <stb_image_write.h>
 #include <string.h>
 #include <time.h>
 #include "client/game.h"

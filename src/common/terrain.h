@@ -5,7 +5,7 @@
 #include <dragonstd/tree.h>
 #include <stdbool.h>
 #include <pthread.h>
-#include "node.h"
+#include "common/node.h"
 #include "types.h"
 
 #define CHUNK_ITERATE \

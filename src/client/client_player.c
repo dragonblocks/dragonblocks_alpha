@@ -8,8 +8,8 @@
 #include "client/cube.h"
 #include "client/debug_menu.h"
 #include "client/texture.h"
-#include "environment.h"
-#include "physics.h"
+#include "common/environment.h"
+#include "common/physics.h"
 
 struct ClientPlayer client_player;
 
@@ -233,7 +233,7 @@ void client_player_deinit()
 void client_player_gfx_init()
 {
 	player_model = model_load(
-		RESSOURCE_PATH "models/player.txt", RESSOURCE_PATH "textures/models/player",
+		ASSET_PATH "models/player.txt", ASSET_PATH "textures/models/player",
 		&client_entity_cube, &client_entity_shader);
 
 	player_model->callbacks.delete = &on_model_delete;

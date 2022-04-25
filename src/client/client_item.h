@@ -3,8 +3,8 @@
 
 #include <stdbool.h>
 #include "client/mesh.h"
-#include "item.h"
-#include "node.h"
+#include "common/item.h"
+#include "common/node.h"
 
 typedef struct {
 	const char *mesh_path;

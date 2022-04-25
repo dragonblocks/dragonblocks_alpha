@@ -1,6 +1,6 @@
 #include "client/client_item.h"
 #include "client/interact.h"
-#include "node.h"
+#include "common/node.h"
 
 static bool use_dig(__attribute__((unused)) ItemStack *stack)
 {
@@ -11,7 +11,7 @@ static bool use_dig(__attribute__((unused)) ItemStack *stack)
 ClientItemDef client_item_def[COUNT_ITEM] = {
 	// unknown
 	{
-		.mesh_path = RESSOURCE_PATH "meshes/unknown.txt",
+		.mesh_path = ASSET_PATH "meshes/unknown.txt",
 		.mesh = {0},
 		.use = NULL,
 	},
@@ -23,19 +23,19 @@ ClientItemDef client_item_def[COUNT_ITEM] = {
 	},
 	// pickaxe
 	{
-		.mesh_path = RESSOURCE_PATH "meshes/pickaxe.txt",
+		.mesh_path = ASSET_PATH "meshes/pickaxe.txt",
 		.mesh = {0},
 		.use = &use_dig,
 	},
 	// axe
 	{
-		.mesh_path = RESSOURCE_PATH "meshes/axe.txt",
+		.mesh_path = ASSET_PATH "meshes/axe.txt",
 		.mesh = {0},
 		.use = &use_dig,
 	},
 	// shovel
 	{
-		.mesh_path = RESSOURCE_PATH "meshes/shovel.txt",
+		.mesh_path = ASSET_PATH "meshes/shovel.txt",
 		.mesh = {0},
 		.use = &use_dig,
 	},

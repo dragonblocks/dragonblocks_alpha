@@ -1,30 +1,4 @@
-# CMake
-CMakeLists.txt.user
-CMakeCache.txt
-CMakeFiles
-CMakeScripts
-Testing
-Makefile
-cmake_install.cmake
-install_manifest.txt
-compile_commands.json
-CTestTestfile.cmake
-_deps
-
-# Binaries
-dragonblocks
-dragonblocks_server
-dragonblocks_alpha-*.zip
-dragonblocks_alpha
-
-# Data
-client.conf
-server.conf
-*.sqlite
-*.sqlite-journal
-screenshot-*.png
-
-# Generated code
-version.h
-types.c
-types.h
+build*/*
+!build/debug.sh
+!build/debug_loop.sh
+dragonblocks_alpha*

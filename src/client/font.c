@@ -39,7 +39,7 @@ void font_init()
 		abort();
 	}
 
-	if (FT_New_Face(font_library, RESSOURCE_PATH "fonts/Minecraftia.ttf", 0, &font_face)) {
+	if (FT_New_Face(font_library, ASSET_PATH "fonts/Minecraftia.ttf", 0, &font_face)) {
 		fprintf(stderr, "[error] failed to load Minecraftia.ttf\n");
 		abort();
 	}

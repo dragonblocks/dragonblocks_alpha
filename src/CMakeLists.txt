@@ -1,41 +1,44 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.14)
 project(Dragonblocks)
 
 # Variables
 
-set(DEPS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../deps/")
+set(DEPS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../deps")
 
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-if(NOT RESSOURCE_PATH)
-	set(RESSOURCE_PATH "../")
+if(NOT ASSET_PATH)
+	set(ASSET_PATH "../assets/")
 endif()
 
 # Dependencies
 
-find_package(OpenGL REQUIRED)
+cmake_policy(SET CMP0077 NEW)
 
-if(NOT GLEW_LIBRARIES OR NOT GLEW_INCLUDE_DIRS)
-	find_package(GLEW REQUIRED)
-endif()
+set(SKIP_INSTALL_ALL ON)
+set(BUILD_SHARED_LIBS OFF)
+set(ZLIB_LIBRARY zlibstatic)
 
-if(NOT GLFW_LIBRARIES OR NOT GLFW_INCLUDE_DIRS)
-	find_package(glfw3 3.3 REQUIRED)
-	set(GLFW_LIBRARIES glfw)
-	set(GLFW_INCLUDE_DIRS)
-endif()
+set(FT_DISABLE_ZLIB OFF)
+set(FT_DISABLE_BZIP2 ON)
+set(FT_DISABLE_PNG ON)
+set(FT_DISABLE_HARFBUZZ ON)
+set(FT_DISABLE_BROTLI ON)
 
-if(NOT FREETYPE_LIBRARIES OR NOT FREETYPE_INCLUDE_DIRS)
-	find_package(Freetype REQUIRED)
-endif()
-
-if(NOT ZLIB_LIBRARIES OR NOT ZLIB_INCLUDE_DIRS)
-	find_package(ZLIB REQUIRED)
-	set(ZLIB_LIBRARIES ZLIB::ZLIB)
-	set(ZLIB_INCLUDE_DIRS)
-endif()
+add_subdirectory("${DEPS_DIR}/glfw" EXCLUDE_FROM_ALL "${CMAKE_CURRENT_BINARY_DIR}/glfw")
+add_subdirectory("${DEPS_DIR}/glew-cmake" EXCLUDE_FROM_ALL "${CMAKE_CURRENT_BINARY_DIR}/glew")
+add_subdirectory("${DEPS_DIR}/sqlite3-cmake" EXCLUDE_FROM_ALL "${CMAKE_CURRENT_BINARY_DIR}/sqlite3")
+add_subdirectory("${DEPS_DIR}/perlin" EXCLUDE_FROM_ALL "${CMAKE_CURRENT_BINARY_DIR}/perlin")
+add_subdirectory("${DEPS_DIR}/asprintf" EXCLUDE_FROM_ALL "${CMAKE_CURRENT_BINARY_DIR}/asprintf")
+add_subdirectory("${DEPS_DIR}/dragonnet" EXCLUDE_FROM_ALL "${CMAKE_CURRENT_BINARY_DIR}/dragonnet")
+add_subdirectory("${DEPS_DIR}/dragonstd" EXCLUDE_FROM_ALL "${CMAKE_CURRENT_BINARY_DIR}/dragonstd")
+add_subdirectory("${DEPS_DIR}/getline" EXCLUDE_FROM_ALL "${CMAKE_CURRENT_BINARY_DIR}/getline")
+add_subdirectory("${DEPS_DIR}/stpcpy" EXCLUDE_FROM_ALL "${CMAKE_CURRENT_BINARY_DIR}/stpcpy")
+add_subdirectory("${DEPS_DIR}/linenoise" EXCLUDE_FROM_ALL "${CMAKE_CURRENT_BINARY_DIR}/linenoise")
+add_subdirectory("${DEPS_DIR}/zlib" EXCLUDE_FROM_ALL "${CMAKE_CURRENT_BINARY_DIR}/zlib")
+add_subdirectory("${DEPS_DIR}/freetype" EXCLUDE_FROM_ALL "${CMAKE_CURRENT_BINARY_DIR}/freetype")
 
 # Options
 
@@ -44,20 +47,16 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 endif()
 
 add_compile_definitions("USE_DRAGONNET")
-add_compile_definitions("RESSOURCE_PATH=\"${RESSOURCE_PATH}\"")
+add_compile_definitions("GLEW_STATIC")
+add_compile_definitions("ASSET_PATH=\"${ASSET_PATH}\"")
 
-add_compile_options(-Wall -Wextra -Werror -Wno-address-of-packed-member -Wno-implicit-fallthrough -Wno-unused-parameter -Wno-maybe-uninitialized -fmax-errors=4)
-
-link_libraries(
-	pthread
-	m
-	${ZLIB_LIBRARIES}
+add_compile_options(
+	-Wall
+	-Wextra
+	-Werror
+	-Wno-address-of-packed-member
+	-fmax-errors=4
 )
-
-include_directories(SYSTEM ${DEPS_DIR})
-include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR})
-include_directories(${ZLIB_INCLUDE_DIRS})
 
 # System specific options
 
@@ -73,45 +72,43 @@ endif()
 
 # Common sources
 
-set(COMMON_SOURCES
+add_library(dragonblocks
 	"${CMAKE_CURRENT_BINARY_DIR}/types.c"
-	"${DEPS_DIR}/asprintf/asprintf.c"
-	"${DEPS_DIR}/dragonnet/addr.c"
-	"${DEPS_DIR}/dragonnet/listen.c"
-	"${DEPS_DIR}/dragonnet/peer.c"
-	"${DEPS_DIR}/dragonnet/recv.c"
-	"${DEPS_DIR}/dragonnet/recv_thread.c"
-	"${DEPS_DIR}/dragonnet/send.c"
-	"${DEPS_DIR}/dragonstd/array.c"
-	"${DEPS_DIR}/dragonstd/flag.c"
-	"${DEPS_DIR}/dragonstd/list.c"
-	"${DEPS_DIR}/dragonstd/map.c"
-	"${DEPS_DIR}/dragonstd/queue.c"
-	"${DEPS_DIR}/dragonstd/refcount.c"
-	"${DEPS_DIR}/dragonstd/tree.c"
-	"${DEPS_DIR}/dragonstd/bits/compare.c"
-	"${DEPS_DIR}/getline/getline.c"
-	"${DEPS_DIR}/linenoise/linenoise.c"
-	"${DEPS_DIR}/linenoise/stringbuf.c"
-	"${DEPS_DIR}/linenoise/utf8.c"
-	"${DEPS_DIR}/perlin/perlin.c"
-	color.c
-	config.c
-	day.c
-	environment.c
-	facedir.c
-	interrupt.c
-	item.c
-	node.c
-	perlin.c
-	physics.c
-	terrain.c
+	common/color.c
+	common/config.c
+	common/day.c
+	common/environment.c
+	common/facedir.c
+	common/interrupt.c
+	common/item.c
+	common/node.c
+	common/perlin.c
+	common/physics.c
+	common/terrain.c
+)
+
+target_include_directories(dragonblocks
+	PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+	PUBLIC ${CMAKE_CURRENT_BINARY_DIR}
+	PUBLIC "${DEPS_DIR}/linmath.h"
+	PUBLIC "${DEPS_DIR}/endian.h"
+	PUBLIC "${DEPS_DIR}/stb"
+)
+
+target_link_libraries(dragonblocks
+	PUBLIC pthread
+	PUBLIC m
+	PUBLIC perlin
+	PUBLIC dragonnet
+	PUBLIC dragonstd
+	PUBLIC getline
+	PUBLIC zlibstatic
+	PUBLIC stpcpy
 )
 
 # Client
 
-add_executable(dragonblocks
-	${COMMON_SOURCES}
+add_executable(dragonblocks_client
 	client/camera.c
 	client/client.c
 	client/client_auth.c
@@ -144,23 +141,18 @@ add_executable(dragonblocks
 	client/window.c
 )
 
-target_link_libraries(dragonblocks
-	${OPENGL_LIBRARIES}
-	${GLEW_LIBRARIES}
-	${GLFW_LIBRARIES}
-	${FREETYPE_LIBRARIES}
-)
-
-target_include_directories(dragonblocks PUBLIC
-	${GLEW_INCLUDE_DIRS}
-	${GLFW_INCLUDE_DIRS}
-	${FREETYPE_INCLUDE_DIRS}
+target_link_libraries(dragonblocks_client
+	PUBLIC dragonblocks
+	PUBLIC libglew_static
+	PUBLIC glfw
+	PUBLIC asprintf
+	PUBLIC linenoise
+	PUBLIC freetype
 )
 
 # Server
 
 add_executable(dragonblocks_server
-	${COMMON_SOURCES}
 	server/biomes.c
 	server/database.c
 	server/schematic.c
@@ -178,7 +170,8 @@ add_executable(dragonblocks_server
 )
 
 target_link_libraries(dragonblocks_server
-	sqlite3
+	PUBLIC dragonblocks
+	PUBLIC sqlite3
 )
 
 # Version
@@ -189,7 +182,6 @@ add_custom_target(version
 )
 
 add_dependencies(dragonblocks version)
-add_dependencies(dragonblocks_server version)
 
 # Types
 
@@ -206,4 +198,3 @@ add_custom_target(types
 )
 
 add_dependencies(dragonblocks types)
-add_dependencies(dragonblocks_server types)

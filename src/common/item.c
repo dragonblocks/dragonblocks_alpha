@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "item.h"
+#include "common/item.h"
 
 void item_stack_initialize(ItemStack *stack)
 {

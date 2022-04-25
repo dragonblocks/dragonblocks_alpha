@@ -1,6 +1,6 @@
-#include "dig.h"
-#include "node.h"
-#include "terrain.h"
+#include "common/dig.h"
+#include "common/node.h"
+#include "common/terrain.h"
 #include "types.h"
 
 NodeDef node_def[COUNT_NODE] = {

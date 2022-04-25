@@ -3,7 +3,7 @@
 	url = https://github.com/datenwolf/linmath.h
 [submodule "deps/perlin"]
 	path = deps/perlin
-	url = https://github.com/czinn/perlin
+	url = https://github.com/dragonblocks/perlin
 [submodule "deps/stb"]
 	path = deps/stb
 	url = https://github.com/nothings/stb
@@ -21,10 +21,28 @@
 	url = https://github.com/dragonblocks/dragonnet
 [submodule "deps/linenoise"]
 	path = deps/linenoise
-	url = https://github.com/msteveb/linenoise
+	url = https://github.com/dragonblocks/linenoise
 [submodule "deps/protogen"]
 	path = deps/protogen
 	url = https://github.com/dragonblocks/protogen
 [submodule "deps/getline"]
 	path = deps/getline
 	url = https://github.com/dragonblocks/getline
+[submodule "deps/glfw"]
+	path = deps/glfw
+	url = https://github.com/glfw/glfw
+[submodule "deps/glew-cmake"]
+	path = deps/glew-cmake
+	url = https://github.com/Perlmint/glew-cmake
+[submodule "deps/freetype"]
+	path = deps/freetype
+	url = https://gitlab.freedesktop.org/freetype/freetype
+[submodule "deps/sqlite3-cmake"]
+	path = deps/sqlite3-cmake
+	url = https://github.com/dragonblocks/sqlite3-cmake
+[submodule "deps/stpcpy"]
+	path = deps/stpcpy
+	url = https://github.com/dragonblocks/stpcpy
+[submodule "deps/zlib"]
+	path = deps/zlib
+	url = https://github.com/dragonblocks/zlib

@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "voxel_depth_search.h"
+#include "server/voxel_depth_search.h"
 
 v3s32 dirs[6] = {
 	{+0, -1, +0}, // this is commonly used to find ground, search downwards first

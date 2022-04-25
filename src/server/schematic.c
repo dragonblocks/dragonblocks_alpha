@@ -1,9 +1,9 @@
-#include <getline/getline.h>
+#include <getline.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "common/terrain.h"
 #include "server/schematic.h"
 #include "server/server_node.h"
-#include "terrain.h"
 
 void schematic_load(List *schematic, const char *path, SchematicMapping *mappings, size_t num_mappings)
 {

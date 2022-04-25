@@ -1,4 +1,4 @@
-#include "facedir.h"
+#include "common/facedir.h"
 
 v3s32 facedir[6] = {
 	{+0, +0, -1},

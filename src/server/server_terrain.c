@@ -8,14 +8,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "interrupt.h"
+#include "common/interrupt.h"
+#include "common/terrain.h"
 #include "server/database.h"
 #include "server/schematic.h"
 #include "server/server_config.h"
 #include "server/server_node.h"
 #include "server/server_terrain.h"
 #include "server/terrain_gen.h"
-#include "terrain.h"
 
 // this file is too long
 Terrain *server_terrain;
@@ -168,7 +168,7 @@ static void generate_spawn_hut()
 	list_ini(&changed_chunks);
 
 	List spawn_hut;
-	schematic_load(&spawn_hut, RESSOURCE_PATH "schematics/spawn_hut.txt", (SchematicMapping[]) {
+	schematic_load(&spawn_hut, ASSET_PATH "schematics/spawn_hut.txt", (SchematicMapping[]) {
 		{
 			.color = {0x7d, 0x54, 0x35},
 			.type = NODE_OAK_WOOD,

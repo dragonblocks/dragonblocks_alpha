@@ -21,8 +21,8 @@
 #include "client/interact.h"
 #include "client/sky.h"
 #include "client/window.h"
-#include "day.h"
-#include "interrupt.h"
+#include "common/day.h"
+#include "common/interrupt.h"
 
 #ifdef _WIN32
 #include <pthread_time.h>

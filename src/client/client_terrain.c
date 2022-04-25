@@ -14,7 +14,7 @@
 #include "client/client_terrain.h"
 #include "client/debug_menu.h"
 #include "client/terrain_gfx.h"
-#include "facedir.h"
+#include "common/facedir.h"
 
 #define MAX_REQUESTS 4
 

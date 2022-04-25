@@ -1,4 +1,4 @@
-#include <asprintf/asprintf.h>
+#include <asprintf.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "client/client_config.h"
@@ -19,7 +19,7 @@ void client_inventory_init()
 {
 	char *_3d_shader_def;
 	asprintf(&_3d_shader_def, "#define VIEW_DISTANCE %lf\n", client_config.view_distance);
-	_3d_shader_prog = shader_program_create(RESSOURCE_PATH "shaders/3d/item", _3d_shader_def);
+	_3d_shader_prog = shader_program_create(ASSET_PATH "shaders/3d/item", _3d_shader_def);
 	free(_3d_shader_def);
 
 	_3d_loc_VP = glGetUniformLocation(_3d_shader_prog, "VP");

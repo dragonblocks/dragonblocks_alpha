@@ -1,20 +1,30 @@
 # Dragonblocks Alpha
 
 A multiplayer voxelgame for POSIX systems.
+It has been ported to Linux, Windows, FreeBSD and OpenBSD, but may work on other systems.
 
-Head to <https://www.elidragon.tk/dragonblocks_alpha/> for ubuntu snapshot and release builds.
+Head to <https://www.elidragon.tk/dragonblocks_alpha/> for snapshot and release builds (CURRENTLY DOWN).
 
 ## Invocation
 
-```bash
-./DragonblocksServer <port>
-./Dragonblocks <address> <port>
+```sh
+# on posix
+./dragonblocks_server "[<address>]:<port>"
+./dragonblocks_client "[<address>]:<port>"
+
+# on windows
+dragonblocks_server.exe "[<address>]:<port>"
+dragonblocks_client.exe "[<address>]:<port>"
 ```
 
 or alternatively:
 
-```bash
+```sh
+# on posix
 ./singleplayer.sh
+
+# on windows
+singleplayer.bat
 ```
 
 ## Controls
@@ -35,35 +45,10 @@ or alternatively:
 | F11 | Toggle fullscreen |
 | ESC | Pause / unpause game |
 
-## Dependencies
-
-Both the client and the server depend on ZLib.
-The client depends on GLFW3, OpenGL, GLEW and Freetype.
-The server depends on SQLite3.
-
-Ubuntu / Debian:
-
-```bash
-sudo apt install zlib1g libgl1-mesa-dri libglfw3 libglew2.1 libfreetype6 libsqlite3-0
-
-```
-
-FreeBSD:
-
-```csh
-sudo pkg install lzlib mesa-dri glfw glew freetype sqlite3
-```
-
-OpenBSD:
-
-```sh
-sudo pkg_add lzlib glfw glew freetype sqlite3
-```
-
-## Setup Requirements
+## System Requirements
 Dragonblocks Alpha targets PCs only. Non x86-64 platforms may work, however there is no guarantee whatsoever.
 You need a POSIX system conforming to the ISO C and POSIX 2008 standards. However, so far only GNU/Linux systems, in particular Ubuntu and Debian, have been tested.
-The minimum OpenGL version is 4.6.0. Dragonblocks has been tested on Intel Integrated and NVIDIA GPUs, however other graphics cards should work as well.
+The minimum OpenGL version is 4.2.0. Dragonblocks has been tested on Intel Integrated and NVIDIA GPUs, however other graphics cards should work as well.
 A PC with at least 4 CPU cores is recommended, but not necessarily required.
 
 ## Current Features

@@ -1,6 +1,6 @@
 #include <assert.h>
-#include <asprintf/asprintf.h>
-#include <linmath.h/linmath.h>
+#include <asprintf.h>
+#include <linmath.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "client/client_config.h"
@@ -12,7 +12,7 @@
 #include "client/light.h"
 #include "client/shader.h"
 #include "client/terrain_gfx.h"
-#include "facedir.h"
+#include "common/facedir.h"
 
 typedef struct {
 	TerrainChunk *chunk;     // input: chunk pointer
@@ -225,7 +225,7 @@ void terrain_gfx_init()
 		texture_units,
 		client_config.view_distance
 	);
-	shader_prog = shader_program_create(RESSOURCE_PATH "shaders/3d/terrain", shader_def);
+	shader_prog = shader_program_create(ASSET_PATH "shaders/3d/terrain", shader_def);
 	free(shader_def);
 
 	loc_VP = glGetUniformLocation(shader_prog, "VP"); GL_DEBUG

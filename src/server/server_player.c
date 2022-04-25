@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-#include "day.h"
-#include "entity.h"
-#include "perlin.h"
+#include "common/day.h"
+#include "common/entity.h"
+#include "common/perlin.h"
 #include "server/database.h"
 #include "server/server_config.h"
 #include "server/server_player.h"

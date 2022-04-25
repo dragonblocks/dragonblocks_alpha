@@ -1,4 +1,4 @@
-#include <linmath.h/linmath.h>
+#include <linmath.h>
 #include <stdio.h>
 #include "client/camera.h"
 #include "client/client.h"
@@ -42,7 +42,7 @@ static Mesh selection_mesh = {
 
 void interact_init()
 {
-	shader_prog = shader_program_create(RESSOURCE_PATH "shaders/3d/selection", NULL);
+	shader_prog = shader_program_create(ASSET_PATH "shaders/3d/selection", NULL);
 	loc_MVP = glGetUniformLocation(shader_prog, "MVP"); GL_DEBUG
 	loc_color = glGetUniformLocation(shader_prog, "color"); GL_DEBUG
 
@@ -64,7 +64,7 @@ void interact_init()
 		.scale_type = SCALE_IMAGE,
 		.affect_parent_scale = false,
 		.text = NULL,
-		.image = texture_load(RESSOURCE_PATH "textures/crosshair.png", false),
+		.image = texture_load(ASSET_PATH "textures/crosshair.png", false),
 		.text_color = {0.0f, 0.0f, 0.0f, 0.0f},
 		.bg_color = {0.0f, 0.0f, 0.0f, 0.0f},
 	});

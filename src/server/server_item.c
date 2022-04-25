@@ -1,5 +1,5 @@
 #include <assert.h>
-#include "node.h"
+#include "common/node.h"
 #include "server/server_item.h"
 #include "server/server_node.h"
 #include "server/server_terrain.h"

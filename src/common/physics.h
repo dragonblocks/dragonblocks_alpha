@@ -2,7 +2,7 @@
 #define _PHYSICS_H_
 
 #include <stdbool.h>
-#include "terrain.h"
+#include "common/terrain.h"
 #include "types.h"
 
 bool physics_ground(Terrain *terrain, bool collide, aabb3f32 box, v3f64 *pos, v3f64 *vel);

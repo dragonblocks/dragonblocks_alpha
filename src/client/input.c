@@ -1,4 +1,4 @@
-#include <asprintf/asprintf.h>
+#include <asprintf.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,7 +13,7 @@
 #include "client/input.h"
 #include "client/screenshot.h"
 #include "client/window.h"
-#include "day.h"
+#include "common/day.h"
 
 #define SET_STATUS_MESSAGE(args...) { \
 	char *msg; asprintf(&msg, args); \

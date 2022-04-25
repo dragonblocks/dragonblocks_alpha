@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include "config.h"
+#include "common/config.h"
 
 void config_read(char *path, ConfigEntry *entries, size_t num_entries)
 {

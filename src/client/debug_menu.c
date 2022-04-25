@@ -1,4 +1,4 @@
-#include <asprintf/asprintf.h>
+#include <asprintf.h>
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <stdbool.h>
@@ -15,9 +15,9 @@
 #include "client/gui.h"
 #include "client/interact.h"
 #include "client/window.h"
-#include "day.h"
-#include "environment.h"
-#include "perlin.h"
+#include "common/day.h"
+#include "common/environment.h"
+#include "common/perlin.h"
 #include "version.h"
 
 static GUIElement *gui_elements[COUNT_ENTRY] = {NULL};
