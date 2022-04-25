@@ -51,6 +51,7 @@ endif()
 add_compile_definitions("USE_DRAGONNET")
 add_compile_definitions("GLEW_STATIC")
 add_compile_definitions("ASSET_PATH=\"${ASSET_PATH}\"")
+add_compile_definitions("__USE_MINGW_ANSI_STDIO")
 
 add_compile_options(
 	-Wall
