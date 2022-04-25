@@ -68,7 +68,7 @@ static inline void bind_v3f32(sqlite3_stmt *stmt, int idx, v3f32 pos)
 // public functions
 
 // open and initialize SQLite3 databases
-bool database_init()
+void database_init()
 {
 	struct {
 		sqlite3 **handle;
@@ -83,14 +83,14 @@ bool database_init()
 	for (int i = 0; i < 3; i++) {
 		if (sqlite3_open_v2(databases[i].path, databases[i].handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, NULL) != SQLITE_OK) {
 			fprintf(stderr, "[error] failed to open %s: %s\n", databases[i].path, sqlite3_errmsg(*databases[i].handle));
-			return false;
+			abort();
 		}
 
 		char *err;
 		if (sqlite3_exec(*databases[i].handle, databases[i].init, NULL, NULL, &err) != SQLITE_OK) {
 			fprintf(stderr, "[error] failed initializing %s: %s\n", databases[i].path, err);
 			sqlite3_free(err);
-			return false;
+			abort();
 		}
 	}
 
@@ -110,8 +110,6 @@ bool database_init()
 		set_time_of_day(time_of_day);
 	else
 		set_time_of_day(12 * MINUTES_PER_HOUR);
-
-	return true;
 }
 
 // close databases

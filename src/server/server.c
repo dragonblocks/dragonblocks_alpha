@@ -1,5 +1,6 @@
 #define _GNU_SOURCE // don't worry, GNU extensions are only used when available
 #include <dragonnet/addr.h>
+#include <dragonnet/init.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,6 +62,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
+	dragonnet_init();
 	if (!(server = dragonnet_listener_new(argv[1]))) {
 		fprintf(stderr, "[error] failed to listen to connections\n");
 		return EXIT_FAILURE;
@@ -79,8 +81,7 @@ int main(int argc, char **argv)
 	srand(time(0));
 
 	interrupt_init();
-	if (!database_init())
-		return EXIT_FAILURE;
+	database_init();
 	server_terrain_init();
 	server_player_init();
 
@@ -98,6 +99,6 @@ int main(int argc, char **argv)
 	interrupt_deinit();
 
 	dragonnet_listener_delete(server);
-
+	dragonnet_deinit();
 	return EXIT_SUCCESS;
 }

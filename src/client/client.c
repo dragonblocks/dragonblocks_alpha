@@ -1,4 +1,5 @@
 #define _GNU_SOURCE // don't worry, GNU extensions are only used when available
+#include <dragonnet/init.h>
 #include <dragonstd/flag.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -118,6 +119,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
+	dragonnet_init();
 	if (!(client = dragonnet_connect(argv[1]))) {
 		fprintf(stderr, "[error] failed to connect to server\n");
 		return EXIT_FAILURE;
@@ -165,5 +167,6 @@ int main(int argc, char **argv)
 	flag_dst(&finish);
 	flag_dst(&gfx_init);
 
+	dragonnet_deinit();
 	return EXIT_SUCCESS;
 }
