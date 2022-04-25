@@ -100,6 +100,7 @@ target_include_directories(dragonblocks
 target_link_libraries(dragonblocks
 	PUBLIC pthread
 	PUBLIC m
+	PUBLIC ${CMAKE_DL_LIBS}
 	PUBLIC perlin
 	PUBLIC dragonnet
 	PUBLIC dragonstd
