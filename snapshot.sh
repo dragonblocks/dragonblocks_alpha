@@ -44,4 +44,5 @@ cp -r \
 	README.md \
 	$SNAPSHOT
 
+rm -f $SNAPSHOT.zip
 zip -r $SNAPSHOT.zip $SNAPSHOT/*
