@@ -4,7 +4,7 @@
 #include "client/camera.h"
 #include "client/client.h"
 #include "client/cube.h"
-#include "client/gl_debug.h"
+#include "client/opengl.h"
 #include "client/mesh.h"
 #include "client/shader.h"
 #include "client/sky.h"

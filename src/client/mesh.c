@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "client/cube.h"
-#include "client/gl_debug.h"
+#include "client/opengl.h"
 #include "client/mesh.h"
 
 typedef struct {

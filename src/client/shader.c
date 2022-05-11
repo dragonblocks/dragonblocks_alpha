@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "client/gl_debug.h"
+#include "client/client_config.h"
+#include "client/opengl.h"
 #include "client/shader.h"
 
 static GLuint compile_shader(GLenum type, const char *path, const char *name, GLuint program, const char *def)
@@ -48,8 +49,9 @@ static GLuint compile_shader(GLenum type, const char *path, const char *name, GL
 
 	GLuint id = glCreateShader(type); GL_DEBUG
 
-	// Minimum OpenGL version is 4.2.0 (idk some shader feature from that version is required)
-	const char *version = "#version 420 core\n"; // 420 blaze it
+	const char *version = client_config.texture_batching
+		? "#version 400 core\n"
+		: "#version 330 core\n";
 
 	const char *code_list[3] = {
 		version,

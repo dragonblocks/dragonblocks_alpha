@@ -5,7 +5,7 @@
 #include <string.h>
 #include <time.h>
 #include "client/game.h"
-#include "client/gl_debug.h"
+#include "client/opengl.h"
 #include "client/window.h"
 
 char *screenshot()

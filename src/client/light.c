@@ -1,6 +1,6 @@
 #include <linmath.h>
 #include "client/camera.h"
-#include "client/gl_debug.h"
+#include "client/opengl.h"
 #include "client/light.h"
 #include "common/day.h"
 

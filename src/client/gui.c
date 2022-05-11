@@ -5,7 +5,7 @@
 #include <string.h>
 #include "client/client.h"
 #include "client/cube.h"
-#include "client/gl_debug.h"
+#include "client/opengl.h"
 #include "client/gui.h"
 #include "client/mesh.h"
 #include "client/shader.h"

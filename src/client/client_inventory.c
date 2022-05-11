@@ -4,7 +4,7 @@
 #include "client/client_config.h"
 #include "client/client_inventory.h"
 #include "client/client_item.h"
-#include "client/gl_debug.h"
+#include "client/opengl.h"
 #include "client/frustum.h"
 #include "client/light.h"
 #include "client/shader.h"

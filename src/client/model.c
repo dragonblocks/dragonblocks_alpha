@@ -6,7 +6,7 @@
 #include "client/camera.h"
 #include "client/client_config.h"
 #include "client/frustum.h"
-#include "client/gl_debug.h"
+#include "client/opengl.h"
 #include "client/model.h"
 
 typedef struct {
@@ -189,7 +189,7 @@ void model_init()
 	list_ini(&scene_new);
 
 	pthread_mutex_init(&lock_scene_new, NULL);
-	glGetIntegerv(GL_MAX_TEXTURE_UNITS, &units); GL_DEBUG
+	units = opengl_texture_batch_units();
 }
 
 // ded

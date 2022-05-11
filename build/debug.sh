@@ -22,7 +22,7 @@ end
 "
 
 echo "$COMMON
-break gl_error
+break opengl_error
 run \"[::1]:4000\" < $DEBUG_DIR/name
 " > $DEBUG_DIR/client_script
 

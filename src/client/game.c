@@ -15,7 +15,7 @@
 #include "client/font.h"
 #include "client/frustum.h"
 #include "client/game.h"
-#include "client/gl_debug.h"
+#include "client/opengl.h"
 #include "client/gui.h"
 #include "client/input.h"
 #include "client/interact.h"

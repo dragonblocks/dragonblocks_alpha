@@ -48,8 +48,10 @@ singleplayer.bat
 ## System Requirements
 Dragonblocks Alpha targets PCs only. Non x86-64 platforms may work, however there is no guarantee whatsoever.
 You need a POSIX system conforming to the ISO C and POSIX 2008 standards. However, so far only GNU/Linux systems, in particular Ubuntu and Debian, have been tested.
-The minimum OpenGL version is 4.2.0. Dragonblocks has been tested on Intel Integrated and NVIDIA GPUs, however other graphics cards should work as well.
+The minimum OpenGL version is 3.3 core. Dragonblocks has been tested on Intel Integrated and NVIDIA GPUs, however other graphics cards should work as well.
 A PC with at least 4 CPU cores is recommended, but not necessarily required.
+
+Note: The game can work with OpenGL 3.3, but to use texture batching, you need at least OpenGL 4.0. If your machine doesn't that version, disable texture batching by adding the line "texture_batching off" to your client.conf file.
 
 ## Current Features
 - Multiplayer, Animated player model, Nametags

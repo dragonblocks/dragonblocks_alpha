@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <dragonstd/tree.h>
 #include "client/client_config.h"
-#include "client/gl_debug.h"
+#include "client/opengl.h"
 #include "client/texture.h"
 
 static Tree textures;

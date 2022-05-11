@@ -3,7 +3,7 @@
 #include FT_FREETYPE_H
 #include "client/client.h"
 #include "client/font.h"
-#include "client/gl_debug.h"
+#include "client/opengl.h"
 #include "client/texture.h"
 
 #define NUM_CHARS 128

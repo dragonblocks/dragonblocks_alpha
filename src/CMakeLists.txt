@@ -129,13 +129,13 @@ add_executable(dragonblocks_client
 	client/font.c
 	client/frustum.c
 	client/game.c
-	client/gl_debug.c
 	client/gui.c
 	client/input.c
 	client/interact.c
 	client/light.c
 	client/mesh.c
 	client/model.c
+	client/opengl.c
 	client/raycast.c
 	client/screenshot.c
 	client/shader.c

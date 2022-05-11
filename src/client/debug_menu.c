@@ -11,7 +11,7 @@
 #include "client/client_terrain.h"
 #include "client/debug_menu.h"
 #include "client/game.h"
-#include "client/gl_debug.h"
+#include "client/opengl.h"
 #include "client/gui.h"
 #include "client/interact.h"
 #include "client/window.h"

@@ -8,7 +8,7 @@
 #include "client/client_terrain.h"
 #include "client/cube.h"
 #include "client/frustum.h"
-#include "client/gl_debug.h"
+#include "client/opengl.h"
 #include "client/light.h"
 #include "client/shader.h"
 #include "client/terrain_gfx.h"
@@ -215,26 +215,29 @@ static Model *create_chunk_model(ChunkRenderData *data)
 
 void terrain_gfx_init()
 {
-	GLint texture_units;
-	glGetIntegerv(GL_MAX_TEXTURE_UNITS, &texture_units); GL_DEBUG
+	GLint texture_batch_units = opengl_texture_batch_units();
 
 	char *shader_def;
 	asprintf(&shader_def,
-		"#define MAX_TEXTURE_UNITS %d\n"
+		"#define TEXURE_BATCH_UNITS %d\n"
 		"#define VIEW_DISTANCE %lf\n",
-		texture_units,
+		texture_batch_units,
 		client_config.view_distance
 	);
+
 	shader_prog = shader_program_create(ASSET_PATH "shaders/3d/terrain", shader_def);
 	free(shader_def);
 
 	loc_VP = glGetUniformLocation(shader_prog, "VP"); GL_DEBUG
 
-	GLint texture_indices[texture_units];
-	for (GLint i = 0; i < texture_units; i++)
-		texture_indices[i] = i;
+	if (texture_batch_units > 1) {
+		GLint texture_indices[texture_batch_units];
+		for (GLint i = 0; i < texture_batch_units; i++)
+			texture_indices[i] = i;
 
-	glProgramUniform1iv(shader_prog, glGetUniformLocation(shader_prog, "textures"), texture_units, texture_indices); GL_DEBUG
+		glProgramUniform1iv(shader_prog, glGetUniformLocation(shader_prog, "textures"),
+			texture_batch_units, texture_indices); GL_DEBUG
+	}
 
 	model_shader.prog = shader_prog;
 	model_shader.loc_transform = glGetUniformLocation(shader_prog, "model"); GL_DEBUG

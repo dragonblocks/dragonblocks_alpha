@@ -5,7 +5,7 @@
 #include "client/client_config.h"
 #include "client/debug_menu.h"
 #include "client/game.h"
-#include "client/gl_debug.h"
+#include "client/opengl.h"
 #include "client/gui.h"
 #include "client/input.h"
 #include "client/window.h"

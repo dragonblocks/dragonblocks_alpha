@@ -1,10 +1,9 @@
-#include <GL/glew.h>
-#include <GL/gl.h>
 #include <stdio.h>
-#include "client/gl_debug.h"
+#include "client/client_config.h"
+#include "client/opengl.h"
 
 // put this into seperate function to make it easy to trace stack using external debugger
-static void gl_error(GLenum err, const char *file, int line)
+static void opengl_error(GLenum err, const char *file, int line)
 {
 	switch (err) {
 		case GL_INVALID_ENUM:                  fprintf(stderr, "[warning] OpenGL error: INVALID_ENUM %s:%d\n", file, line); break;
@@ -17,10 +16,21 @@ static void gl_error(GLenum err, const char *file, int line)
 		default: break;
 	}
 }
-void gl_debug(const char *file, int line)
+void opengl_debug(const char *file, int line)
 {
 	GLenum err = glGetError();
 
 	if (err != GL_NO_ERROR)
-		gl_error(err, file, line);
+		opengl_error(err, file, line);
+}
+
+GLint opengl_texture_batch_units()
+{
+	if (!client_config.texture_batching)
+		return 1;
+
+	GLint units;
+	glGetIntegerv(GL_MAX_TEXTURE_UNITS, &units); GL_DEBUG
+
+	return units;
 }

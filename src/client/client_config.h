@@ -10,6 +10,7 @@ extern struct ClientConfig {
 	bool vsync;
 	unsigned int meshgen_threads;
 	bool swap_mouse_buttons;
+	bool texture_batching;
 } client_config;
 
 #endif

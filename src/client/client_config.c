@@ -8,6 +8,7 @@ struct ClientConfig client_config = {
 	.vsync = true,
 	.meshgen_threads = 4,
 	.swap_mouse_buttons = true,
+	.texture_batching = true,
 };
 
 static ConfigEntry config_entries[] = {
@@ -40,6 +41,11 @@ static ConfigEntry config_entries[] = {
 		.type = CONFIG_BOOL,
 		.key = "swap_mouse_buttons",
 		.value = &client_config.meshgen_threads,
+	},
+	{
+		.type = CONFIG_BOOL,
+		.key = "texture_batching",
+		.value = &client_config.texture_batching,
 	},
 };
 

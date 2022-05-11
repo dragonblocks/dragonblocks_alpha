@@ -8,7 +8,7 @@
 #include "client/client_entity.h"
 #include "client/client_player.h"
 #include "client/frustum.h"
-#include "client/gl_debug.h"
+#include "client/opengl.h"
 #include "client/light.h"
 #include "client/shader.h"
 #include "client/window.h"
