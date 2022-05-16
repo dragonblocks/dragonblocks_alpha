@@ -1,7 +1,7 @@
 # Building instructions
 
 ## Dependencies
-You need Git, CMake, Lua, Bash and GCC. Make sure these dependencies are installed on your system. (on Debian based systems: `apt install git cmake build-essential`)
+You need Git, CMake, Lua, Bash and GCC. Make sure these dependencies are installed on your system. (on Debian based systems: `apt install git cmake build-essential lua5.4`)
 
 All other dependencies are included as submodules, compiled automatically and statically linked.
 Make sure to clone the repository recursively:
