@@ -1,4 +1,4 @@
-build*/*
+build/*
 !build/debug.sh
 !build/debug_loop.sh
-dragonblocks_alpha*
+snapshot/*

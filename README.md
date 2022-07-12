@@ -3,7 +3,7 @@
 A multiplayer voxelgame for POSIX systems.
 It has been ported to Linux, Windows, FreeBSD and OpenBSD, but may work on other systems.
 
-Head to <https://www.elidragon.tk/dragonblocks_alpha/> for snapshot and release builds (CURRENTLY DOWN).
+Head to <https://www.elidragon.tk/dragonblocks_alpha/> for snapshot and release builds.
 
 ## Invocation
 

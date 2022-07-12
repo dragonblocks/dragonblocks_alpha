@@ -26,6 +26,3 @@ jobs:
           SECRET: ${{ secrets.ELIDRAGON_UPLOAD_TOKEN }}
         run: |
           ./upload.sh
-
-
-

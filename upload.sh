@@ -1,19 +1,22 @@
 #!/bin/bash
-echo "Snapshot uploading temporarily disabled"
-exit
+set -e
 
-VERSION=`git tag --points-at HEAD`
-IS_RELEASE="1"
-if [[ $VERSION = "" ]]; then
-	VERSION=`git rev-parse --short HEAD`
-	IS_RELEASE="0"
+name="$(git describe --tags)"
+path="@snapshot/dragonblocks_alpha-$name"
+ref="$(git tag --points-at HEAD)"
+release="1"
+
+if [[ "$ref" == "" ]]; then
+	ref="$(git rev-parse --short HEAD)"
+	release="0"
 fi
 
 curl -f -i -X POST -H "Content-Type: multipart/form-data" \
 	-F "secret=$SECRET" \
-	-F "name=$VERSION" \
-	-F "is_release=$IS_RELEASE" \
-	-F "linux=@dragonblocks_alpha-$VERSION.zip" \
-	-F "win32=@dragonblocks_alpha-win32-$VERSION.zip" \
-	-F "win64=@dragonblocks_alpha-win64-$VERSION.zip" \
+	-F "name=$name" \
+	-F "ref=$ref" \
+	-F "release=$release" \
+	-F "Linux=$path.zip" \
+	-F "Win32=$path-win32.zip" \
+	-F "Win64=$path-win64.zip" \
 	https://elidragon.tk/dragonblocks_alpha/upload.php
