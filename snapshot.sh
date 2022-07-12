@@ -3,7 +3,7 @@ set -e
 
 version="$(git describe --tags)"
 
-mkdir "snapshot"
+mkdir -p "snapshot"
 cd "snapshot"
 
 build="build"
@@ -22,7 +22,7 @@ if [[ "$1" != "" ]]; then
 	flags="$flags -static"
 fi
 
-mkdir "$build"
+mkdir -p "$build"
 
 cmake -B "$build" -S ../src \
 	-DCMAKE_BUILD_TYPE="Release" \
