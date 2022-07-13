@@ -56,6 +56,11 @@ static void mouse_button_callback(__attribute__((unused)) GLFWwindow *handle, in
 		input_click(button == GLFW_MOUSE_BUTTON_LEFT);
 }
 
+static void error_callback(__attribute__((unused)) int error, const char *description)
+{
+	fprintf(stderr, "[warning] GLFW error: %s\n", description);
+}
+
 void window_enter_fullscreen()
 {
 	window.fullscreen = true;
@@ -81,6 +86,8 @@ void window_init()
 		abort();
 	}
 
+	glfwSetErrorCallback(&error_callback);
+
 	glfwWindowHint(GLFW_SAMPLES, client_config.antialiasing);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -97,7 +104,7 @@ void window_init()
 	small_height = window.height;
 
 	if (!window.handle) {
-		fprintf(stderr, "[error] failed to create window\n");
+		fprintf(stderr, "[error] failed to create window (does your machine support OpenGL 3.3?)\n");
 		glfwTerminate();
 		abort();
 	}
