@@ -115,7 +115,7 @@ GLuint shader_program_create(const char *path, const char *def)
 		glGetProgramInfoLog(id, BUFSIZ, NULL, errbuf); GL_DEBUG
 		fprintf(stderr, "[error] failed to link shader program %s: %s\n", path, errbuf);
 		glDeleteProgram(id); GL_DEBUG
-		return false;
+		abort();
 	}
 
 	return id;
