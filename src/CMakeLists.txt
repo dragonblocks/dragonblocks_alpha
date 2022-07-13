@@ -77,6 +77,7 @@ add_library(dragonblocks
 	common/day.c
 	common/environment.c
 	common/facedir.c
+	common/init.c
 	common/interrupt.c
 	common/item.c
 	common/node.c

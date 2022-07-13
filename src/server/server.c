@@ -1,10 +1,10 @@
-#define _GNU_SOURCE // don't worry, GNU extensions are only used when available
 #include <dragonnet/addr.h>
 #include <dragonnet/init.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include "common/init.h"
 #include "common/interrupt.h"
 #include "server/database.h"
 #include "server/server.h"
@@ -53,16 +53,8 @@ static void on_ToServerRequestChunk(DragonnetPeer *peer, ToServerRequestChunk *p
 // server entry point
 int main(int argc, char **argv)
 {
-#ifdef __GLIBC__ // check whether bloat is enabled
-	pthread_setname_np(pthread_self(), "main");
-#endif // __GLIBC__
+	dragonblocks_init(argc);
 
-	if (argc < 2) {
-		fprintf(stderr, "[error] missing address\n");
-		return EXIT_FAILURE;
-	}
-
-	dragonnet_init();
 	if (!(server = dragonnet_listener_new(argv[1]))) {
 		fprintf(stderr, "[error] failed to listen to connections\n");
 		return EXIT_FAILURE;

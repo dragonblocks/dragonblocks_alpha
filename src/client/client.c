@@ -1,4 +1,3 @@
-#define _GNU_SOURCE // don't worry, GNU extensions are only used when available
 #include <dragonnet/init.h>
 #include <dragonstd/flag.h>
 #include <stdio.h>
@@ -16,6 +15,7 @@
 #include "client/game.h"
 #include "client/input.h"
 #include "common/day.h"
+#include "common/init.h"
 #include "common/interrupt.h"
 #include "common/perlin.h"
 #include "types.h"
@@ -110,16 +110,8 @@ static void on_ToClientMovement(__attribute__((unused)) DragonnetPeer *peer, ToC
 
 int main(int argc, char **argv)
 {
-#ifdef __GLIBC__ // check whether bloat is enabled
-	pthread_setname_np(pthread_self(), "main");
-#endif // __GLIBC__
+	dragonblocks_init(argc);
 
-	if (argc < 2) {
-		fprintf(stderr, "[error] missing address\n");
-		return EXIT_FAILURE;
-	}
-
-	dragonnet_init();
 	if (!(client = dragonnet_connect(argv[1]))) {
 		fprintf(stderr, "[error] failed to connect to server\n");
 		return EXIT_FAILURE;
