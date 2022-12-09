@@ -107,6 +107,8 @@ static void delete_node(ModelNode *node)
 	list_clr(&node->children, &delete_node, NULL, NULL);
 	array_clr(&node->meshes);
 
+	if (node->name)
+		free(node->name);
 	free(node);
 }
 
@@ -129,6 +131,8 @@ static ModelNode *clone_node(ModelNode *original, ModelNode *parent)
 {
 	ModelNode *node = malloc(sizeof *node);
 	*node = *original;
+	if (original->name)
+		node->name = strdup(original->name);
 	init_node(node, parent);
 
 	array_cln(&node->meshes, &original->meshes);
