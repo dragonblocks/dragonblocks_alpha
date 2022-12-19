@@ -174,6 +174,18 @@ target_link_libraries(dragonblocks_server
 	PUBLIC sqlite3
 )
 
+# Debug
+
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+	target_compile_options(dragonblocks PUBLIC -fsanitize=address)
+	target_compile_options(dragonblocks_client PUBLIC -fsanitize=address)
+	target_compile_options(dragonblocks_server PUBLIC -fsanitize=address)
+
+	target_link_options(dragonblocks PUBLIC -fsanitize=address)
+	target_link_options(dragonblocks_client PUBLIC -fsanitize=address)
+	target_link_options(dragonblocks_server PUBLIC -fsanitize=address)
+endif()
+
 # Version
 
 add_custom_target(version
