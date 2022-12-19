@@ -11,7 +11,7 @@ snapshot="dragonblocks_alpha-$version"
 toolchain=""
 dotexe=""
 dotsh=".sh"
-flags="-Ofast"
+flags="-O2"
 
 if [[ "$1" != "" ]]; then
 	build="$build-$1"
