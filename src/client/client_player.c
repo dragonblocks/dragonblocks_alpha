@@ -122,7 +122,7 @@ static void on_remove(ClientEntity *entity)
 
 static void on_free(ClientEntity *entity)
 {
-	client_inventory_init_player(entity);
+	client_inventory_deinit_player(entity);
 	free(entity->extra);
 }
 
