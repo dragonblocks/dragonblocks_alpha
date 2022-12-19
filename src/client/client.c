@@ -145,16 +145,16 @@ int main(int argc, char **argv)
 	game(&gfx_init);
 
 	dragonnet_peer_shutdown(client);
+	pthread_t recv_thread = client->recv_thread;
+
+	flag_set(&finish);
+	pthread_join(recv_thread, NULL);
+
 	client_auth_deinit();
 	client_entity_deinit();
 	client_player_deinit();
 	client_terrain_deinit();
 	interrupt_deinit();
-
-	pthread_t recv_thread = client->recv_thread;
-
-	flag_set(&finish);
-	pthread_join(recv_thread, NULL);
 
 	flag_dst(&finish);
 	flag_dst(&gfx_init);
