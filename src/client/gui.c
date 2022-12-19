@@ -105,9 +105,9 @@ static void delete_element(GUIElement *element);
 static void render_element(GUIElement *element);
 static void scale_element(GUIElement *element);
 
-static int cmp_element(const GUIElement *ea, const GUIElement *eb)
+static int cmp_element(const GUIElement **ea, const GUIElement **eb)
 {
-	return -f32_cmp(&ea->def.z_index, &eb->def.z_index);
+	return -f32_cmp(&(*ea)->def.z_index, &(*eb)->def.z_index);
 }
 
 static void delete_elements(Array *elements)
