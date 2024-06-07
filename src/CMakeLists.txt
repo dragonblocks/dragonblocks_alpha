@@ -175,14 +175,15 @@ target_link_libraries(dragonblocks_server
 
 # Debug
 
-if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-	target_compile_options(dragonblocks PUBLIC -fsanitize=address)
-	target_compile_options(dragonblocks_client PUBLIC -fsanitize=address)
-	target_compile_options(dragonblocks_server PUBLIC -fsanitize=address)
+option(SANITIZE "address | thread: enable -fsanitize")
+if(NOT "${SANITIZE}" STREQUAL "OFF")
+	target_compile_options(dragonblocks PUBLIC -fsanitize=${SANITIZE})
+	target_compile_options(dragonblocks_client PUBLIC -fsanitize=${SANITIZE})
+	target_compile_options(dragonblocks_server PUBLIC -fsanitize=${SANITIZE})
 
-	target_link_options(dragonblocks PUBLIC -fsanitize=address)
-	target_link_options(dragonblocks_client PUBLIC -fsanitize=address)
-	target_link_options(dragonblocks_server PUBLIC -fsanitize=address)
+	target_link_options(dragonblocks PUBLIC -fsanitize=${SANITIZE})
+	target_link_options(dragonblocks_client PUBLIC -fsanitize=${SANITIZE})
+	target_link_options(dragonblocks_server PUBLIC -fsanitize=${SANITIZE})
 endif()
 
 # Version
