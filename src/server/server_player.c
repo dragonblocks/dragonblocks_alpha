@@ -207,7 +207,7 @@ void server_player_add(DragonnetPeer *peer)
 	pthread_mutex_init(&player->mtx_inv, NULL);
 
 	printf("[access] connected %s\n", player->name);
-	peer->extra = refcount_grb(&player->rc);
+	peer->user = refcount_grb(&player->rc);
 
 	// keep the search tree somewhat balanced by using random IDs
 	// duplicate IDs are very unlikely, but it doesn't hurt to check
@@ -223,8 +223,8 @@ void server_player_add(DragonnetPeer *peer)
 // called on connection close
 void server_player_remove(DragonnetPeer *peer)
 {
-	ServerPlayer *player = peer->extra;
-	peer->extra = NULL; // technically not necessary, but just in case
+	ServerPlayer *player = peer->user;
+	peer->user = NULL; // technically not necessary, but just in case
 
 	// peer will be deleted - forget about it!
 	pthread_rwlock_wrlock(&player->lock_peer);

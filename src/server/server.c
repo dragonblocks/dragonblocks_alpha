@@ -17,18 +17,18 @@ DragonnetListener *server;
 static bool on_recv(DragonnetPeer *peer, DragonnetTypeId type, __attribute__((unused)) void *pkt)
 {
 	// this is recv thread, so we don't need lock_auth
-	return ((ServerPlayer *) peer->extra)->auth != (type == DRAGONNET_TYPE_ToServerAuth);
+	return ((ServerPlayer *) peer->user)->auth != (type == DRAGONNET_TYPE_ToServerAuth);
 }
 
 static void on_ToServerAuth(DragonnetPeer *peer, ToServerAuth *pkt)
 {
-	if (server_player_auth(peer->extra, pkt->name))
+	if (server_player_auth(peer->user, pkt->name))
 		pkt->name = NULL;
 }
 
 static void on_ToServerInteract(DragonnetPeer *peer, ToServerInteract *pkt)
 {
-	ServerPlayer *player = peer->extra;
+	ServerPlayer *player = peer->user;
 	pthread_mutex_lock(&player->mtx_inv);
 
 	ItemStack *stack = pkt->left ? &player->inventory.left : &player->inventory.right;
@@ -41,13 +41,13 @@ static void on_ToServerInteract(DragonnetPeer *peer, ToServerInteract *pkt)
 // update player's position
 static void on_ToServerPosRot(DragonnetPeer *peer, ToServerPosRot *pkt)
 {
-	server_player_move(peer->extra, pkt->pos, pkt->rot);
+	server_player_move(peer->user, pkt->pos, pkt->rot);
 }
 
 // tell server map manager client requested the chunk
 static void on_ToServerRequestChunk(DragonnetPeer *peer, ToServerRequestChunk *pkt)
 {
-	server_terrain_requested_chunk(peer->extra, pkt->pos);
+	server_terrain_requested_chunk(peer->user, pkt->pos);
 }
 
 // server entry point
