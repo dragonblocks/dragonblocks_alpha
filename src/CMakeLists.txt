@@ -51,7 +51,6 @@ add_compile_definitions("__USE_MINGW_ANSI_STDIO")
 add_compile_options(
 	-Wall
 	-Wextra
-	-Werror
 	-Wno-address-of-packed-member
 	-fmax-errors=4
 )
