@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <asprintf.h>
 #include <linmath.h>
 #include <stdio.h>
 #include <stdlib.h>

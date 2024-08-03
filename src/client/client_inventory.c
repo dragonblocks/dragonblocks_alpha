@@ -1,4 +1,3 @@
-#include <asprintf.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "client/client_config.h"

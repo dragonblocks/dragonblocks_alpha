@@ -4,6 +4,7 @@ add_project_arguments([
 	'-Wno-address-of-packed-member',
 	'-DGLEW_NO_GLU',
 	'-DUSE_DRAGONNET',
+	'-D_GNU_SOURCE', # TODO: remove once posix 2024 is in glibc
 	'-DASSET_PATH="' + get_option('asset_path') + '"',
 ], language: 'c')
 
@@ -99,7 +100,6 @@ executable('dragonblocks-client',
 		dependency('glew'),
 		dependency('gl'),
 		dependency('glfw3'),
-		dependency('asprintf'),
 		dependency('linenoise'),
 		dependency('freetype2'),
 	],
