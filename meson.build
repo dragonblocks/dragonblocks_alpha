@@ -28,6 +28,13 @@ if not cc.has_function('getline')
 	deps += dependency('getline')
 endif
 
+linenoise = cc.find_library('linenoise', required: false)
+if linenoise.found()
+	linenoise = [linenoise, cc.find_library('stdc++')]
+else
+	linenoise = dependency('linenoise')
+endif
+
 common_lib = static_library('dragonblocks',
 	sources: [
 		vcs_tag(
@@ -103,8 +110,8 @@ executable('dragonblocks-client',
 		dependency('glew'),
 		dependency('gl'),
 		dependency('glfw3'),
-		dependency('linenoise'),
 		dependency('freetype2'),
+		linenoise,
 	],
 	install: true,
 )
