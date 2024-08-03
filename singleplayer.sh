@@ -1,5 +1,5 @@
 #!/bin/bash
 PATH=".:$PATH"
-dragonblocks_server "[::1]:4000" &
-echo "singleplayer" | dragonblocks_client "[::1]:4000"
+dragonblocks-server "[::1]:4000" &
+echo "singleplayer" | dragonblocks-client "[::1]:4000"
 pkill -P $$

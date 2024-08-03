@@ -44,8 +44,8 @@ mkdir "$snapshot"
 
 cp -r \
 	"../assets" \
-	"$build/dragonblocks_client$dotexe" \
-	"$build/dragonblocks_server$dotexe" \
+	"$build/dragonblocks-client$dotexe" \
+	"$build/dragonblocks-server$dotexe" \
 	"../singleplayer$dotsh" \
 	"../LICENSE" \
 	"../README.md" \

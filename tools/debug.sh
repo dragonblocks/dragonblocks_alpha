@@ -33,11 +33,11 @@ run \"[::1]:4000\"
 
 alacritty -e bash -c "
 	echo \$\$ > $DEBUG_DIR/server_pid
-	exec gdb --command $DEBUG_DIR/server_script ./dragonblocks_server
+	exec gdb --command $DEBUG_DIR/server_script ./dragonblocks-server
 " &
 sleep 0.5
 
-gdb --command $DEBUG_DIR/client_script ./dragonblocks_client
+gdb --command $DEBUG_DIR/client_script ./dragonblocks-client
 
 kill `cat $DEBUG_DIR/server_pid`
 

@@ -9,12 +9,16 @@ Head to <https://www.elidragon.tk/dragonblocks_alpha/> for snapshot and release 
 
 ```sh
 # on posix
-./dragonblocks_server "<address>:<port>"
-./dragonblocks_client "<address>:<port>"
+./dragonblocks-server "<address>:<port>"
+./dragonblocks-client "<address>:<port>"
+# alternatively:
+./singleplayer.sh
 
 # on windows
-dragonblocks_server.exe "<address>:<port>"
-dragonblocks_client.exe "<address>:<port>"
+dragonblocks-server.exe "<address>:<port>"
+dragonblocks-client.exe "<address>:<port>"
+# alternatively:
+singleplayer.bat
 ```
 
 or alternatively:

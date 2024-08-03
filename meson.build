@@ -60,7 +60,7 @@ common = declare_dependency(
 	include_directories: include,
 )
 
-executable('dragonblocks_client',
+executable('dragonblocks-client',
 	sources: [
 		'src/client/camera.c',
 		'src/client/client.c',
@@ -106,7 +106,7 @@ executable('dragonblocks_client',
 	install: true,
 )
 
-executable('dragonblocks_server',
+executable('dragonblocks-server',
 	sources: [
 		'src/server/biomes.c',
 		'src/server/database.c',
