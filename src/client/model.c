@@ -1,5 +1,4 @@
 #include <dragonstd/tree.h>
-#include <getline.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>

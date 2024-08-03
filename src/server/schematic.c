@@ -1,4 +1,3 @@
-#include <getline.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "common/terrain.h"

@@ -21,9 +21,12 @@ deps = [
 	dependency('perlin'),
 	dependency('dragonnet'),
 	dependency('dragonstd'),
-	dependency('getline'),
 	dependency('zlib'),
 ]
+
+if not cc.has_function('getline')
+	deps += dependency('getline')
+endif
 
 common_lib = static_library('dragonblocks',
 	sources: [
