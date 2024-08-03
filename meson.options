@@ -1,0 +1,1 @@
+option('asset_path', type: 'string', value: '../assets/')

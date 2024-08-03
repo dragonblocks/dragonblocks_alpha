@@ -2,7 +2,7 @@
 set -e
 
 name="$(git describe --tags)"
-path="@snapshot/dragonblocks_alpha-$name"
+path="@snapshots/dragonblocks_alpha-$name"
 ref="$(git tag --points-at HEAD)"
 release="1"
 

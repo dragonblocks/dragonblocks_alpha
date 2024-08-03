@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if ! make -j$(nproc); then
+if ! meson compile; then
 	exit 1
 fi
 

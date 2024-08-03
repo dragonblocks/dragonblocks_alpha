@@ -3,15 +3,13 @@ set -e
 
 version="$(git describe --tags)"
 
-mkdir -p "snapshot"
-cd "snapshot"
+mkdir -p "snapshots"
 
 build="build"
 snapshot="dragonblocks_alpha-$version"
-toolchain=""
 dotexe=""
 dotsh=".sh"
-flags="-O2"
+crossfile=""
 
 if [[ "$1" != "" ]]; then
 	build="$build-$1"
@@ -19,19 +17,27 @@ if [[ "$1" != "" ]]; then
 	toolchain="$1.cmake"
 	dotexe=".exe"
 	dotsh=".bat"
-	flags="$flags -static"
+	crossfile="--cross-file=cross/$1.txt"
+
+	export CFLAGS="$CFLAGS -static"
 fi
 
-mkdir -p "$build"
+meson setup "snapshots/$build" \
+	-Dbuildtype=release \
+	-Doptimization=2 \
+	-Dasset_path="assets/" \
+	-Ddefault_library=static \
+	-Dfreetype2:harfbuzz=disabled \
+	-Dfreetype2:bzip2=disabled \
+	-Dfreetype2:brotli=disabled \
+	-Dfreetype2:png=disabled \
+	$crossfile \
+	--wrap-mode=forcefallback \
+	--reconfigure
 
-cmake -B "$build" -S ../src \
-	-DCMAKE_BUILD_TYPE="Release" \
-	-DASSET_PATH="assets/" \
-	-DCMAKE_C_FLAGS="$flags" \
-	-DCMAKE_CXX_FLAGS="$flags" \
-	-DCMAKE_TOOLCHAIN_FILE="$toolchain"
+cd "snapshots"
 
-make --no-print-directory -C "$build" -j"$(nproc)"
+meson compile -C "$build"
 
 rm -rf "$snapshot"
 mkdir "$snapshot"
