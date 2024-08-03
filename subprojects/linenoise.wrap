@@ -1,8 +1,5 @@
 [wrap-git]
-url = https://github.com/dragonblocks/linenoise
+url = https://github.com/msteveb/linenoise
 revision = head
 depth = 1
-method = cmake
-
-[provide]
-linenoise = linenoise_dep
+patch_directory = linenoise
