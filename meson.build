@@ -16,13 +16,16 @@ deps = [
 	cc.find_library('m', required: false),
 	dependency('threads'),
 	dependency('protogen'),
-	dependency('endian'),
 	dependency('linmath'),
 	dependency('perlin'),
 	dependency('dragonnet'),
 	dependency('dragonstd'),
 	dependency('zlib'),
 ]
+
+if not cc.check_header('endian.h')
+	deps += dependency('endian')
+endif
 
 if not cc.has_function('getline')
 	deps += dependency('getline')
