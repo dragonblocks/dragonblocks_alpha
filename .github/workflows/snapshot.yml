@@ -12,15 +12,15 @@ jobs:
           sudo apt-get install -y build-essential cmake meson lua5.3 xorg-dev libgl1-mesa-dev mingw-w64 curl zip
       - name: Build linux snapshot
         run: |
-          ./snapshot.sh
+          ./tools/snapshot.sh
       - name: Build win32 snapshot
         run: |
-          ./snapshot.sh win32
+          ./tools/snapshot.sh win32
       - name: Build win64 snapshot
         run: |
-          ./snapshot.sh win64
+          ./tools/snapshot.sh win64
       - name: Upload snapshots
         env:
           SECRET: ${{ secrets.ELIDRAGON_UPLOAD_TOKEN }}
         run: |
-          ./upload.sh
+          ./tools/upload.sh

@@ -17,7 +17,7 @@ if [[ "$1" != "" ]]; then
 	toolchain="$1.cmake"
 	dotexe=".exe"
 	dotsh=".bat"
-	crossfile="--cross-file=cross/$1.txt"
+	crossfile="--cross-file=tools/$1-toolchain.txt"
 
 	export CFLAGS="$CFLAGS -static"
 fi

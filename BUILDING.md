@@ -49,15 +49,15 @@ If you use a debug build, the singleplayer script should be invoked from the bui
 
 ```bash
 # Native snapshot
-./snapshot.sh
+./tools/snapshot.sh
 
 # Crosscompiling for windows
 
 # win32 (requires i686-w64-mingw32-gcc)
-./snapshot.sh win32
+./tools/snapshot.sh win32
 
 # win64 (requires x86_64-w64-mingw32-gcc)
-./snapshot.sh win64
+./tools/snapshot.sh win64
 ```
 
 Creates snapshot zipfiles.

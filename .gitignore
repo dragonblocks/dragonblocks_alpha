@@ -1,6 +1,3 @@
-/build/
-!/build/debug.sh
-!/build/debug_loop.sh
 /snapshots/*
 /subprojects/*
 !/subprojects/packagefiles
