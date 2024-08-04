@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     container: debian:sid
     steps:
-      - name: Checkout repository and submodules
+      - name: Checkout repository
         uses: actions/checkout@v4
       - name: Install deps
         run: |

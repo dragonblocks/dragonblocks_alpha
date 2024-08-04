@@ -9,8 +9,10 @@ jobs:
         run: |
           apt-get update
           apt-get install -y git build-essential cmake meson lua5.4 xorg-dev libgl1-mesa-dev libxkbcommon-dev mingw-w64 curl zip
-      - name: Checkout repository and submodules
+      - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Add safe directory
+        run: git config --global --add safe.directory $PWD
       - name: Build linux snapshot
         run: |
           ./tools/snapshot.sh
