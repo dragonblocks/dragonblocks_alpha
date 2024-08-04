@@ -5,12 +5,14 @@ jobs:
     runs-on: ubuntu-latest
     container: debian:sid
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
       - name: Install deps
         run: |
           apt-get update
           apt-get install -y git build-essential meson cmake lua5.4 xorg-dev libgl1-mesa-dev libxkbcommon-dev
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Build
         run: |
           meson setup build
