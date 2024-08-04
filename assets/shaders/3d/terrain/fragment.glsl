@@ -1,5 +1,5 @@
 in vec3 fragmentPosition;
-in vec2 fragmentTextureCoordinates;
+centroid in vec2 fragmentTextureCoordinates;
 in float fragmentTextureIndex;
 in vec3 fragmentColor;
 
