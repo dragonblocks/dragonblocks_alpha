@@ -159,7 +159,12 @@ static inline void render_node(ChunkRenderData *data, v3s32 offset)
 			if (def->render)
 				def->render(&args);
 
-			model_batch_add_vertex(batch, def->tiles.textures[args.f]->txo, &args.vertex);
+			TextureSlice *texture = &def->tiles.textures[args.f];
+			v2f32 *tcoord = &args.vertex.cube.textureCoordinates;
+			tcoord->x = texture->tex_coord_x + tcoord->x * texture->tex_coord_w;
+			tcoord->y = texture->tex_coord_y + tcoord->y * texture->tex_coord_h;
+
+			model_batch_add_vertex(batch, client_node_atlas.txo, &args.vertex);
 		}
 	}
 }

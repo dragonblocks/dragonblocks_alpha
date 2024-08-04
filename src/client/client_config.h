@@ -11,6 +11,8 @@ extern struct ClientConfig {
 	unsigned int meshgen_threads;
 	bool swap_mouse_buttons;
 	bool texture_batching;
+	unsigned int atlas_size;
+	unsigned int atlas_mipmap;
 } client_config;
 
 #endif

@@ -125,5 +125,6 @@ void game(Flag *gfx_init)
 	interact_deinit();
 	client_item_deinit();
 	client_inventory_deinit();
+	client_node_deinit();
 }
 

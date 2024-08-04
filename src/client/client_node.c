@@ -1,13 +1,15 @@
 #include <stdlib.h>
+#include <math.h>
 #include "client/client.h"
+#include "client/client_config.h"
 #include "client/client_node.h"
 #include "common/color.h"
 #include "common/environment.h"
 #include "common/node.h"
 #include "common/perlin.h"
 
-#define TILES_SIMPLE(path) {.paths = {path, NULL, NULL, NULL, NULL, NULL}, .indices = {0, 0, 0, 0, 0, 0}, .textures = {NULL}}
-#define TILES_NONE {.paths = {NULL}, .indices = {0}, .textures = {NULL}}
+#define TILES_SIMPLE(path) {.paths = {path, NULL, NULL, NULL, NULL, NULL}, .indices = {0, 0, 0, 0, 0, 0}, .textures = {}}
+#define TILES_NONE {.paths = {NULL}, .indices = {0}, .textures = {}}
 
 static void render_grass(NodeArgsRender *args)
 {
@@ -30,8 +32,10 @@ static void render_grass(NodeArgsRender *args)
 
 static void render_stone(NodeArgsRender *args)
 {
+	/*
 	args->vertex.cube.textureCoordinates.x += noise2d(args->pos.x, args->pos.z, 0, seed + OFFSET_TEXTURE_OFFSET_S);
 	args->vertex.cube.textureCoordinates.y += noise2d(args->pos.x, args->pos.z, 0, seed + OFFSET_TEXTURE_OFFSET_T);
+	*/
 }
 
 static void render_color(NodeArgsRender *args)
@@ -44,7 +48,6 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	{
 		.tiles = TILES_SIMPLE(ASSET_PATH "textures/unknown.png"),
 		.visibility = VISIBILITY_SOLID,
-		.mipmap = true,
 		.render = NULL,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
@@ -54,7 +57,6 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	{
 		.tiles = TILES_NONE,
 		.visibility = VISIBILITY_NONE,
-		.mipmap = true,
 		.render = NULL,
 		.pointable = false,
 		.selection_color = {1.0f, 1.0f, 1.0f},
@@ -64,7 +66,6 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	{
 		.tiles = TILES_SIMPLE(ASSET_PATH "textures/grass.png"),
 		.visibility = VISIBILITY_SOLID,
-		.mipmap = true,
 		.render = &render_grass,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
@@ -74,7 +75,6 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	{
 		.tiles = TILES_SIMPLE(ASSET_PATH "textures/dirt.png"),
 		.visibility = VISIBILITY_SOLID,
-		.mipmap = true,
 		.render = NULL,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
@@ -84,7 +84,6 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	{
 		.tiles = TILES_SIMPLE(ASSET_PATH "textures/stone.png"),
 		.visibility = VISIBILITY_SOLID,
-		.mipmap = true,
 		.render = &render_stone,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
@@ -94,7 +93,6 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	{
 		.tiles = TILES_SIMPLE(ASSET_PATH "textures/snow.png"),
 		.visibility = VISIBILITY_SOLID,
-		.mipmap = true,
 		.render = NULL,
 		.pointable = true,
 		.selection_color = {0.1f, 0.5f, 1.0f},
@@ -105,10 +103,9 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 		.tiles = {
 			.paths = {ASSET_PATH "textures/oak_wood.png", ASSET_PATH "textures/oak_wood_top.png", NULL, NULL, NULL, NULL},
 			.indices = {0, 0, 0, 0, 1, 1},
-			.textures = {NULL},
+			.textures = {},
 		},
 		.visibility = VISIBILITY_SOLID,
-		.mipmap = true,
 		.render = &render_color,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
@@ -118,7 +115,6 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	{
 		.tiles = TILES_SIMPLE(ASSET_PATH "textures/oak_leaves.png"),
 		.visibility = VISIBILITY_SOLID,
-		.mipmap = true,
 		.render = &render_color,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
@@ -129,10 +125,9 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 		.tiles = {
 			.paths = {ASSET_PATH "textures/pine_wood.png", ASSET_PATH "textures/pine_wood_top.png", NULL, NULL, NULL, NULL},
 			.indices = {0, 0, 0, 0, 1, 1},
-			.textures = {NULL},
+			.textures = {},
 		},
 		.visibility = VISIBILITY_SOLID,
-		.mipmap = true,
 		.render = &render_color,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
@@ -142,7 +137,6 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	{
 		.tiles = TILES_SIMPLE(ASSET_PATH "textures/pine_leaves.png"),
 		.visibility = VISIBILITY_CLIP,
-		.mipmap = true,
 		.render = &render_color,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
@@ -153,10 +147,9 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 		.tiles = {
 			.paths = {ASSET_PATH "textures/palm_wood.png", ASSET_PATH "textures/palm_wood_top.png", NULL, NULL, NULL, NULL},
 			.indices = {0, 0, 0, 0, 1, 1},
-			.textures = {NULL},
+			.textures = {},
 		},
 		.visibility = VISIBILITY_SOLID,
-		.mipmap = true,
 		.render = &render_color,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
@@ -166,7 +159,6 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	{
 		.tiles = TILES_SIMPLE(ASSET_PATH "textures/palm_leaves.png"),
 		.visibility = VISIBILITY_SOLID,
-		.mipmap = true,
 		.render = &render_color,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
@@ -176,7 +168,6 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	{
 		.tiles = TILES_SIMPLE(ASSET_PATH "textures/sand.png"),
 		.visibility = VISIBILITY_SOLID,
-		.mipmap = true,
 		.render = NULL,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
@@ -186,7 +177,6 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	{
 		.tiles = TILES_SIMPLE(ASSET_PATH "textures/water.png"),
 		.visibility = VISIBILITY_BLEND,
-		.mipmap = true,
 		.render = NULL,
 		.pointable = false,
 		.selection_color = {1.0f, 1.0f, 1.0f},
@@ -196,7 +186,6 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	{
 		.tiles = TILES_SIMPLE(ASSET_PATH "textures/lava.png"),
 		.visibility = VISIBILITY_BLEND,
-		.mipmap = true,
 		.render = NULL,
 		.pointable = false,
 		.selection_color = {1.0f, 1.0f, 1.0f},
@@ -206,7 +195,6 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	{
 		.tiles = TILES_SIMPLE(ASSET_PATH "textures/vulcano_stone.png"),
 		.visibility = VISIBILITY_SOLID,
-		.mipmap = true,
 		.render = NULL,
 		.pointable = true,
 		.selection_color = {1.0f, 1.0f, 1.0f},
@@ -214,19 +202,25 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	},
 };
 
+Texture client_node_atlas;
+
 void client_node_init()
 {
+	TextureAtlas atlas = texture_atlas_create(
+		client_config.atlas_size, client_config.atlas_size, 4,
+		(client_config.atlas_mipmap && client_config.mipmap) ? client_config.atlas_mipmap : 1);
+
 	for (NodeType node = 0; node < COUNT_NODE; node++) {
 		ClientNodeDef *def = &client_node_def[node];
 
 		if (def->visibility != VISIBILITY_NONE) {
-			Texture *textures[6];
+			TextureSlice textures[6];
 
 			for (int i = 0; i < 6; i++) {
 				char *path = def->tiles.paths[i];
 
 				if (path)
-					textures[i] = texture_load(path, def->mipmap);
+					textures[i] = texture_atlas_add(&atlas, path);
 				else
 					break;
 			}
@@ -235,6 +229,13 @@ void client_node_init()
 				def->tiles.textures[i] = textures[def->tiles.indices[i]];
 		}
 	}
+
+	client_node_atlas = texture_atlas_upload(&atlas);
+}
+
+void client_node_deinit()
+{
+	texture_destroy(&client_node_atlas);
 }
 
 void client_node_delete(TerrainNode *node)

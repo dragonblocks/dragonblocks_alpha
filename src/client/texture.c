@@ -182,3 +182,128 @@ void texture_destroy(Texture *texture)
 {
 	glDeleteTextures(1, &texture->txo); GL_DEBUG
 }
+
+TextureAtlas texture_atlas_create(int width, int height, int channels, size_t mipmap_levels)
+{
+	TextureAtlas atlas = {
+		.texture = { 0, width, height, channels },
+		.mipmap_levels = mipmap_levels,
+		.data = malloc(sizeof(unsigned char *) * mipmap_levels),
+		.alloc = {
+			.x = 0,
+			.y = 0,
+			.row_height = 0,
+		},
+	};
+
+	for (size_t i = 0; i < atlas.mipmap_levels; i++) {
+		atlas.data[i] = calloc(width * height, channels);
+
+		width /= 2;
+		height /= 2;
+
+		if (width == 0 || height == 0)
+			atlas.mipmap_levels = i;
+	}
+
+	return atlas;
+}
+
+TextureSlice texture_atlas_add(TextureAtlas *atlas, char *path)
+{
+	int width, height, channels;
+
+	unsigned char *data = stbi_load(path, &width, &height, &channels, 0);
+	if (!data) {
+		fprintf(stderr, "[error] failed to load texture %s\n", path);
+		abort();
+	}
+
+	if (channels != atlas->texture.channels) {
+		fprintf(stderr, "[error] invalid number of channels in %s, expected %d got %d\n",
+			path, atlas->texture.channels, channels);
+		abort();
+	}
+
+	if (atlas->mipmap_levels > 1 && ((width & (width - 1)) != 0 || (height & (height - 1)) != 0)) {
+		fprintf(stderr, "[error] texture %s dimensions are not powers of two\n", path);
+		abort();
+	}
+
+	if (width > atlas->texture.width || height > atlas->texture.height) {
+		fprintf(stderr, "[error] texture %s does not fit into atlas\n", path);
+		abort();
+	}
+
+	if ((int) atlas->alloc.x + width >= atlas->texture.width) {
+		atlas->alloc.x = 0;
+		atlas->alloc.y += atlas->alloc.row_height;
+		atlas->alloc.row_height = 0;
+	}
+
+	if ((int) atlas->alloc.y + height >= atlas->texture.height) {
+		fprintf(stderr, "[error] texture %s has no space left in atlas\n", path);
+		abort();
+	}
+
+	unsigned int x = atlas->alloc.x;
+	unsigned int y = atlas->alloc.y;
+
+	atlas->alloc.x += width;
+	if ((int) atlas->alloc.row_height < height)
+		atlas->alloc.row_height = height;
+
+	for (size_t i = 0; i < atlas->mipmap_levels; i++) {
+		unsigned int mm_width = width >> i;
+		unsigned int mm_height = height >> i;
+
+		if (mm_width == 0) mm_width = 1;
+		if (mm_height == 0) mm_height = 1;
+
+		stbir_resize_uint8(
+			data, width, height, 0,
+			atlas->data[i] + ((atlas->texture.width >> i) * (y >> i) + (x >> i)) * channels,
+			mm_width, mm_height, (atlas->texture.width >> i) * channels,
+			channels
+		);
+	}
+
+	stbi_image_free(data);
+
+	return (TextureSlice) {
+		.tex_coord_x = ((GLfloat) x) / ((GLfloat) atlas->texture.width),
+		.tex_coord_y = ((GLfloat) y) / ((GLfloat) atlas->texture.height),
+		.tex_coord_w = ((GLfloat) width) / ((GLfloat) atlas->texture.width),
+		.tex_coord_h = ((GLfloat) height) / ((GLfloat) atlas->texture.height),
+		.width = width,
+		.height = height,
+	};
+}
+
+Texture texture_atlas_upload(TextureAtlas *atlas)
+{
+	glGenTextures(1, &atlas->texture.txo); GL_DEBUG
+	glBindTexture(GL_TEXTURE_2D, atlas->texture.txo); GL_DEBUG
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, atlas->mipmap_levels > 1
+		? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST); GL_DEBUG
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); GL_DEBUG
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); GL_DEBUG
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); GL_DEBUG
+
+	if (atlas->mipmap_levels > 1) {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0); GL_DEBUG
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, atlas->mipmap_levels-1); GL_DEBUG
+	}
+
+	for (size_t i = 0; i < atlas->mipmap_levels; i++) {
+		glTexImage2D(GL_TEXTURE_2D, i, GL_RGBA, atlas->texture.width >> i, atlas->texture.height >> i,
+			0, GL_RGBA, GL_UNSIGNED_BYTE, atlas->data[i]); GL_DEBUG
+		stbi_image_free(atlas->data[i]);
+	}
+
+	free(atlas->data);
+	atlas->data = NULL;
+
+	return atlas->texture;
+}

@@ -9,6 +9,8 @@ struct ClientConfig client_config = {
 	.meshgen_threads = 4,
 	.swap_mouse_buttons = true,
 	.texture_batching = true,
+	.atlas_size = 1024,
+	.atlas_mipmap = 4,
 };
 
 static ConfigEntry config_entries[] = {
@@ -46,6 +48,16 @@ static ConfigEntry config_entries[] = {
 		.type = CONFIG_BOOL,
 		.key = "texture_batching",
 		.value = &client_config.texture_batching,
+	},
+	{
+		.type = CONFIG_UINT,
+		.key = "atlas_size",
+		.value = &client_config.atlas_size,
+	},
+	{
+		.type = CONFIG_UINT,
+		.key = "atlas_mipmap",
+		.value = &client_config.atlas_mipmap,
 	},
 };
 

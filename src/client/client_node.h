@@ -21,12 +21,11 @@ typedef struct {
 
 typedef struct {
 	struct {
-		char *paths[6];       // input
-		int indices[6];       // input
-		Texture *textures[6]; // output
+		char *paths[6];           // input
+		int indices[6];           // input
+		TextureSlice textures[6]; // output
 	} tiles;
 	NodeVisibility visibility;
-	bool mipmap;
 	void (*render)(NodeArgsRender *args);
 	bool pointable;
 	v3f32 selection_color;
@@ -34,7 +33,10 @@ typedef struct {
 } ClientNodeDef;
 
 extern ClientNodeDef client_node_def[];
+extern Texture client_node_atlas;
+
 void client_node_init();
+void client_node_deinit();
 
 void client_node_delete(TerrainNode *node);
 void client_node_deserialize(TerrainNode *node, Blob buffer);
