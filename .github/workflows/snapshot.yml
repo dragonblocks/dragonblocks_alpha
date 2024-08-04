@@ -5,12 +5,12 @@ jobs:
     runs-on: ubuntu-latest
     container: debian:sid
     steps:
-      - name: Checkout repository and submodules
-        uses: actions/checkout@v4
       - name: Install deps
         run: |
           apt-get update
           apt-get install -y git build-essential cmake meson lua5.4 xorg-dev libgl1-mesa-dev libxkbcommon-dev mingw-w64 curl zip
+      - name: Checkout repository and submodules
+        uses: actions/checkout@v4
       - name: Build linux snapshot
         run: |
           ./tools/snapshot.sh
@@ -21,6 +21,7 @@ jobs:
         run: |
           ./tools/snapshot.sh win64
       - name: Upload snapshots
+        if: github.ref == 'refs/heads/master'
         env:
           SECRET: ${{ secrets.UPLOAD_TOKEN }}
         run: |
