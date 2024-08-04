@@ -1,5 +1,5 @@
 name: snapshot
-on: [push]
+on: workflow_dispatch
 jobs:
   snapshot:
     runs-on: ubuntu-latest
