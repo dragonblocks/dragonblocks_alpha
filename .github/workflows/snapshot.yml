@@ -1,15 +1,16 @@
 name: snapshot
-on: workflow_dispatch
+on: [push]
 jobs:
   snapshot:
     runs-on: ubuntu-latest
+    container: debian:sid
     steps:
       - name: Checkout repository and submodules
         uses: actions/checkout@v4
       - name: Install deps
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential cmake meson lua5.3 xorg-dev libgl1-mesa-dev mingw-w64 curl zip
+          apt-get update
+          apt-get install -y git build-essential cmake meson lua5.4 xorg-dev libgl1-mesa-dev libxkbcommon-dev mingw-w64 curl zip
       - name: Build linux snapshot
         run: |
           ./tools/snapshot.sh
@@ -21,6 +22,6 @@ jobs:
           ./tools/snapshot.sh win64
       - name: Upload snapshots
         env:
-          SECRET: ${{ secrets.ELIDRAGON_UPLOAD_TOKEN }}
+          SECRET: ${{ secrets.UPLOAD_TOKEN }}
         run: |
           ./tools/upload.sh

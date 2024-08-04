@@ -3,7 +3,7 @@
 A multiplayer voxelgame for POSIX systems.
 It has been ported to Linux, Windows, FreeBSD and OpenBSD, but may work on other systems.
 
-Head to <https://www.elidragon.tk/dragonblocks_alpha/> for snapshot and release builds.
+Head to <https://dragonblocks.lizzy.rs> for snapshot and release builds.
 
 ## Invocation
 
@@ -89,7 +89,7 @@ wont't have to use it if you don't want to.
 
 ### Modding
 Dragonblocks Alpha does not and will most likely never have a modding API. If anything, a Lua plugin API will be added.
-It would be possible to have a native modding API for a C project (as demonstrated by [dungeon_game](https://github.com/EliasFleckenstein03/dungeon_game)),
+It would be possible to have a native modding API for a C project (as demonstrated by [dungeon_game](https://github.com/LizzyFleckenstein03/dungeon_game)),
 but it would remove simplicity and, most importantly, remove optimisation possibilities.
 The way you are meant to mod dragonblocks is by simply forking it on github and modifiying the game directly. To use multiple mods together, just git merge them.
 If there are conflicts, the mods would likely not be compatible anyway.

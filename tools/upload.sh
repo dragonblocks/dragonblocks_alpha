@@ -19,4 +19,4 @@ curl -f -i -X POST -H "Content-Type: multipart/form-data" \
 	-F "Linux=$path.zip" \
 	-F "Win32=$path-win32.zip" \
 	-F "Win64=$path-win64.zip" \
-	https://elidragon.tk/dragonblocks_alpha/upload.php
+	https://dragonblocks.lizzy.rs/upload.php
