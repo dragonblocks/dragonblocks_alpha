@@ -16,15 +16,6 @@ typedef struct {
 static List scene;
 static List scene_new;
 static pthread_mutex_t lock_scene_new;
-static GLint units;
-
-static int cmp_batch_texture(const ModelBatchTexture *ta, const ModelBatchTexture *tb)
-{
-	return
-		ta->vertices.siz > tb->vertices.siz ? -1 :
-		ta->vertices.siz < tb->vertices.siz ? +1 :
-		0;
-}
 
 static int cmp_node(const ModelNode *node, const char *str)
 {
@@ -192,7 +183,6 @@ void model_init()
 	list_ini(&scene_new);
 
 	pthread_mutex_init(&lock_scene_new, NULL);
-	units = opengl_texture_batch_units();
 }
 
 // ded
@@ -425,105 +415,6 @@ void model_node_add_mesh(ModelNode *node, const ModelMesh *mesh)
 {
 	array_apd(&node->meshes, mesh);
 	clone_mesh(&((ModelMesh *) node->meshes.ptr)[node->meshes.siz - 1]);
-}
-
-void model_node_add_batch(ModelNode *node, ModelBatch *batch)
-{
-	if (!batch->textures.siz) {
-		free(batch);
-		return;
-	}
-
-	array_srt(&batch->textures, &cmp_batch_texture);
-	ModelBatchTexture *textures = batch->textures.ptr;
-
-	size_t num_meshes = ceil((double) batch->textures.siz / (double) units);
-	array_grw(&node->meshes, num_meshes);
-	ModelMesh *meshes = &((ModelMesh *) node->meshes.ptr)[node->meshes.siz - num_meshes];
-
-	for (size_t m = 0; m < num_meshes; m++) {
-		ModelMesh *mesh = &meshes[m];
-
-		mesh->mesh = malloc(sizeof *mesh->mesh);
-		mesh->mesh->layout = batch->layout;
-		mesh->mesh->vao = mesh->mesh->vbo = 0;
-		mesh->mesh->free_data = true;
-
-		mesh->textures = malloc(sizeof *mesh->textures * (mesh->num_textures =
-			ceil((double) (batch->textures.siz - m) / (double) num_meshes)));
-
-		mesh->shader = batch->shader;
-
-		mesh->mesh->count = 0;
-		for (size_t t = 0; t < mesh->num_textures; t++) {
-			ModelBatchTexture *texture = &textures[m + t * num_meshes];
-			mesh->mesh->count += texture->vertices.siz;
-			mesh->textures[t] = texture->texture;
-
-			for (size_t v = 0; v < texture->vertices.siz; v++)
-				*((f32 *) (texture->vertices.ptr + v * texture->vertices.mbs
-					+ batch->off_tex_idx)) = t;
-		}
-
-		ModelBatchTexture *first = &textures[m];
-		first->vertices.cap = mesh->mesh->count;
-		first->vertices.ext = 0;
-		array_rlc(&first->vertices);
-
-		mesh->mesh->data = first->vertices.ptr;
-
-		for (size_t t = 1; t < mesh->num_textures; t++) {
-			ModelBatchTexture *texture = &textures[m + t * num_meshes];
-			memcpy(first->vertices.ptr + first->vertices.siz * first->vertices.mbs,
-				texture->vertices.ptr, texture->vertices.siz * texture->vertices.mbs);
-			first->vertices.siz += texture->vertices.siz;
-
-			array_clr(&texture->vertices);
-		}
-	}
-
-	array_clr(&batch->textures);
-	free(batch);
-}
-
-// ModelBatch functions
-
-ModelBatch *model_batch_create(ModelShader *shader, VertexLayout *layout, size_t off_tex_idx)
-{
-	ModelBatch *batch = malloc(sizeof *batch);
-	batch->shader = shader;
-	batch->layout = layout;
-	batch->off_tex_idx = off_tex_idx;
-	array_ini(&batch->textures, sizeof(ModelBatchTexture), 5);
-	return batch;
-}
-
-void model_batch_free(ModelBatch *batch)
-{
-	for (size_t i = 0; i < batch->textures.siz; i++)
-		array_clr(&((ModelBatchTexture *) batch->textures.ptr)[i].vertices);
-
-	array_clr(&batch->textures);
-	free(batch);
-}
-
-void model_batch_add_vertex(ModelBatch *batch, GLuint texture, const void *vertex)
-{
-	ModelBatchTexture *batch_texture = NULL;
-
-	for (size_t i = 0; i <= batch->textures.siz; i++) {
-		if (i == batch->textures.siz) {
-			ModelBatchTexture new;
-			new.texture = texture;
-			array_ini(&new.vertices, batch->layout->size, 10000);
-			array_apd(&batch->textures, &new);
-		}
-
-		if ((batch_texture = &((ModelBatchTexture *) batch->textures.ptr)[i])->texture == texture)
-			break;
-	}
-
-	array_apd(&batch_texture->vertices, vertex);
 }
 
 // scene functions

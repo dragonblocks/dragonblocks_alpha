@@ -24,13 +24,3 @@ void opengl_debug(const char *file, int line)
 		opengl_error(err, file, line);
 }
 
-GLint opengl_texture_batch_units()
-{
-	if (!client_config.texture_batching)
-		return 1;
-
-	GLint units;
-	glGetIntegerv(GL_MAX_TEXTURE_UNITS, &units); GL_DEBUG
-
-	return units;
-}

@@ -49,12 +49,8 @@ static GLuint compile_shader(GLenum type, const char *path, const char *name, GL
 
 	GLuint id = glCreateShader(type); GL_DEBUG
 
-	const char *version = client_config.texture_batching
-		? "#version 400 core\n"
-		: "#version 330 core\n";
-
 	const char *code_list[3] = {
-		version,
+		"#version 330 core\n",
 		def,
 		code,
 	};

@@ -18,8 +18,7 @@ typedef struct {
 	TerrainChunkMeta *meta;  // input: coersed chunk metadata pointer
 	v3s32 chunkp;            // input: position of chunk
 	bool animate;            // input: disable edge culling
-	ModelBatch *batch;       // main output: vertex data
-	ModelBatch *batch_blend; // main output: vertex data for transparent textures
+	Array vertices[2];       // main output: vertex data, 0=regular, 1=transparent textures
 	bool abort;              // output: state changes have occured that invalidate generated output
 	bool grabbed[6];         // output: neighbors that have been grabbed
 	bool visible;            // output: edge culled model would be visible
@@ -31,10 +30,9 @@ static VertexLayout terrain_vertex_layout = {
 		{GL_FLOAT, 3, sizeof(v3f32)}, // position
 		{GL_FLOAT, 3, sizeof(v3f32)}, // normal
 		{GL_FLOAT, 2, sizeof(v2f32)}, // textureCoordinates
-		{GL_FLOAT, 1, sizeof(f32  )}, // textureIndex
 		{GL_FLOAT, 3, sizeof(v3f32)}, // color
 	},
-	.count = 5,
+	.count = 4,
 	.size = sizeof(TerrainVertex),
 };
 
@@ -150,7 +148,6 @@ static inline void render_node(ChunkRenderData *data, v3s32 offset)
 		if (data->abort)
 			return;
 
-		ModelBatch *batch = def->visibility == VISIBILITY_BLEND ? data->batch_blend : data->batch;
 		for (args.v = 0; args.v < 6; args.v++) {
 			args.vertex.cube = cube_vertices[args.f][args.v];
 			args.vertex.cube.position = v3f32_add(args.vertex.cube.position, vertex_offset);
@@ -164,7 +161,7 @@ static inline void render_node(ChunkRenderData *data, v3s32 offset)
 			tcoord->x = texture->tex_coord_x + tcoord->x * texture->tex_coord_w;
 			tcoord->y = texture->tex_coord_y + tcoord->y * texture->tex_coord_h;
 
-			model_batch_add_vertex(batch, client_node_atlas.txo, &args.vertex);
+			array_apd(&data->vertices[def->visibility == VISIBILITY_BLEND], &args.vertex);
 		}
 	}
 }
@@ -191,7 +188,7 @@ static void animate_chunk_model(Model *model, f64 dtime)
 
 static Model *create_chunk_model(ChunkRenderData *data)
 {
-	if (!data->visible || (!data->batch->textures.siz && !data->batch_blend->textures.siz))
+	if (!data->visible || (!data->vertices[0].siz && !data->vertices[1].siz))
 		return NULL;
 
 	Model *model = model_create();
@@ -206,26 +203,34 @@ static Model *create_chunk_model(ChunkRenderData *data)
 	model->callbacks.step = data->animate ? &animate_chunk_model : NULL;
 	model->callbacks.delete = &model_free_meshes;
 	model->flags.frustum_culling = 1;
-	model->flags.transparent = data->batch_blend->textures.siz > 0;
+	model->flags.transparent = data->vertices[1].siz > 0;
 
 	model->root->pos = v3f32_add(v3s32_to_f32(data->chunkp), center_offset);
 	model->root->scale = data->animate ? (v3f32) {0.0f, 0.0f, 0.0f} : (v3f32) {1.0f, 1.0f, 1.0f};
 
-	model_node_add_batch(model->root, data->batch);
-	model_node_add_batch(model->root, data->batch_blend);
+	for (size_t i = 0; i < 2; i++) {
+		Mesh *mesh = calloc(1, sizeof *mesh);
+		mesh->layout = &terrain_vertex_layout;
+		mesh->data = data->vertices[i].ptr;
+		mesh->count = data->vertices[i].siz;
+		mesh->free_data = true;
+
+		model_node_add_mesh(model->root, &(ModelMesh) {
+			.mesh = mesh,
+			.textures = &client_node_atlas.txo,
+			.num_textures = 1,
+			.shader = &model_shader,
+		});
+	}
 
 	return model;
 }
 
 void terrain_gfx_init()
 {
-	GLint texture_batch_units = opengl_texture_batch_units();
-
 	char *shader_def;
 	asprintf(&shader_def,
-		"#define TEXURE_BATCH_UNITS %d\n"
 		"#define VIEW_DISTANCE %lf\n",
-		texture_batch_units,
 		client_config.view_distance
 	);
 
@@ -233,15 +238,6 @@ void terrain_gfx_init()
 	free(shader_def);
 
 	loc_VP = glGetUniformLocation(shader_prog, "VP"); GL_DEBUG
-
-	if (texture_batch_units > 1) {
-		GLint texture_indices[texture_batch_units];
-		for (GLint i = 0; i < texture_batch_units; i++)
-			texture_indices[i] = i;
-
-		glProgramUniform1iv(shader_prog, glGetUniformLocation(shader_prog, "textures"),
-			texture_batch_units, texture_indices); GL_DEBUG
-	}
 
 	model_shader.prog = shader_prog;
 	model_shader.loc_transform = glGetUniformLocation(shader_prog, "model"); GL_DEBUG
@@ -275,15 +271,15 @@ void terrain_gfx_make_chunk_model(TerrainChunk *chunk)
 		.meta = meta,
 		.chunkp = v3s32_scale(chunk->pos, CHUNK_SIZE),
 		.animate = false,
-		.batch = model_batch_create(
-			&model_shader, &terrain_vertex_layout, offsetof(TerrainVertex, textureIndex)),
-		.batch_blend = model_batch_create(
-			&model_shader, &terrain_vertex_layout, offsetof(TerrainVertex, textureIndex)),
+		.vertices = {},
 		.abort = false,
 		.grabbed = {false},
 		.visible = false,
 		.remake_needed = false,
 	};
+
+	array_ini(&data.vertices[0], sizeof(TerrainVertex), 10000);
+	array_ini(&data.vertices[1], sizeof(TerrainVertex), 10000);
 
 	//  animate if old animation hasn't finished (or this is the first model)
 	if (meta->model)
@@ -310,7 +306,7 @@ void terrain_gfx_make_chunk_model(TerrainChunk *chunk)
 		if (data.abort)
 			goto abort;
 
-		// put vertex data into batches
+		// make vertex data
 		render_node(&data, (v3s32) {x, y, z});
 
 		// abort if failed to grab a neighbor
@@ -330,10 +326,10 @@ void terrain_gfx_make_chunk_model(TerrainChunk *chunk)
 	// only create model if we didn't abort
 	Model *model = data.abort ? NULL : create_chunk_model(&data);
 
-	// make sure to free batch mem if it wasn't fed into model
+	// make sure to free vertex mem if it wasn't fed into model
 	if (!model) {
-		model_batch_free(data.batch);
-		model_batch_free(data.batch_blend);
+		array_clr(&data.vertices[0]);
+		array_clr(&data.vertices[1]);
 	}
 
 	// abort if chunk changed

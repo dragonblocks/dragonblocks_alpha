@@ -6,7 +6,6 @@
 
 typedef struct {
 	CubeVertex cube;
-	f32 textureIndex;
 	v3f32 color;
 } __attribute__((packed)) TerrainVertex;
 

@@ -17,13 +17,6 @@ typedef struct {
 	GLint loc_transform;
 } ModelShader;
 
-typedef struct {
-	ModelShader *shader;
-	VertexLayout *layout;
-	size_t off_tex_idx;
-	Array textures;
-} ModelBatch;
-
 typedef struct ModelNode {
 	char *name;
 	v3f32 pos, rot, scale;
@@ -90,15 +83,6 @@ ModelNode *model_node_create(ModelNode *parent);
 void model_node_transform(ModelNode *node);
 // add a mesh to model node (will be copied)
 void model_node_add_mesh(ModelNode *node, const ModelMesh *mesh);
-// add and delete batch (may add multiple meshes depending on available texture units)
-void model_node_add_batch(ModelNode *node, ModelBatch *batch);
-
-// create batch
-ModelBatch *model_batch_create(ModelShader *shader, VertexLayout *layout, size_t off_tex_idx);
-// delete batch
-void model_batch_free(ModelBatch *batch);
-// add a vertex to batch
-void model_batch_add_vertex(ModelBatch *batch, GLuint texture, const void *vertex);
 
 // add model to scene
 void model_scene_add(Model *model);

@@ -11,6 +11,5 @@
 #include <GL/gl.h>
 
 void opengl_debug(const char *file, int line);
-GLint opengl_texture_batch_units();
 
 #endif
