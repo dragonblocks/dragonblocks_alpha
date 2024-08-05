@@ -1,5 +1,5 @@
 [wrap-git]
 url = https://github.com/dragonblocks/protogen
-revision = head
+revision = 0731c88673ac4dffa1ab4bc3b3c58f61f37ce9a1
 depth = 1
 patch_directory = protogen

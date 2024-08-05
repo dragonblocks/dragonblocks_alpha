@@ -1,5 +1,5 @@
 [wrap-git]
 url = https://github.com/dragonblocks/dragonnet
-revision = head
+revision = e9828204897c3a85ca09e11eeea7094e50d16cc0
 clone-recursive = true
 depth = 1
