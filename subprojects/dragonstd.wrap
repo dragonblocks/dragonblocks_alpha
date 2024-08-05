@@ -1,6 +1,6 @@
 [wrap-git]
 url = https://github.com/dragonblocks/dragonstd
-revision = d1e5953cd35ecc5686ae4bd897630b94bb25d517
+revision = 3e2e753a1b98acbdbd1fb304837c07abdca3f9e4
 depth = 1
 method = cmake
 
