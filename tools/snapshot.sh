@@ -27,6 +27,8 @@ meson setup "snapshots/$build" \
 	-Doptimization=2 \
 	-Dasset_path="assets/" \
 	-Ddefault_library=static \
+	-Dglew:glu=disabled \
+	-Dglew:egl=disabled \
 	-Dfreetype2:harfbuzz=disabled \
 	-Dfreetype2:bzip2=disabled \
 	-Dfreetype2:brotli=disabled \

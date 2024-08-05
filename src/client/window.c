@@ -114,8 +114,9 @@ void window_init()
 	if (!client_config.vsync)
 		glfwSwapInterval(0);
 
-	if (glewInit() != GLEW_OK) {
-		fprintf(stderr, "[error] failed to initialize GLEW\n");
+	GLenum err = glewInit();
+	if (err != GLEW_OK) {
+		fprintf(stderr, "[error] failed to initialize GLEW: %s\n", glewGetErrorString(err));
 		abort();
 	}
 
