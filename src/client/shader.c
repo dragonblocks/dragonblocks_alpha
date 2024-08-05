@@ -12,7 +12,7 @@ static GLuint compile_shader(GLenum type, const char *path, const char *name, GL
 	char full_path[strlen(path) + 1 + strlen(name) + 1 + 4 + 1];
 	sprintf(full_path, "%s/%s.glsl", path, name);
 
-	char *code = read_file(path);
+	char *code = read_file(full_path);
 	if (!code)
 		return 0;
 

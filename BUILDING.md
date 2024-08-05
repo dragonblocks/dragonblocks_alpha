@@ -22,9 +22,9 @@ These dependencies will be built from source if they are not present.
 	- Debian: `apt-get install libsqlite3-dev`
 	- Arch: `pacman -S sqlite3`
 
-- The client requires Freetype2, GLFW and GLEW.
-	- Debian: `apt-get install libglfw3-dev libglew-dev libfreetype-dev`
-	- Arch: `pacman -S freetype2 glfw glew`
+- The client requires GLFW and GLEW.
+	- Debian: `apt-get install libglfw3-dev libglew-dev`
+	- Arch: `pacman -S glfw glew`
 
 If you plan to build GLFW and GLEW from source, you still need their build dependencies, refer to:
 

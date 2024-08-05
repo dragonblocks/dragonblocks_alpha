@@ -10,9 +10,7 @@
 
 typedef struct {
 	v2f32 size;
-	size_t count;
-	Mesh *meshes;
-	GLuint *textures;
+	Mesh mesh;
 } Font;
 
 void font_init();

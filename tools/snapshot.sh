@@ -29,10 +29,6 @@ meson setup "snapshots/$build" \
 	-Ddefault_library=static \
 	-Dglew:glu=disabled \
 	-Dglew:egl=disabled \
-	-Dfreetype2:harfbuzz=disabled \
-	-Dfreetype2:bzip2=disabled \
-	-Dfreetype2:brotli=disabled \
-	-Dfreetype2:png=disabled \
 	$crossfile \
 	--wrap-mode=forcefallback \
 	--reconfigure
