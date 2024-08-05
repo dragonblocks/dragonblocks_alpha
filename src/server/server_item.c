@@ -24,7 +24,7 @@ static void use_dig(__attribute__((unused)) ServerPlayer *player, ItemStack *sta
 		return;
 	}
 
-	*node = server_node_create(NODE_AIR);
+	server_terrain_replace_node(node, server_node_create(NODE_AIR));
 	meta->tgsb.raw.nodes[offset.x][offset.y][offset.z] = STAGE_PLAYER;
 
 	pthread_rwlock_unlock(&chunk->lock);

@@ -67,6 +67,8 @@ void server_terrain_deinit();
 void server_terrain_requested_chunk(ServerPlayer *player, v3s32 pos);
 // prepare spawn region
 void server_terrain_prepare_spawn();
+// delete old node and put new
+void server_terrain_replace_node(TerrainNode *ptr, TerrainNode new);
 // set node with terraingen stage
 void server_terrain_gen_node(v3s32 pos, TerrainNode node, TerrainGenStage new_tgs, List *changed_chunks);
 // get the spawn height because idk

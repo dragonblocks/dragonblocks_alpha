@@ -359,6 +359,12 @@ void server_terrain_prepare_spawn()
 	}
 }
 
+void server_terrain_replace_node(TerrainNode *ptr, TerrainNode new)
+{
+	server_node_delete(ptr);
+	*ptr = new;
+}
+
 void server_terrain_gen_node(v3s32 pos, TerrainNode node, TerrainGenStage new_tgs, List *changed_chunks)
 {
 	v3s32 offset;
@@ -376,7 +382,7 @@ void server_terrain_gen_node(v3s32 pos, TerrainNode node, TerrainGenStage new_tg
 	}
 
 	*tgs = new_tgs;
-	chunk->data[offset.x][offset.y][offset.z] = node;
+	server_terrain_replace_node(&chunk->data[offset.x][offset.y][offset.z], node);
 
 	if (changed_chunks)
 		list_add(changed_chunks, chunk, chunk, &cmp_ref, NULL);

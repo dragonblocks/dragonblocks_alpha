@@ -139,7 +139,7 @@ static void destroy_search_node(DepthSearchNode *node, List *changed_chunks)
 		CheckTreeSearchNodeMeta *meta = node->extra;
 
 		// overwrite node and generation stage
-		*meta->node = server_node_create(NODE_AIR);
+		server_terrain_replace_node(meta->node, server_node_create(NODE_AIR));
 		*meta->tgs  = STAGE_PLAYER;
 
 		// flag chunk as changed

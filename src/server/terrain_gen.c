@@ -109,7 +109,7 @@ void terrain_gen_chunk(TerrainChunk *chunk, List *changed_chunks)
 
 				assert(pthread_rwlock_wrlock(&chunk->lock) == 0);
 				if (meta->tgsb.raw.nodes[x][y][z] <= STAGE_TERRAIN) {
-					chunk->data[x][y][z] = server_node_create(node);
+					server_terrain_replace_node(&chunk->data[x][y][z], server_node_create(node));
 					meta->tgsb.raw.nodes[x][y][z] = STAGE_TERRAIN;
 				}
 				pthread_rwlock_unlock(&chunk->lock);
