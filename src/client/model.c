@@ -113,8 +113,10 @@ static void init_node(ModelNode *node, ModelNode *parent)
 static void clone_mesh(ModelMesh *mesh)
 {
 	GLuint *old_textures = mesh->textures;
-	memcpy(mesh->textures = malloc(mesh->num_textures * sizeof *mesh->textures),
-		old_textures, mesh->num_textures * sizeof *mesh->textures);
+
+	if (old_textures)
+		memcpy(mesh->textures = malloc(mesh->num_textures * sizeof *mesh->textures),
+			old_textures, mesh->num_textures * sizeof *mesh->textures);
 }
 
 static ModelNode *clone_node(ModelNode *original, ModelNode *parent)
