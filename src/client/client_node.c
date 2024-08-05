@@ -8,8 +8,8 @@
 #include "common/node.h"
 #include "common/perlin.h"
 
-#define TILES_SIMPLE(path) {.paths = {path, NULL, NULL, NULL, NULL, NULL}, .indices = {0, 0, 0, 0, 0, 0}, .textures = {}}
-#define TILES_NONE {.paths = {NULL}, .indices = {0}, .textures = {}}
+#define TILES_SIMPLE(path) {.paths = {path, NULL, NULL, NULL, NULL, NULL}, .indices = {0, 0, 0, 0, 0, 0}, .textures = {}, .x4 = {}}
+#define TILES_NONE {.paths = {NULL}, .indices = {0}, .textures = {}, .x4 = {}}
 
 static void render_grass(NodeArgsRender *args)
 {
@@ -32,10 +32,10 @@ static void render_grass(NodeArgsRender *args)
 
 static void render_stone(NodeArgsRender *args)
 {
-	/*
-	args->vertex.cube.textureCoordinates.x += noise2d(args->pos.x, args->pos.z, 0, seed + OFFSET_TEXTURE_OFFSET_S);
-	args->vertex.cube.textureCoordinates.y += noise2d(args->pos.x, args->pos.z, 0, seed + OFFSET_TEXTURE_OFFSET_T);
-	*/
+	v2f32 *tcoord = &args->vertex.cube.textureCoordinates;
+	tcoord->x = tcoord->x + noise2d(args->pos.x, args->pos.z, 0, seed + OFFSET_TEXTURE_OFFSET_S) * 0.5 + 0.5;
+	tcoord->y = tcoord->y + noise2d(args->pos.x, args->pos.z, 0, seed + OFFSET_TEXTURE_OFFSET_T) * 0.5 + 0.5;
+	*tcoord = v2f32_scale(*tcoord, 0.5);
 }
 
 static void render_color(NodeArgsRender *args)
@@ -82,7 +82,12 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	},
 	// stone
 	{
-		.tiles = TILES_SIMPLE(ASSET_PATH "textures/stone.png"),
+		.tiles = {
+			.paths = { ASSET_PATH  "textures/stone.png" },
+			.indices = {},
+			.textures = {},
+			.x4 = { true },
+		},
 		.visibility = VISIBILITY_SOLID,
 		.render = &render_stone,
 		.pointable = true,
@@ -220,7 +225,7 @@ void client_node_init()
 				char *path = def->tiles.paths[i];
 
 				if (path)
-					textures[i] = texture_atlas_add(&atlas, path);
+					textures[i] = texture_atlas_add(&atlas, path, def->tiles.x4[i]);
 				else
 					break;
 			}

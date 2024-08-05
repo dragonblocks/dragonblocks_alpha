@@ -209,7 +209,7 @@ TextureAtlas texture_atlas_create(int width, int height, int channels, size_t mi
 	return atlas;
 }
 
-TextureSlice texture_atlas_add(TextureAtlas *atlas, char *path)
+TextureSlice texture_atlas_add(TextureAtlas *atlas, char *path, bool x4)
 {
 	int width, height, channels;
 
@@ -217,6 +217,23 @@ TextureSlice texture_atlas_add(TextureAtlas *atlas, char *path)
 	if (!data) {
 		fprintf(stderr, "[error] failed to load texture %s\n", path);
 		abort();
+	}
+
+	if (x4) {
+		int new_width = width * 2, new_height = height * 2;
+		unsigned char *new_data = malloc(new_width * new_height * channels);
+
+		for (int x = 0; x < 2; x++) for (int y = 0; y < 2; y++)
+			// abusing resize for copy...
+			stbir_resize_uint8(
+				data, width, height, 0,
+				new_data + (y * height * new_width + x * width) * channels,
+				width, height, new_width * channels, channels);
+
+		stbi_image_free(data);
+		width = new_width;
+		height = new_height;
+		data = new_data;
 	}
 
 	if (channels != atlas->texture.channels) {

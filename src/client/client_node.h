@@ -23,6 +23,7 @@ typedef struct {
 	struct {
 		char *paths[6];           // input
 		int indices[6];           // input
+		bool x4[6];               // input
 		TextureSlice textures[6]; // output
 	} tiles;
 	NodeVisibility visibility;

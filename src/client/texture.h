@@ -3,6 +3,7 @@
 
 #include <GL/glew.h>
 #include <GL/gl.h>
+#include <stdbool.h>
 
 typedef struct {
 	GLuint txo;
@@ -30,7 +31,7 @@ void texture_upload(Texture *texture, unsigned char *data, GLenum format, bool m
 void texture_destroy(Texture *texture);
 
 TextureAtlas texture_atlas_create(int width, int height, int channels, size_t mipmap_levels);
-TextureSlice texture_atlas_add(TextureAtlas *atlas, char *path);
+TextureSlice texture_atlas_add(TextureAtlas *atlas, char *path, bool x4);
 Texture texture_atlas_upload(TextureAtlas *atlas);
 
 #endif // _TEXTURE_H_
