@@ -3,8 +3,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
+#include "common/fs.h"
 
 void dragonblocks_init(int argc)
 {
@@ -12,16 +11,7 @@ void dragonblocks_init(int argc)
 	pthread_setname_np(pthread_self(), "main");
 #endif // __GLIBC__
 
-	// stat() does not properly handle trailing slashes on dirs on MinGW in some cases
-	// strip trailing slashes
-	size_t len = strlen(ASSET_PATH);
-	char stat_path[len+1];
-	strcpy(stat_path, ASSET_PATH);
-	while (len > 0 && stat_path[len-1] == '/')
-		stat_path[--len] = '\0';
-
-	struct stat sb;
-	if (stat(stat_path, &sb) != 0 || !S_ISDIR(sb.st_mode)) {
+	if (!directory_exists(ASSET_PATH)) {
 		fprintf(stderr, "[error] asset directory not found at %s, "
 			"invoke game from correct path\n", ASSET_PATH);
 		exit(EXIT_FAILURE);

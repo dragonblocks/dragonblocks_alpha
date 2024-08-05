@@ -5,47 +5,16 @@
 #include "client/client_config.h"
 #include "client/opengl.h"
 #include "client/shader.h"
+#include "common/fs.h"
 
 static GLuint compile_shader(GLenum type, const char *path, const char *name, GLuint program, const char *def)
 {
 	char full_path[strlen(path) + 1 + strlen(name) + 1 + 4 + 1];
 	sprintf(full_path, "%s/%s.glsl", path, name);
 
-	FILE *file = fopen(full_path, "r");
-	if (!file) {
-		perror("fopen");
+	char *code = read_file(path);
+	if (!code)
 		return 0;
-	}
-
-	if (fseek(file, 0, SEEK_END) == -1) {
-		perror("fseek");
-		fclose(file);
-		return 0;
-	}
-
-	long size = ftell(file);
-
-	if (size == 1) {
-		perror("ftell");
-		fclose(file);
-		return 0;
-	}
-
-	if (fseek(file, 0, SEEK_SET) == -1) {
-		perror("fseek");
-		fclose(file);
-		return 0;
-	}
-
-	char code[size];
-
-	if (fread(code, 1, size, file) != (size_t) size) {
-		perror("fread");
-		fclose(file);
-		return 0;
-	}
-
-	fclose(file);
 
 	GLuint id = glCreateShader(type); GL_DEBUG
 
@@ -58,12 +27,12 @@ static GLuint compile_shader(GLenum type, const char *path, const char *name, GL
 	int size_list[3] = {
 		18,
 		strlen(def),
-		size,
+		strlen(code),
 	};
 
 	glShaderSource(id, 3, code_list, size_list); GL_DEBUG
-
 	glCompileShader(id); GL_DEBUG
+	free(code);
 
 	GLint success;
 	glGetShaderiv(id, GL_COMPILE_STATUS, &success); GL_DEBUG
