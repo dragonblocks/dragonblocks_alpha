@@ -209,6 +209,8 @@ static Model *create_chunk_model(ChunkRenderData *data)
 	model->root->scale = data->animate ? (v3f32) {0.0f, 0.0f, 0.0f} : (v3f32) {1.0f, 1.0f, 1.0f};
 
 	for (size_t i = 0; i < 2; i++) {
+		if (!data->vertices[i].siz) continue;
+
 		Mesh *mesh = calloc(1, sizeof *mesh);
 		mesh->layout = &terrain_vertex_layout;
 		mesh->data = data->vertices[i].ptr;
