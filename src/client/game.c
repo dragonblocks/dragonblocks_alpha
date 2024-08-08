@@ -19,6 +19,7 @@
 #include "client/gui.h"
 #include "client/input.h"
 #include "client/interact.h"
+#include "client/shadows.h"
 #include "client/sky.h"
 #include "client/window.h"
 #include "common/day.h"
@@ -43,13 +44,16 @@ void game_render(f64 dtime)
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); GL_DEBUG
 
+	shadows_render_map();
+	model_scene_update(dtime);
+
 	frustum_update();
 	terrain_gfx_update();
 	client_entity_gfx_update();
 	client_inventory_update();
 
 	sky_render();
-	model_scene_render(dtime);
+	model_scene_render();
 	interact_render();
 	gui_render();
 }
@@ -95,9 +99,11 @@ static void game_loop()
 void game(Flag *gfx_init)
 {
 	window_init();
+	shadows_init();
 	font_init();
 	model_init();
 	sky_init();
+	client_node_init();
 	terrain_gfx_init();
 	client_entity_gfx_init();
 	client_player_gfx_init();
@@ -106,7 +112,6 @@ void game(Flag *gfx_init)
 	interact_init();
 	client_item_init();
 	client_inventory_init();
-	client_node_init();
 	client_terrain_start();
 	debug_menu_init();
 	input_init();
@@ -126,5 +131,6 @@ void game(Flag *gfx_init)
 	client_item_deinit();
 	client_inventory_deinit();
 	client_node_deinit();
+	shadows_deinit();
 }
 

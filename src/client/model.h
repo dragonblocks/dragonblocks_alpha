@@ -33,6 +33,7 @@ typedef struct {
 	GLuint *textures;
 	GLuint num_textures;
 	ModelShader *shader;
+	// ModelShader *shader_shadow;
 } ModelMesh;
 
 typedef struct {
@@ -86,7 +87,11 @@ void model_node_add_mesh(ModelNode *node, const ModelMesh *mesh);
 
 // add model to scene
 void model_scene_add(Model *model);
+// update scene
+void model_scene_update(f64 dtime);
 // render scene
-void model_scene_render(f64 dtime);
+void model_scene_render();
+// render shadow map buffer
+void model_scene_render_shadows();
 
 #endif // _MODEL_H_

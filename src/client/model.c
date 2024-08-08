@@ -7,6 +7,7 @@
 #include "client/frustum.h"
 #include "client/opengl.h"
 #include "client/model.h"
+#include "client/shadows.h"
 
 typedef struct {
 	GLuint texture;
@@ -41,7 +42,7 @@ static void transform_node(ModelNode *node)
 	list_itr(&node->children, &transform_node, NULL, NULL);
 }
 
-static void render_node(ModelNode *node)
+static void render_node(ModelNode *node, bool *shadow)
 {
 	if (!node->visible)
 		return;
@@ -56,8 +57,12 @@ static void render_node(ModelNode *node)
 		if (!mesh->mesh)
 			continue;
 
-		glUseProgram(mesh->shader->prog); GL_DEBUG
-		glUniformMatrix4fv(mesh->shader->loc_transform, 1, GL_FALSE, node->abs[0]); GL_DEBUG
+		if (*shadow) {
+			shadows_set_model(node->abs);
+		} else {
+			glUseProgram(mesh->shader->prog); GL_DEBUG
+			glUniformMatrix4fv(mesh->shader->loc_transform, 1, GL_FALSE, node->abs[0]); GL_DEBUG
+		}
 
 		// bind textures
 		for (GLuint i = 0; i < mesh->num_textures; i++) {
@@ -67,7 +72,7 @@ static void render_node(ModelNode *node)
 		mesh_render(mesh->mesh);
 	}
 
-	list_itr(&node->children, &render_node, NULL, NULL);
+	list_itr(&node->children, &render_node, shadow, NULL);
 
 	if (node->clockwise) {
 		glFrontFace(GL_CCW); GL_DEBUG
@@ -145,18 +150,28 @@ static void render_model(Model *model)
 	if (model->callbacks.before_render)
 		model->callbacks.before_render(model);
 
-	render_node(model->root);
+	bool shadow = false;
+	render_node(model->root, &shadow);
 
 	if (model->callbacks.after_render)
 		model->callbacks.after_render(model);
 }
 
 // step model help im stuck
-static void model_step(Model *model, Tree *transparent, f64 dtime)
+static void model_step(Model *model, f64 dtime)
 {
 	if (model->callbacks.step)
 		model->callbacks.step(model, dtime);
+}
 
+static void model_render_shadow(Model *model)
+{
+	bool shadow = true;
+	render_node(model->root, &shadow);
+}
+
+static void model_render_main(Model *model, Tree *transparent)
+{
 	if (client_config.view_distance < (model->distance = sqrt(
 			pow(model->root->pos.x - camera.eye[0], 2) +
 			pow(model->root->pos.y - camera.eye[1], 2) +
@@ -428,7 +443,7 @@ void model_scene_add(Model *model)
 	pthread_mutex_unlock(&lock_scene_new);
 }
 
-void model_scene_render(f64 dtime)
+void model_scene_update(f64 dtime)
 {
 	pthread_mutex_lock(&lock_scene_new);
 	if (scene_new.fst) {
@@ -438,9 +453,6 @@ void model_scene_render(f64 dtime)
 		list_ini(&scene_new);
 	}
 	pthread_mutex_unlock(&lock_scene_new);
-
-	Tree transparent;
-	tree_ini(&transparent);
 
 	for (ListNode **node = &scene.fst; *node != NULL;) {
 		Model *model = (*node)->dat;
@@ -454,8 +466,27 @@ void model_scene_render(f64 dtime)
 			model_delete(model);
 		} else {
 			node = &(*node)->nxt;
-			model_step(model, &transparent, dtime);
+			model_step(model, dtime);
 		}
+	}
+}
+
+void model_scene_render_shadows()
+{
+	LIST_ITERATE(&scene, node) {
+		model_render_shadow(node->dat);
+	}
+}
+
+void model_scene_render()
+{
+	// model_render_shadow
+
+	Tree transparent;
+	tree_ini(&transparent);
+
+	LIST_ITERATE(&scene, node) {
+		model_render_main(node->dat, &transparent);
 	}
 
 	tree_clr(&transparent, &render_model, NULL, NULL, TRAVERSION_INORDER);

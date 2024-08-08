@@ -24,9 +24,9 @@ static void update_projection()
 
 static void framebuffer_size_callback(__attribute__((unused)) GLFWwindow *handle, int width, int height)
 {
-	glViewport(0, 0, width, height); GL_DEBUG
 	window.width = width;
 	window.height = height;
+	window_set_viewport();
 
 	if (!window.fullscreen) {
 		small_width = width;
@@ -59,6 +59,11 @@ static void mouse_button_callback(__attribute__((unused)) GLFWwindow *handle, in
 static void error_callback(__attribute__((unused)) int error, const char *description)
 {
 	fprintf(stderr, "[warning] GLFW error: %s\n", description);
+}
+
+void window_set_viewport()
+{
+	glViewport(0, 0, window.width, window.height); GL_DEBUG
 }
 
 void window_enter_fullscreen()

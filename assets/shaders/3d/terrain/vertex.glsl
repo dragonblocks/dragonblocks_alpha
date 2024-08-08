@@ -1,26 +1,26 @@
-layout(location = 0) in vec3 vertexPosition;
-layout(location = 1) in vec3 vertexNormal;
-layout(location = 2) in vec2 vertexTextureCoordinates;
-layout(location = 3) in vec3 vertexColor;
+layout(location = 0) in vec3 vertPos;
+layout(location = 1) in vec3 vertNormal;
+layout(location = 2) in vec2 vertTexCoord;
+layout(location = 3) in vec3 vertColor;
 
-out vec3 fragmentPosition;
-out vec2 fragmentTextureCoordinates;
-out vec3 fragmentColor;
+out vec3 fragPos;
+out vec3 fragNormal;
+out vec2 fragTexCoord;
+out vec3 fragColor;
+out vec4 fragPosLightSP;
 
 uniform mat4 model;
 uniform mat4 VP;
-uniform float daylight;
-uniform float ambientLight;
-uniform vec3 lightDir;
+uniform mat4 lightVP;
 
 void main()
 {
-	vec4 worldSpace = model * vec4(vertexPosition, 1.0);
-	gl_Position = VP * worldSpace;
+	vec4 worldSP = model * vec4(vertPos, 1.0);
+	gl_Position = VP * worldSP;
 
-	fragmentPosition = worldSpace.xyz;
-	fragmentTextureCoordinates = vertexTextureCoordinates;
-	fragmentColor = vertexColor;
-
-	fragmentColor *= ambientLight + 0.3 * daylight * clamp(dot(normalize(vertexNormal), normalize(lightDir)), 0.0, 1.0);
+	fragPos = worldSP.xyz;
+	fragNormal = vertNormal;
+	fragTexCoord = vertTexCoord;
+	fragColor = vertColor;
+	fragPosLightSP = lightVP * vec4(fragPos, 1.0);
 }

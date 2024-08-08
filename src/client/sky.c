@@ -128,7 +128,7 @@ void sky_render()
 	f64 sun_angle = get_sun_angle();
 
 	vec3 sun_pos = {0.0f, cos(sun_angle), sin(sun_angle)};
-	vec3_norm(sun_pos, sun_pos);
+	//vec3_norm(sun_pos, sun_pos);
 	vec3_scale(sun_pos, sun_pos, 5.0f);
 
 	mat4x4 model;

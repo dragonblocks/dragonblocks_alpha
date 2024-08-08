@@ -17,5 +17,6 @@ extern struct Window {
 void window_init();
 void window_enter_fullscreen();
 void window_exit_fullscreen();
+void window_set_viewport();
 
 #endif // _WINDOW_H_

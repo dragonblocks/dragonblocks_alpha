@@ -10,6 +10,7 @@
 #include "client/opengl.h"
 #include "client/light.h"
 #include "client/shader.h"
+#include "client/shadows.h"
 #include "client/terrain_gfx.h"
 #include "common/facedir.h"
 
@@ -44,9 +45,11 @@ static v3f32 center_offset = {
 
 static GLuint shader_prog;
 static GLint loc_VP;
+static GLint loc_lightVP;
 
 static LightShader light_shader;
 static ModelShader model_shader;
+static GLuint textures[2];
 
 static void grab_neighbor(ChunkRenderData *data, int i)
 {
@@ -219,8 +222,8 @@ static Model *create_chunk_model(ChunkRenderData *data)
 
 		model_node_add_mesh(model->root, &(ModelMesh) {
 			.mesh = mesh,
-			.textures = &client_node_atlas.txo,
-			.num_textures = 1,
+			.textures = textures,
+			.num_textures = 2,
 			.shader = &model_shader,
 		});
 	}
@@ -240,12 +243,18 @@ void terrain_gfx_init()
 	free(shader_def);
 
 	loc_VP = glGetUniformLocation(shader_prog, "VP"); GL_DEBUG
+	loc_lightVP = glGetUniformLocation(shader_prog, "lightVP"); GL_DEBUG
+	glProgramUniform1i(shader_prog, glGetUniformLocation(shader_prog, "atlasTexture"), 0);
+	glProgramUniform1i(shader_prog, glGetUniformLocation(shader_prog, "shadowMap"), 1);
 
 	model_shader.prog = shader_prog;
 	model_shader.loc_transform = glGetUniformLocation(shader_prog, "model"); GL_DEBUG
 
 	light_shader.prog = shader_prog;
 	light_shader_locate(&light_shader);
+
+	textures[0] = client_node_atlas.txo;
+	textures[1] = shadows_get_map();
 }
 
 void terrain_gfx_deinit()
@@ -257,6 +266,7 @@ void terrain_gfx_update()
 {
 	glProgramUniformMatrix4fv(shader_prog, loc_VP, 1, GL_FALSE, frustum[0]); GL_DEBUG
 	light_shader_update(&light_shader);
+	shadows_get_light_view_proj(shader_prog, loc_lightVP);
 }
 
 void terrain_gfx_make_chunk_model(TerrainChunk *chunk)
