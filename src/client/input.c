@@ -104,7 +104,6 @@ void input_init()
 		.bg_color = {0.0f, 0.0f, 0.0f, 0.0f},
 	});
 
-	glfwSetInputMode(window.handle, GLFW_STICKY_KEYS, GL_TRUE);
 	enter_game();
 }
 
