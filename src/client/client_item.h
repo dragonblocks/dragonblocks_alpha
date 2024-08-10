@@ -9,6 +9,8 @@
 typedef struct {
 	const char *mesh_path;
 	Mesh mesh;
+	aabb3s32 mesh_extents;
+	float inventory_rot;
 	bool (*use)(ItemStack *stack);
 } ClientItemDef;
 

@@ -7,7 +7,7 @@ struct ClientConfig client_config = {
 	.view_distance = 255.0,
 	.vsync = true,
 	.meshgen_threads = 4,
-	.swap_mouse_buttons = true,
+	.swap_mouse_buttons = false,
 	.atlas_size = 1024,
 	.atlas_mipmap = 4,
 };

@@ -46,11 +46,13 @@ void game_render(f64 dtime)
 	frustum_update();
 	terrain_gfx_update();
 	client_entity_gfx_update();
-	client_inventory_update();
+	client_inventory_update(dtime);
 
 	sky_render();
 	model_scene_render(dtime);
 	interact_render();
+
+	glClear(GL_DEPTH_BUFFER_BIT); GL_DEBUG
 	gui_render();
 }
 

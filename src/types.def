@@ -1,4 +1,6 @@
 #define CHUNK_SIZE 16
+#define INV_SIZE_HANDS 2
+#define INV_SIZE_MAIN 24
 
 ColorData
 	v3f32 color
@@ -25,6 +27,7 @@ TerrainGenStageBuffer
 	compressed TerrainGenStageBufferRaw raw
 
 EntityData
+	u32 type
 	u64 id
 	v3f64 pos
 	v3f32 rot
@@ -35,13 +38,18 @@ SerializedItemStack
 	u32 count
 	Blob data
 
+InventoryLocation
+; u64 id
+	u16 list
+	u16 slot
+
 ; server packets
 
 pkt ToServerAuth
 	String name
 
 pkt ToServerInteract
-	u8 left
+	u8 right
 	u8 pointed
 	v3s32 pos
 
@@ -55,6 +63,9 @@ pkt ToServerRequestChunk
 pkt ToServerRequestMovement
 	u8 flight
 	u8 collision
+
+pkt ToServerInventorySwap
+	InventoryLocation[2] locations
 
 ; client packets
 
@@ -80,7 +91,6 @@ pkt ToClientMovement
 	f32 gravity
 
 pkt ToClientEntityAdd
-	u32 type
 	EntityData data
 
 pkt ToClientEntityRemove
@@ -97,5 +107,5 @@ pkt ToClientEntityUpdateNametag
 
 pkt ToClientPlayerInventory
 	u64 id
-	SerializedItemStack left
-	SerializedItemStack right
+	SerializedItemStack[INV_SIZE_HANDS] hands
+	SerializedItemStack[INV_SIZE_MAIN] main

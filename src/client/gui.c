@@ -97,6 +97,11 @@ static GLint font_loc_projection;
 static GLint font_loc_color;
 // font meshes are initialized in font.c
 
+static GLuint mesh_prog;
+static GLint mesh_loc_model;
+static GLint mesh_loc_projection;
+// meshes are initialized in mesh.c
+
 static mat4x4 projection;
 
 // element functions
@@ -107,7 +112,7 @@ static void scale_element(GUIElement *element);
 
 static int cmp_element(const GUIElement **ea, const GUIElement **eb)
 {
-	return -f32_cmp(&(*ea)->def.z_index, &(*eb)->def.z_index);
+	return f32_cmp(&(*ea)->def.z_index, &(*eb)->def.z_index);
 }
 
 static void delete_elements(Array *elements)
@@ -121,8 +126,8 @@ static void delete_element(GUIElement *element)
 {
 	delete_elements(&element->children);
 
-	if (element->def.text)
-		free(element->def.text);
+	free(element->user);
+	free(element->def.text);
 
 	if (element->text)
 		font_delete(element->text);
@@ -138,35 +143,46 @@ static void render_elements(Array *elements)
 
 static void render_element(GUIElement *element)
 {
-	if (element->visible) {
-		if (element->def.bg_color.w > 0.0f) {
-			glUseProgram(background_prog); GL_DEBUG
-			glUniformMatrix4fv(background_loc_model, 1, GL_FALSE, element->transform[0]); GL_DEBUG
-			glUniform4f(background_loc_color, element->def.bg_color.x, element->def.bg_color.y, element->def.bg_color.z, element->def.bg_color.w); GL_DEBUG
-			mesh_render(&background_mesh);
-		}
+	if (!element->visible)
+		return;
 
-		if (element->def.image) {
-			glUseProgram(image_prog); GL_DEBUG
-			glUniformMatrix4fv(image_loc_model, 1, GL_FALSE, element->transform[0]); GL_DEBUG
-			glBindTextureUnit(0, element->def.image->txo); GL_DEBUG
-			mesh_render(&image_mesh);
-		}
-
-		if (element->def.text && element->def.text_color.w > 0.0f) {
-			if (!element->text) {
-				element->text = font_create(element->def.text);
-				gui_transform(element);
-			}
-
-			glUseProgram(font_prog); GL_DEBUG
-			glUniformMatrix4fv(font_loc_model, 1, GL_FALSE, element->text_transform[0]); GL_DEBUG
-			glUniform4f(font_loc_color, element->def.text_color.x, element->def.text_color.y, element->def.text_color.z, element->def.text_color.w); GL_DEBUG
-			font_render(element->text);
-		}
-
-		render_elements(&element->children);
+	if (element->def.bg_color.w > 0.0f) {
+		glUseProgram(background_prog); GL_DEBUG
+		glUniformMatrix4fv(background_loc_model, 1, GL_FALSE, element->transform[0]); GL_DEBUG
+		glUniform4f(background_loc_color, element->def.bg_color.x, element->def.bg_color.y, element->def.bg_color.z, element->def.bg_color.w); GL_DEBUG
+		mesh_render(&background_mesh);
 	}
+
+	if (element->def.image) {
+		glUseProgram(image_prog); GL_DEBUG
+		glUniformMatrix4fv(image_loc_model, 1, GL_FALSE, element->transform[0]); GL_DEBUG
+		glBindTextureUnit(0, element->def.image->txo); GL_DEBUG
+		mesh_render(&image_mesh);
+	}
+
+	if (element->def.text && element->def.text_color.w > 0.0f) {
+		if (!element->text) {
+			element->text = font_create(element->def.text);
+			gui_transform(element);
+		}
+
+		glUseProgram(font_prog); GL_DEBUG
+		glUniformMatrix4fv(font_loc_model, 1, GL_FALSE, element->text_transform[0]); GL_DEBUG
+		glUniform4f(font_loc_color, element->def.text_color.x, element->def.text_color.y, element->def.text_color.z, element->def.text_color.w); GL_DEBUG
+		font_render(element->text);
+	}
+
+	if (element->def.mesh) {
+		glEnable(GL_DEPTH_TEST); GL_DEBUG
+
+		glUseProgram(mesh_prog); GL_DEBUG
+		glUniformMatrix4fv(mesh_loc_model, 1, GL_FALSE, element->mesh_transform[0]); GL_DEBUG
+		mesh_render(element->def.mesh);
+
+		glDisable(GL_DEPTH_TEST); GL_DEBUG
+	}
+
+	render_elements(&element->children);
 }
 
 static void scale_elements(Array *elements, int mask, v3f32 *max)
@@ -214,6 +230,17 @@ static void scale_element(GUIElement *element)
 			element->scale.y *= element->parent->scale.y;
 			break;
 
+		case SCALE_RATIO: {
+			element->scale.x *= element->parent->scale.x;
+			element->scale.y *= element->parent->scale.y;
+
+			if (element->scale.x / element->scale.y > element->def.ratio)
+				element->scale.x = element->scale.y * element->def.ratio;
+			else
+				element->scale.y = element->scale.x / element->def.ratio;
+			break;
+		}
+
 		case SCALE_CHILDREN: {
 			v3f32 scale = {0.0f, 0.0f, 0.0f};
 			scale_elements(&element->children, 1 << true, &scale);
@@ -236,13 +263,14 @@ static void scale_element(GUIElement *element)
 static void transform_element(GUIElement *element)
 {
 	element->pos = (v2f32) {
-		floor(element->parent->pos.x + element->def.offset.x + element->def.pos.x * element->parent->scale.x - element->def.align.x * element->scale.x),
-		floor(element->parent->pos.y + element->def.offset.y + element->def.pos.y * element->parent->scale.y - element->def.align.y * element->scale.y),
+		floor(element->parent->pos.x + 0.5 + element->def.offset.x + element->def.pos.x * element->parent->scale.x - element->def.align.x * element->scale.x),
+		floor(element->parent->pos.y + 0.5 + element->def.offset.y + element->def.pos.y * element->parent->scale.y - element->def.align.y * element->scale.y),
 	};
 
 	mat4x4_translate(element->transform, element->pos.x - element->def.margin.x, element->pos.y - element->def.margin.y, 0.0f);
 	mat4x4_translate(element->text_transform, element->pos.x, element->pos.y, 0.0f);
 	mat4x4_scale_aniso(element->transform, element->transform, element->scale.x + element->def.margin.x * 2.0f, element->scale.y + element->def.margin.y * 2.0f, 1.0f);
+	mat4x4_mul(element->mesh_transform, element->transform, element->def.mesh_transform);
 
 	for (size_t i = 0; i < element->children.siz; i++)
 		transform_element(((GUIElement **) element->children.ptr)[i]);
@@ -269,6 +297,11 @@ void gui_init()
 	font_loc_projection = glGetUniformLocation(font_prog, "projection"); GL_DEBUG
 	font_loc_color = glGetUniformLocation(font_prog, "color"); GL_DEBUG
 
+	// initialize mesh pipeline
+	mesh_prog = shader_program_create(ASSET_PATH "shaders/gui/mesh", NULL);
+	mesh_loc_model = glGetUniformLocation(mesh_prog, "model"); GL_DEBUG
+	mesh_loc_projection = glGetUniformLocation(mesh_prog, "projection"); GL_DEBUG
+
 	// initialize GUI root element
 	array_ini(&root_element.children, sizeof(GUIElement *), 0);
 	gui_update_projection();
@@ -293,6 +326,7 @@ void gui_update_projection()
 	glProgramUniformMatrix4fv(background_prog, background_loc_projection, 1, GL_FALSE, projection[0]); GL_DEBUG
 	glProgramUniformMatrix4fv(image_prog, image_loc_projection, 1, GL_FALSE, projection[0]); GL_DEBUG
 	glProgramUniformMatrix4fv(font_prog, font_loc_projection, 1, GL_FALSE, projection[0]); GL_DEBUG
+	glProgramUniformMatrix4fv(mesh_prog, mesh_loc_projection, 1, GL_FALSE, projection[0]); GL_DEBUG
 
 	root_element.def.scale.x = window.width;
 	root_element.def.scale.y = window.height;
@@ -321,12 +355,14 @@ GUIElement *gui_add(GUIElement *parent, GUIElementDef def)
 	element->visible = true;
 	element->parent = parent;
 	element->text = NULL;
+	element->user = NULL;
+
 
 	if (element->def.text)
 		element->def.text = strdup(element->def.text);
 
 	array_ins(&parent->children, &element, &cmp_element);
-	array_ini(&element->children, sizeof(GUIElement), 0);
+	array_ini(&element->children, sizeof(GUIElement *), 0);
 
 	if (element->def.affect_parent_scale)
 		gui_transform(parent);
@@ -352,4 +388,30 @@ void gui_transform(GUIElement *element)
 {
 	scale_element(element);
 	transform_element(element);
+}
+
+static bool click_element(GUIElement *element, float x, float y, bool right)
+{
+	if (!element->visible)
+		return false;
+
+	for (size_t i = 0; i < element->children.siz; i++)
+		if (click_element(((GUIElement **) element->children.ptr)[i], x, y, right))
+			return true;
+
+	if (!element->def.on_click)
+		return false;
+
+	float off_x = x - element->pos.x;
+	float off_y = y - element->pos.y;
+	if (off_x < 0 || off_y < 0 || off_x > element->scale.x || off_y > element->scale.y)
+		return false;
+
+	element->def.on_click(element, right);
+	return true;
+}
+
+void gui_click(float x, float y, bool right)
+{
+	click_element(&root_element, x, y, right);
 }

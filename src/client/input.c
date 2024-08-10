@@ -25,6 +25,7 @@ typedef struct {
 } KeyListener;
 
 static bool paused = false;
+static bool inventory = false;
 
 static GUIElement *pause_menu;
 static GUIElement *status_message;
@@ -36,6 +37,7 @@ static KeyListener listener_collision  = {GLFW_KEY_C,      false};
 static KeyListener listener_timelapse  = {GLFW_KEY_T,      false};
 static KeyListener listener_debug_menu = {GLFW_KEY_F3,     false};
 static KeyListener listener_screenshot = {GLFW_KEY_F2,     false};
+static KeyListener listener_inventory =  {GLFW_KEY_I,      false};
 
 static double cursor_last_x = 0.0;
 static double cursor_last_y = 0.0;
@@ -64,6 +66,7 @@ static void enter_game()
 {
 	glfwSetInputMode(window.handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	pause_menu->visible = false;
+	client_inventory_set_open(inventory = false);
 }
 
 static bool key_listener(KeyListener *listener)
@@ -107,6 +110,18 @@ void input_init()
 	enter_game();
 }
 
+static void toggle_pause()
+{
+	paused = !paused;
+
+	if (paused) {
+		glfwSetInputMode(window.handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		pause_menu->visible = true;
+	} else {
+		enter_game();
+	}
+}
+
 void input_tick(f64 dtime)
 {
 	if (status_message->def.text_color.w > 1.0f)
@@ -114,15 +129,12 @@ void input_tick(f64 dtime)
 	else if (status_message->def.text_color.w > 0.0f)
 		status_message->def.text_color.w -= dtime * 1.0f;
 
-	if (key_listener(&listener_pause)) {
-		paused = !paused;
+	if (key_listener(&listener_pause))
+		toggle_pause();
 
-		if (paused) {
-			glfwSetInputMode(window.handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-			pause_menu->visible = true;
-		} else {
-			enter_game();
-		}
+	if ((!paused || inventory) && key_listener(&listener_inventory)) {
+		toggle_pause();
+		client_inventory_set_open(inventory = paused);
 	}
 
 	if (key_listener(&listener_fullscreen)) {
@@ -195,13 +207,13 @@ void input_tick(f64 dtime)
 
 void input_cursor(double current_x, double current_y)
 {
-	if (paused)
-		return;
-
 	double delta_x = current_x - cursor_last_x;
 	double delta_y = current_y - cursor_last_y;
 	cursor_last_x = current_x;
 	cursor_last_y = current_y;
+
+	if (paused)
+		return;
 
 	ClientEntity *entity = client_player_entity_local();
 	if (!entity)
@@ -220,10 +232,17 @@ void input_cursor(double current_x, double current_y)
 	refcount_drp(&entity->rc);
 }
 
-void input_click(bool left)
+void input_click(bool right)
 {
-	if (client_config.swap_mouse_buttons)
-		left = !left;
+	if (paused) {
+		double x, y;
+		glfwGetCursorPos(window.handle, &x, &y);
+		gui_click(x, y, right);
+		return;
+	}
 
-	interact_use(left);
+	if (client_config.swap_mouse_buttons)
+		right = !right;
+
+	interact_use(right);
 }

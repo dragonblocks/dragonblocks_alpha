@@ -53,7 +53,7 @@ static void window_pos_callback(__attribute__((unused)) GLFWwindow *handle, int 
 static void mouse_button_callback(__attribute__((unused)) GLFWwindow *handle, int button, int action, __attribute__((unused)) int mods)
 {
 	if ((button == GLFW_MOUSE_BUTTON_RIGHT || button == GLFW_MOUSE_BUTTON_LEFT) && action == GLFW_PRESS)
-		input_click(button == GLFW_MOUSE_BUTTON_LEFT);
+		input_click(button == GLFW_MOUSE_BUTTON_RIGHT);
 }
 
 static void error_callback(__attribute__((unused)) int error, const char *description)

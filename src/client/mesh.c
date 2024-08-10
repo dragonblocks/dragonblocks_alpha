@@ -62,7 +62,7 @@ static void render_loaded_voxel(LoadedVoxel *voxel, LoadedRenderArgs *args)
 	}
 }
 
-void mesh_load(Mesh *mesh, const char *path)
+void mesh_load(Mesh *mesh, const char *path, aabb3s32 *extents)
 {
 	mesh->layout = &loaded_layout;
 	mesh->vao = mesh->vbo = 0;
@@ -85,6 +85,8 @@ void mesh_load(Mesh *mesh, const char *path)
 	ssize_t length;
 	int count = 0;
 
+	if (extents) *extents = (aabb3s32) {};
+
 	while ((length = getline(&line, &siz, file)) > 0) {
 		count++;
 
@@ -101,6 +103,11 @@ void mesh_load(Mesh *mesh, const char *path)
 				path, count, line);
 			free(voxel);
 			continue;
+		}
+
+		if (extents) {
+			extents->min = v3s32_clamp(voxel->pos, voxel->pos, extents->min);
+			extents->max = v3s32_clamp(voxel->pos, extents->max, voxel->pos);
 		}
 
 		voxel->color = (v3f32) {

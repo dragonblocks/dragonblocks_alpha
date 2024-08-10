@@ -41,6 +41,7 @@ singleplayer.bat
 | D | Move Right |
 | Space | Jump / When flying: Move Up |
 | Left Shift | When flying: Move Down |
+| I | Open / close inventory |
 | F | Toggle flight |
 | C | Toggle collision |
 | T | Toggle timelapse |
@@ -59,16 +60,16 @@ A PC with at least 4 CPU cores is recommended, but not necessarily required.
 - Multiplayer, Animated player model, Nametags
 - Mountains, snow, temperature and humidity, dynamic grass color, oceans and beaches, vulcanos, boulders
 - Physics
-- FPS Camera
 - Mipmapping, Antialiasing, Face Culling, Frustum Culling, Diffuse Lighting, Skybox, Fog
 - Taking screenshots
 - Daylight cycle
-- GUI
 - Saving terrain, player positions and other data to a SQLite3 database
 - Multithreaded terrain generation, mesh generation and networking
 - Handlers for SIGINT und SIGTERM (just Ctrl+C to shut down the server)
 - Log levels: error, warning, access, action, info, verbose
 - Loading assets such as textures, models, schematics, shaders and fonts from files
+- Inventory
+- Tools, Breaking blocks
 
 ## Usage
 

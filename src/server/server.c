@@ -31,7 +31,7 @@ static void on_ToServerInteract(DragonnetPeer *peer, ToServerInteract *pkt)
 	ServerPlayer *player = peer->user;
 	pthread_mutex_lock(&player->mtx_inv);
 
-	ItemStack *stack = pkt->left ? &player->inventory.left : &player->inventory.right;
+	ItemStack *stack = &player->inventory.hands[pkt->right ? 1 : 0];
 	if (server_item_def[stack->type].use)
 		server_item_def[stack->type].use(player, stack, pkt->pointed, pkt->pos);
 
@@ -50,6 +50,11 @@ static void on_ToServerRequestChunk(DragonnetPeer *peer, ToServerRequestChunk *p
 	server_terrain_requested_chunk(peer->user, pkt->pos);
 }
 
+static void on_ToServerInventorySwap(DragonnetPeer *peer, ToServerInventorySwap *pkt)
+{
+	server_player_inventory_swap(peer->user, pkt);
+}
+
 // server entry point
 int main(int argc, char **argv)
 {
@@ -65,10 +70,11 @@ int main(int argc, char **argv)
 	server->on_connect = &server_player_add;
 	server->on_disconnect = &server_player_remove;
 	server->on_recv = &on_recv;
-	server->on_recv_type[DRAGONNET_TYPE_ToServerAuth        ] = (void *) &on_ToServerAuth;
-	server->on_recv_type[DRAGONNET_TYPE_ToServerInteract    ] = (void *) &on_ToServerInteract;
-	server->on_recv_type[DRAGONNET_TYPE_ToServerPosRot      ] = (void *) &on_ToServerPosRot;
-	server->on_recv_type[DRAGONNET_TYPE_ToServerRequestChunk] = (void *) &on_ToServerRequestChunk;
+	server->on_recv_type[DRAGONNET_TYPE_ToServerAuth         ] = (void *) &on_ToServerAuth;
+	server->on_recv_type[DRAGONNET_TYPE_ToServerInteract     ] = (void *) &on_ToServerInteract;
+	server->on_recv_type[DRAGONNET_TYPE_ToServerPosRot       ] = (void *) &on_ToServerPosRot;
+	server->on_recv_type[DRAGONNET_TYPE_ToServerRequestChunk ] = (void *) &on_ToServerRequestChunk;
+	server->on_recv_type[DRAGONNET_TYPE_ToServerInventorySwap] = (void *) &on_ToServerInventorySwap;
 
 	srand(time(0));
 

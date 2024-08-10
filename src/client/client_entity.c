@@ -237,13 +237,13 @@ void client_entity_transform(ClientEntity *entity)
 
 void client_entity_add(__attribute__((unused)) void *peer, ToClientEntityAdd *pkt)
 {
-	if (pkt->type >= COUNT_ENTITY)
+	if (pkt->data.type >= COUNT_ENTITY)
 		return;
 
 	ClientEntity *entity = malloc(sizeof *entity);
 
 	entity->data = pkt->data;
-	entity->type = &client_entity_types[pkt->type];
+	entity->type = &client_entity_types[pkt->data.type];
 	refcount_ini(&entity->rc, entity, &entity_delete);
 
 	pkt->data.nametag = NULL;

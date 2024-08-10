@@ -24,8 +24,8 @@ typedef struct {
 	pthread_rwlock_t lock_pos;     // git commit crime
 
 	struct {
-		ItemStack left;
-		ItemStack right;
+		ItemStack hands[INV_SIZE_HANDS];
+		ItemStack main[INV_SIZE_MAIN];
 	} inventory;
 	pthread_mutex_t mtx_inv;
 } ServerPlayer;
@@ -44,5 +44,6 @@ void server_player_disconnect(ServerPlayer *player);
 void server_player_move(ServerPlayer *player, v3f64 pos, v3f32 rot);
 void server_player_iterate(void *func, void *arg);
 void server_player_inventory_changed(ServerPlayer *player);
+void server_player_inventory_swap(ServerPlayer *player, ToServerInventorySwap *pkt);
 
 #endif // _SERVER_PLAYER_H_

@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include "common/day.h"
 #include "common/entity.h"
+#include "common/inventory.h"
 #include "common/perlin.h"
 #include "server/database.h"
 #include "server/server_config.h"
@@ -18,11 +19,13 @@
 static Map players;
 static Map players_named;
 
+static ItemStack stack_none;
+
 static void send_entity_add(ServerPlayer *player, ServerPlayer *entity)
 {
 	dragonnet_peer_send_ToClientEntityAdd(player->peer, &(ToClientEntityAdd) {
-		.type = player == entity ? ENTITY_LOCALPLAYER : ENTITY_PLAYER,
 		.data = {
+			.type = player == entity ? ENTITY_LOCALPLAYER : ENTITY_PLAYER,
 			.id = entity->id,
 			.pos = entity->pos,
 			.rot = entity->rot,
@@ -61,8 +64,11 @@ static void send_player_inventory(ServerPlayer *client, ServerPlayer *player)
 {
 	ToClientPlayerInventory pkt;
 	pkt.id = player->id;
-	item_stack_serialize(&player->inventory.left, &pkt.left);
-	item_stack_serialize(&player->inventory.right, &pkt.right);
+	for (size_t i = 0; i < INV_SIZE_HANDS; i++)
+		item_stack_serialize(&player->inventory.hands[i], &pkt.hands[i]);
+	for (size_t i = 0; i < INV_SIZE_MAIN; i++)
+		item_stack_serialize(client == player ? &player->inventory.main[i] : &stack_none,
+			&pkt.main[i]);
 	dragonnet_peer_send_ToClientPlayerInventory(client->peer, &pkt);
 }
 
@@ -103,8 +109,8 @@ static void player_delete(ServerPlayer *player)
 
 	pthread_rwlock_destroy(&player->lock_pos);
 
-	item_stack_destroy(&player->inventory.left);
-	item_stack_destroy(&player->inventory.right);
+	for (size_t i = 0; i < INV_SIZE_HANDS; i++) item_stack_destroy(&player->inventory.hands[i]);
+	for (size_t i = 0; i < INV_SIZE_MAIN; i++) item_stack_destroy(&player->inventory.main[i]);
 	pthread_mutex_destroy(&player->mtx_inv);
 
 	free(player);
@@ -121,8 +127,14 @@ static void player_spawn(ServerPlayer *player)
 		database_create_player(player->name, player->pos, player->rot);
 	}
 
-	item_stack_set(&player->inventory.left, ITEM_NONE + rand() % (COUNT_ITEM - ITEM_NONE), 1, (Blob) {0, NULL});
-	item_stack_set(&player->inventory.right, ITEM_NONE + rand() % (COUNT_ITEM - ITEM_NONE), 1, (Blob) {0, NULL});
+	// messy
+	for (size_t i = 0; i < INV_SIZE_HANDS; i++)
+		item_stack_set(&player->inventory.hands[i], ITEM_NONE, 1, (Blob) {0, NULL});
+	for (size_t i = 0; i < INV_SIZE_MAIN; i++)
+		item_stack_set(&player->inventory.main[i], ITEM_NONE, 1, (Blob) {0, NULL});
+	item_stack_set(&player->inventory.main[0], ITEM_PICKAXE, 1, (Blob) {0, NULL});
+	item_stack_set(&player->inventory.main[1], ITEM_AXE, 1, (Blob) {0, NULL});
+	item_stack_set(&player->inventory.main[2], ITEM_SHOVEL, 1, (Blob) {0, NULL});
 
 	// since this is recv thread, we don't need lock_peer
 	dragonnet_peer_send_ToClientInfo(player->peer, &(ToClientInfo) {
@@ -168,6 +180,9 @@ void server_player_init()
 {
 	map_ini(&players);
 	map_ini(&players_named);
+
+	item_stack_initialize(&stack_none);
+	item_stack_set(&stack_none, ITEM_NONE, 1, (Blob) {0, NULL});
 }
 
 // main thread
@@ -178,6 +193,8 @@ void server_player_deinit()
 	map_cnl(&players_named, &refcount_drp, NULL, NULL,          0);
 	// disconnect players and forget about them
 	map_cnl(&players,       &player_drop,  NULL, &refcount_obj, 0);
+
+	item_stack_destroy(&stack_none);
 }
 
 // accept thread
@@ -202,8 +219,8 @@ void server_player_add(DragonnetPeer *peer)
 	player->rot = (v3f32) {0.0f, 0.0f, 0.0f};
 	pthread_rwlock_init(&player->lock_pos, NULL);
 
-	item_stack_initialize(&player->inventory.left);
-	item_stack_initialize(&player->inventory.right);
+	for (size_t i = 0; i < INV_SIZE_HANDS; i++) item_stack_initialize(&player->inventory.hands[i]);
+	for (size_t i = 0; i < INV_SIZE_MAIN; i++) item_stack_initialize(&player->inventory.main[i]);
 	pthread_mutex_init(&player->mtx_inv, NULL);
 
 	printf("[access] connected %s\n", player->name);
@@ -324,6 +341,33 @@ void server_player_iterate(void *func, void *arg)
 void server_player_inventory_changed(ServerPlayer *player)
 {
 	server_player_iterate(&send_player_inventory, player);
+}
+
+static ItemStack *inv_loc_get_ptr(ServerPlayer *player, InventoryLocation loc)
+{
+	switch (loc.list) {
+		case INVENTORY_HANDS: return loc.slot < INV_SIZE_HANDS ? &player->inventory.hands[loc.slot] : NULL;
+		case INVENTORY_MAIN: return loc.slot < INV_SIZE_MAIN ? &player->inventory.main[loc.slot] : NULL;
+		default: return NULL;
+	}
+}
+
+void server_player_inventory_swap(ServerPlayer *player, ToServerInventorySwap *pkt)
+{
+	pthread_mutex_lock(&player->mtx_inv);
+
+	ItemStack *a = inv_loc_get_ptr(player, pkt->locations[0]);
+	ItemStack *b = inv_loc_get_ptr(player, pkt->locations[1]);
+
+	if (a && b) {
+		ItemStack tmp = *a;
+		*a = *b;
+		*b = tmp;
+	}
+
+	server_player_inventory_changed(player);
+
+	pthread_mutex_unlock(&player->mtx_inv);
 }
 
 /*

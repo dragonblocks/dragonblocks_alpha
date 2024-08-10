@@ -111,7 +111,7 @@ void interact_render()
 	mesh_render(&selection_mesh);
 }
 
-void interact_use(bool left)
+void interact_use(bool right)
 {
 	ClientEntity *entity = client_player_entity_local();
 	if (!entity)
@@ -120,10 +120,10 @@ void interact_use(bool left)
 	ClientPlayerData *data = entity->extra;
 	pthread_mutex_lock(&data->mtx_inv);
 
-	ItemStack *stack = left ? &data->inventory.left : &data->inventory.right;
+	ItemStack *stack = &data->inventory.hands[right];
 	if (client_item_def[stack->type].use && client_item_def[stack->type].use(stack))
 		dragonnet_peer_send_ToServerInteract(client, &(ToServerInteract) {
-			.left = left,
+			.right = right,
 			.pointed = interact_pointed.exists,
 			.pos = interact_pointed.pos,
 		});

@@ -13,8 +13,8 @@ extern struct ClientPlayer {
 
 typedef struct {
 	struct {
-		ItemStack left;
-		ItemStack right;
+		ItemStack hands[INV_SIZE_HANDS];
+		ItemStack main[INV_SIZE_MAIN];
 	} inventory;
 	pthread_mutex_t mtx_inv;
 	struct ClientPlayerBones {

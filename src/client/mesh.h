@@ -4,6 +4,7 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <stdbool.h>
+#include "types.h"
 
 typedef struct {
 	GLenum type;
@@ -25,7 +26,7 @@ typedef struct {
 	bool free_data;
 } Mesh;
 
-void mesh_load(Mesh *mesh, const char *path);
+void mesh_load(Mesh *mesh, const char *path, aabb3s32 *extents);
 void mesh_upload(Mesh *mesh);
 void mesh_render(Mesh *mesh);
 void mesh_destroy(Mesh *mesh);
