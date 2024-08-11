@@ -43,7 +43,7 @@ meson compile -C build
 ```
 
 to build the dragonblocks client and server.
-If you use a debug build, the singleplayer script should be invoked from the build/ directory, because that's where the binaries are located.
+If you use a debug build, the singleplayer/launcher script should be invoked from the build/ directory, because that's where the binaries are located.
 
 ## Building a statically linked release snapshot
 

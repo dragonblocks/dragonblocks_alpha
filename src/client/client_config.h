@@ -14,4 +14,6 @@ extern struct ClientConfig {
 	unsigned int atlas_mipmap;
 } client_config;
 
+void client_config_load(const char *path);
+
 #endif

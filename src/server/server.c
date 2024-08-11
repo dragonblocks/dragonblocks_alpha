@@ -1,5 +1,6 @@
 #include <dragonnet/addr.h>
 #include <dragonnet/init.h>
+#include <getopt.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,6 +9,7 @@
 #include "common/interrupt.h"
 #include "server/database.h"
 #include "server/server.h"
+#include "server/server_config.h"
 #include "server/server_item.h"
 #include "server/server_player.h"
 #include "server/server_terrain.h"
@@ -58,11 +60,49 @@ static void on_ToServerInventorySwap(DragonnetPeer *peer, ToServerInventorySwap 
 // server entry point
 int main(int argc, char **argv)
 {
-	dragonblocks_init(argc);
+	dragonblocks_init();
 
-	if (!(server = dragonnet_listener_new(argv[1]))) {
+	char *config_path = "server.conf";
+	char *world_path = ".";
+	char *write_address = NULL;
+
+	struct option long_options[] = {
+		{"config",        required_argument, 0, 'c' },
+		{"world",         required_argument, 0, 'w' },
+		{"write-address", required_argument, 0, 'a' },
+		{}
+	};
+
+	int option;
+	while ((option = getopt_long(argc, argv, "c:w:a:", long_options, NULL)) != -1) {
+		switch (option) {
+			case 'c': config_path = optarg; break;
+			case 'w': world_path = optarg; break;
+			case 'a': write_address = optarg; break;
+		}
+	}
+
+	server_config_load(config_path);
+
+	if (argc-optind < 1) {
+		fprintf(stderr, "[error] missing address\n");
+		exit(EXIT_FAILURE);
+	}
+
+	if (!(server = dragonnet_listener_new(argv[optind]))) {
 		fprintf(stderr, "[error] failed to listen to connections\n");
 		return EXIT_FAILURE;
+	}
+
+	if (write_address) {
+		FILE *addrfile = fopen(write_address, "a");
+		if (!addrfile) {
+			fprintf(stderr, "[error] failed to open address file\n");
+			return EXIT_FAILURE;
+		}
+
+		fprintf(addrfile, "%s\n", server->address);
+		fclose(addrfile);
 	}
 
 	printf("[info] listening on %s\n", server->address);
@@ -79,7 +119,7 @@ int main(int argc, char **argv)
 	srand(time(0));
 
 	interrupt_init();
-	database_init();
+	database_init(world_path);
 	server_terrain_init();
 	server_player_init();
 

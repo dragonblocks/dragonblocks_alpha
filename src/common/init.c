@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include "common/fs.h"
 
-void dragonblocks_init(int argc)
+void dragonblocks_init()
 {
 #ifdef __GLIBC__ // check whether bloat is enabled
 	pthread_setname_np(pthread_self(), "main");
@@ -14,11 +14,6 @@ void dragonblocks_init(int argc)
 	if (!directory_exists(ASSET_PATH)) {
 		fprintf(stderr, "[error] asset directory not found at %s, "
 			"invoke game from correct path\n", ASSET_PATH);
-		exit(EXIT_FAILURE);
-	}
-
-	if (argc < 2) {
-		fprintf(stderr, "[error] missing address\n");
 		exit(EXIT_FAILURE);
 	}
 

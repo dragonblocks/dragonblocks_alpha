@@ -1,13 +1,13 @@
 # Maintainer: Lizzy Fleckenstein <lizzy@vlhl.dev>
 
 pkgname=dragonblocks-git
-pkgver=0.2.2.64.g46bd431
+pkgver=0.2.2.91.gea28de6
 pkgrel=1
 pkgdesc='A multiplayer voxelgame for POSIX systems.'
 arch=('i686' 'x86_64')
 url='https://github.com/dragonblocks/dragonblocks_alpha'
 license=('GPLv3+')
-depends=('sqlite3' 'zlib' 'glfw' 'glew' 'mesa' 'linenoise-ng')
+depends=('sqlite3' 'zlib' 'glfw' 'glew' 'mesa')
 makedepends=('meson' 'gcc' 'lua' 'cmake')
 source=("git+https://github.com/dragonblocks/dragonblocks_alpha.git")
 md5sums=('SKIP')
@@ -36,7 +36,7 @@ package() {
 	cd "$srcdir/dragonblocks_alpha"
 	meson install -C build --destdir "$pkgdir"
 
-	install -m 755 "singleplayer.sh" "$pkgdir/usr/bin/dragonblocks-singleplayer"
+	install -m 755 "dragonblocks.sh" "$pkgdir/usr/bin/dragonblocks"
 
 	(cd assets &&
 		find -type f -exec install -Dm 644 "{}" "$pkgdir/usr/share/dragonblocks/{}" \; )

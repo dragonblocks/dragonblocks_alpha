@@ -5,7 +5,7 @@
 #include "common/terrain.h"
 #include "types.h"
 
-void database_init();                                                  // open and initialize SQLite3 databases
+void database_init(const char *world_path);                                                  // open and initialize SQLite3 databases
 void database_deinit();                                                // close databases
 bool database_load_chunk(TerrainChunk *chunk);                         // load a chunk from terrain database (initializes state, tgs buffer and data), returns false on failure
 void database_save_chunk(TerrainChunk *chunk);                         // save a chunk to terrain database

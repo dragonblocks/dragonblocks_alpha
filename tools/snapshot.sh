@@ -8,15 +8,15 @@ mkdir -p "snapshots"
 build="build"
 snapshot="dragonblocks_alpha-$version"
 dotexe=""
-dotsh=".sh"
 crossfile=""
+launcher="dragonblocks.sh"
 
 if [[ "$1" != "" ]]; then
 	build="$build-$1"
 	snapshot="$snapshot-$1"
 	toolchain="$1.cmake"
 	dotexe=".exe"
-	dotsh=".bat"
+	launcher="singleplayer.bat"
 	crossfile="--cross-file=tools/$1-toolchain.txt"
 
 	export CFLAGS="$CFLAGS -static"
@@ -44,7 +44,7 @@ cp -r \
 	"../assets" \
 	"$build/dragonblocks-client$dotexe" \
 	"$build/dragonblocks-server$dotexe" \
-	"../singleplayer$dotsh" \
+	"../$launcher" \
 	"../LICENSE" \
 	"../README.md" \
 	"$snapshot"

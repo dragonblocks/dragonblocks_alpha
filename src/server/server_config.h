@@ -14,4 +14,6 @@ extern struct ServerConfig {
 	} movement;
 } server_config;
 
+void server_config_load(const char *path);
+
 #endif // _SERVER_CONFIG_H_

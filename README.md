@@ -10,22 +10,18 @@ Head to <https://dragonblocks.lizzy.rs> for snapshot and release builds.
 ```sh
 # on posix
 ./dragonblocks-server "<address>:<port>"
-./dragonblocks-client "<address>:<port>"
-# alternatively:
-./singleplayer.sh
+./dragonblocks-client "<player name>" "<address>:<port>"
 
 # on windows
 dragonblocks-server.exe "<address>:<port>"
-dragonblocks-client.exe "<address>:<port>"
-# alternatively:
-singleplayer.bat
+dragonblocks-client.exe "<player name>" "<address>:<port>"
 ```
 
 or alternatively:
 
 ```sh
 # on posix
-./singleplayer.sh
+./dragonblocks.sh singleplayer singleplayer_world
 
 # on windows
 singleplayer.bat
@@ -51,8 +47,7 @@ singleplayer.bat
 | ESC | Pause / unpause game |
 
 ## System Requirements
-Dragonblocks Alpha targets PCs only. Non x86-64 platforms may work, however there is no guarantee whatsoever.
-You need a POSIX system conforming to the ISO C and POSIX 2008 standards. However, so far only GNU/Linux systems, in particular Ubuntu and Debian, have been tested.
+You need a system conforming to the C23 and POSIX 2024 standards. Other systems may be supported as well.
 The minimum OpenGL version is 3.3 core.
 A PC with at least 4 CPU cores is recommended, but not necessarily required.
 
@@ -101,7 +96,7 @@ The name "Dragonblocks _Alpha_" does not have anything to do with the game being
 - Exciting and feature-rich gameplay with the focus on exploring and adventuring, while still being multi-optional and not too bloated
 - A simple structure and invocation syntax
 - Using modern OpenGL to combine performance with graphics quality on high-end computers
-- Portability between PCs running POSIX systems (focus: Linux, BSD, MacOS, Plan 9 APE, Windows MinGW)
+- Portability between PCs running POSIX systems (focus: Linux, BSD, MacOS, Windows MinGW)
 
 ### What Dragonblocks Alpha does not aim to achieve
 - Portability to Phones / Consoles

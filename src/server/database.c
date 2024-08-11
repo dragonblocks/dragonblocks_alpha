@@ -68,7 +68,7 @@ static inline void bind_v3f32(sqlite3_stmt *stmt, int idx, v3f32 pos)
 // public functions
 
 // open and initialize SQLite3 databases
-void database_init()
+void database_init(const char *world_path)
 {
 	struct {
 		sqlite3 **handle;
@@ -81,14 +81,17 @@ void database_init()
 	};
 
 	for (int i = 0; i < 3; i++) {
-		if (sqlite3_open_v2(databases[i].path, databases[i].handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, NULL) != SQLITE_OK) {
-			fprintf(stderr, "[error] failed to open %s: %s\n", databases[i].path, sqlite3_errmsg(*databases[i].handle));
+		char path[strlen(world_path) + 1 + strlen(databases[i].path) + 1];
+		sprintf(path, "%s/%s", world_path, databases[i].path);
+
+		if (sqlite3_open_v2(path, databases[i].handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, NULL) != SQLITE_OK) {
+			fprintf(stderr, "[error] failed to open %s: %s\n", path, sqlite3_errmsg(*databases[i].handle));
 			abort();
 		}
 
 		char *err;
 		if (sqlite3_exec(*databases[i].handle, databases[i].init, NULL, NULL, &err) != SQLITE_OK) {
-			fprintf(stderr, "[error] failed initializing %s: %s\n", databases[i].path, err);
+			fprintf(stderr, "[error] failed initializing %s: %s\n", path, err);
 			sqlite3_free(err);
 			abort();
 		}

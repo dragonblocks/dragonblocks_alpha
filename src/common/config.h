@@ -17,7 +17,7 @@ typedef struct {
 	void *value;
 } ConfigEntry;
 
-void config_read(char *path, ConfigEntry *entries, size_t num_entries);
+void config_read(const char *path, ConfigEntry *entries, size_t num_entries);
 void config_free(ConfigEntry *entries, size_t num_entires);
 
 #endif // _CONFIG_H_

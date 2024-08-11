@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include "common/config.h"
 
-void config_read(char *path, ConfigEntry *entries, size_t num_entries)
+void config_read(const char *path, ConfigEntry *entries, size_t num_entries)
 {
 	FILE *f = fopen(path, "r");
 

@@ -1,5 +1,6 @@
 #include <dragonnet/init.h>
 #include <dragonstd/flag.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +8,7 @@
 #include <unistd.h>
 #include "client/client.h"
 #include "client/client_auth.h"
+#include "client/client_config.h"
 #include "client/client_inventory.h"
 #include "client/client_node.h"
 #include "client/client_player.h"
@@ -77,7 +79,6 @@ static void on_ToClientAuth(__attribute__((unused)) DragonnetPeer *peer, ToClien
 		printf("[access] authenticated successfully\n");
 	} else {
 		client_auth.state = AUTH_INIT;
-		printf("[access] authentication failed, please try again\n");
 	}
 	pthread_cond_signal(&client_auth.cv);
 	pthread_mutex_unlock(&client_auth.mtx);
@@ -110,9 +111,30 @@ static void on_ToClientMovement(__attribute__((unused)) DragonnetPeer *peer, ToC
 
 int main(int argc, char **argv)
 {
-	dragonblocks_init(argc);
+	dragonblocks_init();
 
-	if (!(client = dragonnet_connect(argv[1]))) {
+	char *config_path = "client.conf";
+
+	struct option long_options[] = {
+		{"config", required_argument, 0, 'c' },
+		{}
+	};
+
+	int option;
+	while ((option = getopt_long(argc, argv, "c:", long_options, NULL)) != -1) {
+		switch (option) {
+			case 'c': config_path = optarg; break;
+		}
+	}
+
+	client_config_load(config_path);
+
+	if (argc-optind < 2) {
+		fprintf(stderr, "[error] missing name or address\n");
+		exit(EXIT_FAILURE);
+	}
+
+	if (!(client = dragonnet_connect(argv[optind+1]))) {
 		fprintf(stderr, "[error] failed to connect to server\n");
 		return EXIT_FAILURE;
 	}
@@ -139,8 +161,10 @@ int main(int argc, char **argv)
 	client_terrain_init();
 	client_player_init();
 	client_entity_init();
-	dragonnet_peer_run(client);
 	client_auth_init();
+
+	dragonnet_peer_run(client);
+	client_auth_run(argv[optind]);
 
 	game(&gfx_init);
 

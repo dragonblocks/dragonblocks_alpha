@@ -45,9 +45,9 @@ static ConfigEntry config_entries[] = {
 	},
 };
 
-__attribute__((constructor)) static void server_config_init()
+void server_config_load(const char *path)
 {
-	config_read("server.conf", config_entries, sizeof config_entries / sizeof *config_entries);
+	config_read(path, config_entries, sizeof config_entries / sizeof *config_entries);
 }
 
 __attribute__((destructor)) static void server_config_deinit()

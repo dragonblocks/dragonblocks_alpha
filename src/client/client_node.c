@@ -83,7 +83,7 @@ ClientNodeDef client_node_def[COUNT_NODE] = {
 	// stone
 	{
 		.tiles = {
-			.paths = { ASSET_PATH  "textures/stone.png" },
+			.paths = { ASSET_PATH "textures/stone.png" },
 			.indices = {},
 			.textures = {},
 			.x4 = { true },
