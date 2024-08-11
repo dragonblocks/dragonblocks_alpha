@@ -17,16 +17,16 @@ jobs:
         run: git config --global --add safe.directory $PWD
       - name: Build linux snapshot
         run: |
-          ./tools/snapshot.sh
+          ./misc/snapshot.sh
       - name: Build win32 snapshot
         run: |
-          ./tools/snapshot.sh win32
+          ./misc/snapshot.sh win32
       - name: Build win64 snapshot
         run: |
-          ./tools/snapshot.sh win64
+          ./misc/snapshot.sh win64
       - name: Upload snapshots
         if: github.ref == 'refs/heads/master'
         env:
           SECRET: ${{ secrets.UPLOAD_TOKEN }}
         run: |
-          ./tools/upload.sh
+          ./misc/upload.sh

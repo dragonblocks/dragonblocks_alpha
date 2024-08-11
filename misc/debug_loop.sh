@@ -1,8 +1,8 @@
 #!/bin/bash
-COMMAND="../tools/debug.sh"
+COMMAND="../misc/debug.sh"
 
 if [[ $1 == "terrain" ]]; then
-	COMMAND="../tools/debug_terrain.sh"
+	COMMAND="../misc/debug_terrain.sh"
 fi
 
 while true; do

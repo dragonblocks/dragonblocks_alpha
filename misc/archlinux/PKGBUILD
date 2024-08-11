@@ -1,7 +1,7 @@
 # Maintainer: Lizzy Fleckenstein <lizzy@vlhl.dev>
 
 pkgname=dragonblocks-git
-pkgver=0.2.2.91.gea28de6
+pkgver=0.2.2.94.g88943ca
 pkgrel=1
 pkgdesc='A multiplayer voxelgame for POSIX systems.'
 arch=('i686' 'x86_64')
