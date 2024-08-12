@@ -17,10 +17,12 @@ mkdir -p "$DRAGONBLOCKS_STATE/"
 version_path="$DRAGONBLOCKS_DATA/versions"
 world_path="$DRAGONBLOCKS_STATE/worlds"
 log_path="$DRAGONBLOCKS_STATE/logs"
+screenshot_path="$DRAGONBLOCKS_STATE/screenshots"
 
 mkdir -p "$version_path/"
 mkdir -p "$world_path/"
 mkdir -p "$log_path/"
+mkdir -p "$screenshot_path/"
 
 : "${DRAGONBLOCKS_URL:=https://dragonblocks.lizzy.rs}"
 
@@ -44,7 +46,7 @@ load_version() {
 }
 
 timestamp() {
-	date +%Y-%m-%d-%H-%M-%S
+	date +%Y-%m-%d-%H:%M:%S
 }
 
 default_version() {
@@ -141,7 +143,7 @@ EOF
 		trap "unlaunch server" SIGINT SIGTERM
 
 		launch server --world "$(realpath $world)" --write-address "$addrfile" "${4:-::1:}" &
-		launch client "${3:-singleplayer}" "$(<$addrfile)"
+		launch client --screenshot-dir "$(realpath $screenshot_path)" "${3:-singleplayer}" "$(<$addrfile)"
 
 		unlaunch server
 		;;
@@ -151,7 +153,7 @@ EOF
 
 		trap "unlaunch client" SIGINT SIGTERM
 
-		launch client "${2:?missing player (see '$script_name --help')}" \
+		launch client --screenshot-dir "$(realpath $screenshot_path)" "${2:?missing player (see '$script_name --help')}" \
 			"${3:?missing address (see '$script_name --help')}"
 		;;
 

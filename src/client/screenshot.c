@@ -4,9 +4,13 @@
 #include <stb_image_write.h>
 #include <string.h>
 #include <time.h>
+#include <limits.h>
+#include <stdlib.h>
 #include "client/game.h"
 #include "client/opengl.h"
 #include "client/window.h"
+
+char *screenshot_dir = ".";
 
 char *screenshot()
 {
@@ -60,14 +64,27 @@ char *screenshot()
 	time_t timep = time(0);
 	strftime(filename, BUFSIZ, "screenshot-%Y-%m-%d-%H:%M:%S.png", localtime(&timep));
 
+	char path[strlen(screenshot_dir) + 1 + strlen(filename) + 1];
+	sprintf(path, "%s/%s", screenshot_dir, filename);
+
 	// save screenshot
 	stbi_flip_vertically_on_write(true);
-	stbi_write_png(filename, window.width, window.height, 3, data, window.width * 3);
+	stbi_write_png(path, window.width, window.height, 3, data, window.width * 3);
 
 	// delete buffers
 	glDeleteRenderbuffers(1, &rbo); GL_DEBUG
 	glDeleteTextures(2, txos); GL_DEBUG
 	glDeleteFramebuffers(2, fbos); GL_DEBUG
 
-	return strdup(filename);
+	char display_path[PATH_MAX];
+	realpath(path, display_path);
+
+	char *home = getenv("HOME");
+	size_t len_home = strlen(home);
+	if (len_home > 0 && strncmp(display_path, home, len_home) == 0) {
+		display_path[len_home-1] = '~';
+		return strdup(display_path+len_home-1);
+	}
+
+	return strdup(display_path);
 }

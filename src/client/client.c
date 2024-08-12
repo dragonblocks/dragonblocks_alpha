@@ -16,6 +16,7 @@
 #include "client/debug_menu.h"
 #include "client/game.h"
 #include "client/input.h"
+#include "client/screenshot.h"
 #include "common/day.h"
 #include "common/init.h"
 #include "common/interrupt.h"
@@ -117,13 +118,15 @@ int main(int argc, char **argv)
 
 	struct option long_options[] = {
 		{"config", required_argument, 0, 'c' },
+		{"screenshot-dir", required_argument, 0, 's' },
 		{}
 	};
 
 	int option;
-	while ((option = getopt_long(argc, argv, "c:", long_options, NULL)) != -1) {
+	while ((option = getopt_long(argc, argv, "c:s:", long_options, NULL)) != -1) {
 		switch (option) {
 			case 'c': config_path = optarg; break;
+			case 's': screenshot_dir = optarg; break;
 		}
 	}
 
