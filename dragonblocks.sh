@@ -18,6 +18,7 @@ version_path="$DRAGONBLOCKS_DATA/versions"
 world_path="$DRAGONBLOCKS_STATE/worlds"
 log_path="$DRAGONBLOCKS_STATE/logs"
 screenshot_path="$DRAGONBLOCKS_STATE/screenshots"
+default_version_path="$DRAGONBLOCKS_CONFIG/default_version"
 
 mkdir -p "$version_path/"
 mkdir -p "$world_path/"
@@ -52,8 +53,8 @@ timestamp() {
 default_version() {
 	if [ -n "$DRAGONBLOCKS_VERSION" ]; then
 		echo "$DRAGONBLOCKS_VERSION"
-	elif [ -f "$DRAGONBLOCKS_STATE/default_version" ]; then
-		cat "$DRAGONBLOCKS_STATE/default_version"
+	elif [ -f "$default_version_path" ]; then
+		cat "$default_version_path"
 	elif [ -x "./dragonblocks-client" ]; then
 		echo "$PWD"
 	elif command -v "dragonblocks-client" &>/dev/null; then
@@ -181,7 +182,7 @@ EOF
 
 			default)
 				echo "${3:?missing version (see '$script_name --help')}" > \
-					"$DRAGONBLOCKS_STATE/default_version"
+					"$default_version_path"
 				;;
 
 			list)
