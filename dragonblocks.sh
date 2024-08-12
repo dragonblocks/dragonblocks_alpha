@@ -28,14 +28,14 @@ mkdir -p "$screenshot_path/"
 
 load_version() {
 	case "$1" in
-		"system")
+		system)
 			version_exec_dir=""
 			version_working_dir="."
 			;;
 
-		"local")
-			version_exec_dir="./"
-			version_working_dir="."
+		/*)
+			version_exec_dir="$1/"
+			version_working_dir="$1"
 			;;
 
 		*)
@@ -55,7 +55,7 @@ default_version() {
 	elif [ -f "$DRAGONBLOCKS_STATE/default_version" ]; then
 		cat "$DRAGONBLOCKS_STATE/default_version"
 	elif [ -x "./dragonblocks-client" ]; then
-		echo "local"
+		echo "$PWD"
 	elif command -v "dragonblocks-client" &>/dev/null; then
 		echo "system"
 	else
@@ -113,7 +113,7 @@ Available commands:
 	version
 		print default version used for creating new worlds (server and singleplayer)
 		and connecting to servers (client). this is either the manually selected default version
-		or, if not set, "local" if the local directory contains a dragonblocks installation,
+		or, if not set, the current path if it contains a dragonblocks installation,
 		or "system" if dragonblocks is installed globally on the system.
 
 	version default VERSION
