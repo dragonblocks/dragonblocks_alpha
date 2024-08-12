@@ -7,12 +7,20 @@ script_name="$0"
 : "${DRAGONBLOCKS_DATA:=${XDG_DATA_HOME:-$HOME/.local/share}/dragonblocks_alpha}"
 : "${DRAGONBLOCKS_CONFIG:=${XDG_CONFIG_HOME:-$HOME/.config}/dragonblocks_alpha}"
 : "${DRAGONBLOCKS_TMP:=${XDG_RUNTIME_DIR:-/tmp}/dragonblocks_alpha}"
-: "${DRAGONBLOCKS_LOG:=${XDG_STATE_HOME:-$HOME/.local/state}/dragonblocks_alpha}"
+: "${DRAGONBLOCKS_STATE:=${XDG_STATE_HOME:-$HOME/.local/state}/dragonblocks_alpha}"
 
 mkdir -p "$DRAGONBLOCKS_DATA/"
 mkdir -p "$DRAGONBLOCKS_CONFIG/"
 mkdir -p "$DRAGONBLOCKS_TMP/"
-mkdir -p "$DRAGONBLOCKS_LOG/"
+mkdir -p "$DRAGONBLOCKS_STATE/"
+
+version_path="$DRAGONBLOCKS_DATA/versions"
+world_path="$DRAGONBLOCKS_STATE/worlds"
+log_path="$DRAGONBLOCKS_STATE/logs"
+
+mkdir -p "$version_path/"
+mkdir -p "$world_path/"
+mkdir -p "$log_path/"
 
 : "${DRAGONBLOCKS_URL:=https://dragonblocks.lizzy.rs}"
 
@@ -30,7 +38,7 @@ load_version() {
 
 		*)
 			version_exec_dir="./"
-			version_working_dir="$DRAGONBLOCKS_DATA/versions/$1"
+			version_working_dir="$version_path/$1"
 			;;
 	esac
 }
@@ -42,8 +50,8 @@ timestamp() {
 default_version() {
 	if [ -n "$DRAGONBLOCKS_VERSION" ]; then
 		echo "$DRAGONBLOCKS_VERSION"
-	elif [ -f "$DRAGONBLOCKS_DATA/default_version" ]; then
-		cat "$DRAGONBLOCKS_DATA/default_version"
+	elif [ -f "$DRAGONBLOCKS_STATE/default_version" ]; then
+		cat "$DRAGONBLOCKS_STATE/default_version"
 	elif [ -x "./dragonblocks-client" ]; then
 		echo "local"
 	elif command -v "dragonblocks-client" &>/dev/null; then
@@ -56,7 +64,7 @@ default_version() {
 
 get_world() {
 	local world="${1:?missing world (see '$script_name --help' for usage)}"
-	local path="$DRAGONBLOCKS_DATA/worlds/$world"
+	local path="$world_path/$world"
 	mkdir -p "$path/"
 	if [ ! -f "$path/version" ]; then
 		default_version > "$path/version"
@@ -67,7 +75,7 @@ get_world() {
 launch() {
 	local which="$1"
 	local config="$(realpath $DRAGONBLOCKS_CONFIG/$which.conf)"
-	local log="$(realpath $DRAGONBLOCKS_LOG/$which-$(timestamp).log)"
+	local log="$(realpath $log_path/$which-$(timestamp).log)"
 
 	shift
 	cd "$version_working_dir"
@@ -158,16 +166,12 @@ EOF
 		;;
 
 	worlds)
-		mkdir -p "$DRAGONBLOCKS_DATA/worlds/"
-
-		for world in "$DRAGONBLOCKS_DATA/worlds/"*; do
+		for world in "$world_path/"*; do
 			echo "$(basename $world '') on version $(<$world/version) at $(realpath $world)"
 		done
 		;;
 
 	version)
-		mkdir -p "$DRAGONBLOCKS_DATA/versions/"
-
 		case "$2" in
 			"")
 				default_version
@@ -175,11 +179,11 @@ EOF
 
 			default)
 				echo "${3:?missing version (see '$script_name --help')}" > \
-					"$DRAGONBLOCKS_DATA/default_version"
+					"$DRAGONBLOCKS_STATE/default_version"
 				;;
 
 			list)
-				for version in "$DRAGONBLOCKS_DATA/versions/"*; do
+				for version in "$version_path/"*; do
 					echo "$(basename $version '')"
 				done
 
