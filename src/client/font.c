@@ -1,6 +1,8 @@
 #define STB_TRUETYPE_IMPLEMENTATION
 #include <stb_truetype.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "client/client.h"
 #include "client/font.h"
 #include "client/opengl.h"
@@ -29,6 +31,10 @@ static VertexLayout font_vertex_layout = {
 void font_init()
 {
 	unsigned char *ttf = (unsigned char *) read_file(ASSET_PATH "fonts/Minecraftia.ttf");
+	if (!ttf) {
+		fprintf(stderr, "[error] could not load Minecraftia.ttf\n");
+		abort();
+	}
 
 	unsigned char font_atlas_data[font_atlas_size*font_atlas_size];
 	stbtt_BakeFontBitmap(ttf, 0, 24.0, font_atlas_data,
