@@ -304,7 +304,7 @@ static void update_percentage()
 
 	if (percentage > last_percentage) {
 		last_percentage = percentage;
-		printf("[verbose] preparing spawn... %d%%\n", percentage);
+		fprintf(stderr, "[verbose] preparing spawn... %d%%\n", percentage);
 	}
 
 }

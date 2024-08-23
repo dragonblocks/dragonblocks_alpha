@@ -11,7 +11,7 @@ void config_read(const char *path, ConfigEntry *entries, size_t num_entries)
 	if (!f)
 		return;
 
-	printf("[info] reading config from %s\n", path);
+	fprintf(stderr, "[info] reading config from %s\n", path);
 
 	while (!feof(f)) {
 		char key[BUFSIZ];

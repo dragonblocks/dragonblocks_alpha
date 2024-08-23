@@ -223,7 +223,7 @@ void server_player_add(DragonnetPeer *peer)
 	for (size_t i = 0; i < INV_SIZE_MAIN; i++) item_stack_initialize(&player->inventory.main[i]);
 	pthread_mutex_init(&player->mtx_inv, NULL);
 
-	printf("[access] connected %s\n", player->name);
+	fprintf(stderr, "[access] connected %s\n", player->name);
 	peer->user = refcount_grb(&player->rc);
 
 	// keep the search tree somewhat balanced by using random IDs
@@ -252,7 +252,7 @@ void server_player_remove(DragonnetPeer *peer)
 	// map_del returns false if it was canceled
 	// (we don't want disconnect messages for every player on server shutdown)
 	if (map_del(&players, &player->id, &cmp_player_id, &refcount_drp, NULL, NULL))
-		printf("[access] disconnected %s\n", player->name);
+		fprintf(stderr, "[access] disconnected %s\n", player->name);
 
 	if (player->auth && map_del(&players_named, player->name, &cmp_player_name, &refcount_drp, NULL, NULL)) {
 		pthread_rwlock_rdlock(&player->lock_pos);
@@ -291,7 +291,7 @@ bool server_player_auth(ServerPlayer *player, char *name)
 
 	bool success = map_add(&players_named, player->name, &player->rc, &cmp_player_name, &refcount_inc);
 
-	printf("[access] authentication %s: %s -> %s\n", success ? "success" : "failure", old_name, player->name);
+	fprintf(stderr, "[access] authentication %s: %s -> %s\n", success ? "success" : "failure", old_name, player->name);
 
 	// since this is recv thread, we don't need lock_peer
 	dragonnet_peer_send_ToClientAuth(player->peer, &(ToClientAuth) {

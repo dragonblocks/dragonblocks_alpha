@@ -77,7 +77,7 @@ static void on_ToClientAuth(__attribute__((unused)) DragonnetPeer *peer, ToClien
 	pthread_mutex_lock(&client_auth.mtx);
 	if (pkt->success) {
 		client_auth.state = AUTH_SUCCESS;
-		printf("[access] authenticated successfully\n");
+		fprintf(stderr, "[access] authenticated successfully\n");
 	} else {
 		client_auth.state = AUTH_INIT;
 	}
@@ -142,7 +142,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	printf("[access] connected to %s\n", client->address);
+	fprintf(stderr, "[access] connected to %s\n", client->address);
 
 	client->on_disconnect = &on_disconnect;
 	client->on_recv                                                  = (void *) &on_recv;

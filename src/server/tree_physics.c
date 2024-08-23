@@ -327,7 +327,7 @@ void tree_physics_check(v3s32 center)
 			// run depth search
 			if (!check_tree(root, &positions, &chunks)) {
 				// a return value of false means a deadlock occured (should be very rare)
-				printf("[verbose] tree_physics detected deadlock (this not an issue, but should not happen frequently)\n");
+				fprintf(stderr, "[verbose] tree_physics detected deadlock (this not an issue, but should not happen frequently)\n");
 
 				// sleep for 50ms to hopefully resolve the conflict
 				nanosleep(&(struct timespec) {0, 50e6}, NULL);

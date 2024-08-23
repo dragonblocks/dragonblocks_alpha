@@ -138,7 +138,7 @@ static void menu_slot_click(GUIElement *element, bool right)
 	if (menu.selected) {
 		InventoryLocation *other = menu.selected->user;
 
-		printf("[info] inventory swap (%s %zu) with (%s %zu)\n",
+		fprintf(stderr, "[info] inventory swap (%s %zu) with (%s %zu)\n",
 			list_name(loc->list), (size_t) loc->slot, list_name(other->list), (size_t) other->slot);
 
 		dragonnet_peer_send_ToServerInventorySwap(client, &(ToServerInventorySwap) {

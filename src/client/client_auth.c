@@ -19,7 +19,7 @@ void client_auth_run(char *name)
 {
 	pthread_mutex_lock(&client_auth.mtx);
 
-	printf("[access] authenticating as %s...\n", name);
+	fprintf(stderr, "[access] authenticating as %s...\n", name);
 
 	dragonnet_peer_send_ToServerAuth(client, &(ToServerAuth) {
 		.name = name,

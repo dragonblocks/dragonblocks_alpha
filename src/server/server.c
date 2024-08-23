@@ -105,7 +105,7 @@ int main(int argc, char **argv)
 		fclose(addrfile);
 	}
 
-	printf("[info] listening on %s\n", server->address);
+	fprintf(stderr, "[info] listening on %s\n", server->address);
 
 	server->on_connect = &server_player_add;
 	server->on_disconnect = &server_player_remove;
@@ -128,7 +128,7 @@ int main(int argc, char **argv)
 
 	flag_slp(&interrupt);
 
-	printf("[info] shutting down\n");
+	fprintf(stderr, "[info] shutting down\n");
 	dragonnet_listener_close(server);
 
 	server_player_deinit();
