@@ -35,7 +35,7 @@ load_version() {
 			;;
 
 		/*)
-			version_exec_dir="$1/"
+			version_exec_dir="./"
 			version_working_dir="$1"
 			;;
 
@@ -79,14 +79,25 @@ launch() {
 	local which="$1"
 	local config="$(realpath $DRAGONBLOCKS_CONFIG/$which.conf)"
 	local log="$(realpath $log_path/$which-$(timestamp).log)"
-
 	shift
+
 	cd "$version_working_dir"
-	stdbuf -o0 "${version_exec_dir}dragonblocks-$which" --config "$config" $@ |& tee -i "$log"
+	exec 3> >(tee -i "$log" >&2)
+	"${version_exec_dir}dragonblocks-$which" --config "$config" $@ 2>&3
 }
 
 unlaunch() {
 	pkill -g 0 -f dragonblocks-$1
+}
+
+server_ipc() {
+	while read -ra cmd; do
+		case "${cmd[0]}" in
+			listen)
+				echo "${cmd[@]:1}" > "$1"
+				;;
+		esac
+	done
 }
 
 case $1 in
@@ -143,8 +154,16 @@ EOF
 
 		trap "unlaunch server" SIGINT SIGTERM
 
-		launch server --world "$(realpath $world)" --write-address "$addrfile" "${4:-::1:}" &
-		launch client --screenshot-dir "$(realpath $screenshot_path)" "${3:-singleplayer}" "$(<$addrfile)"
+		launch server \
+			--world "$(realpath $world)" \
+			--ipc \
+			"${4:-::1:}" \
+			| server_ipc "$addrfile" &
+
+		launch client \
+			--screenshot-dir "$(realpath $screenshot_path)" \
+			"${3:-singleplayer}" \
+			"$(<$addrfile)"
 
 		unlaunch server
 		;;
@@ -154,7 +173,9 @@ EOF
 
 		trap "unlaunch client" SIGINT SIGTERM
 
-		launch client --screenshot-dir "$(realpath $screenshot_path)" "${2:?missing player (see '$script_name --help')}" \
+		launch client \
+			--screenshot-dir "$(realpath $screenshot_path)" \
+			"${2:?missing player (see '$script_name --help')}" \
 			"${3:?missing address (see '$script_name --help')}"
 		;;
 
@@ -164,7 +185,8 @@ EOF
 
 		trap "unlaunch server" SIGINT SIGTERM
 
-		launch server --world "$(realpath $world)" \
+		launch server \
+			--world "$(realpath $world)" \
 			"${3:?missing address (see '$script_name --help')}"
 		;;
 

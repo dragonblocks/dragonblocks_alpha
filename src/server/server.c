@@ -64,21 +64,21 @@ int main(int argc, char **argv)
 
 	char *config_path = "server.conf";
 	char *world_path = ".";
-	char *write_address = NULL;
+	bool ipc = false;
 
 	struct option long_options[] = {
-		{"config",        required_argument, 0, 'c' },
-		{"world",         required_argument, 0, 'w' },
-		{"write-address", required_argument, 0, 'a' },
+		{"config", required_argument, 0, 'c' },
+		{"world",  required_argument, 0, 'w' },
+		{"ipc",    no_argument,       0, 'i' },
 		{}
 	};
 
 	int option;
-	while ((option = getopt_long(argc, argv, "c:w:a:", long_options, NULL)) != -1) {
+	while ((option = getopt_long(argc, argv, "c:w:i", long_options, NULL)) != -1) {
 		switch (option) {
 			case 'c': config_path = optarg; break;
 			case 'w': world_path = optarg; break;
-			case 'a': write_address = optarg; break;
+			case 'i': ipc = true; break;
 		}
 	}
 
@@ -94,17 +94,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if (write_address) {
-		FILE *addrfile = fopen(write_address, "a");
-		if (!addrfile) {
-			fprintf(stderr, "[error] failed to open address file\n");
-			return EXIT_FAILURE;
-		}
-
-		fprintf(addrfile, "%s\n", server->address);
-		fclose(addrfile);
-	}
-
+	if (ipc) printf("listen %s\n", server->address);
 	fprintf(stderr, "[info] listening on %s\n", server->address);
 
 	server->on_connect = &server_player_add;

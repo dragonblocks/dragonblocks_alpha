@@ -7,6 +7,9 @@
 
 void dragonblocks_init()
 {
+	setvbuf(stdout, NULL, _IOLBF, 0);
+	setvbuf(stderr, NULL, _IOLBF, 0);
+
 #ifdef __GLIBC__ // check whether bloat is enabled
 	pthread_setname_np(pthread_self(), "main");
 #endif // __GLIBC__
