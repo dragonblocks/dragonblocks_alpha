@@ -77,6 +77,9 @@ char *screenshot()
 	glDeleteTextures(2, txos); GL_DEBUG
 	glDeleteFramebuffers(2, fbos); GL_DEBUG
 
+#ifdef _WIN32
+	char *display_path = path;
+#else
 	char display_path[PATH_MAX];
 	realpath(path, display_path);
 
@@ -86,6 +89,7 @@ char *screenshot()
 		display_path[len_home-1] = '~';
 		return strdup(display_path+len_home-1);
 	}
+#endif
 
 	return strdup(display_path);
 }
