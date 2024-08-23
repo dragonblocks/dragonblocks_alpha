@@ -54,7 +54,7 @@ char *screenshot()
 	glBlitFramebuffer(0, 0, window.width, window.height, 0, 0, window.width, window.height, GL_COLOR_BUFFER_BIT, GL_NEAREST); GL_DEBUG
 
 	// read data
-	GLubyte data[window.width * window.height * 3];
+	GLubyte *data = malloc(window.width * window.height * 3);
 	glBindFramebuffer(GL_FRAMEBUFFER, fbos[1]); GL_DEBUG
 	glPixelStorei(GL_PACK_ALIGNMENT, 1); GL_DEBUG
 	glReadPixels(0, 0, window.width, window.height, GL_RGB, GL_UNSIGNED_BYTE, data); GL_DEBUG
@@ -70,6 +70,7 @@ char *screenshot()
 	// save screenshot
 	stbi_flip_vertically_on_write(true);
 	stbi_write_png(path, window.width, window.height, 3, data, window.width * 3);
+	free(data);
 
 	// delete buffers
 	glDeleteRenderbuffers(1, &rbo); GL_DEBUG
