@@ -70,6 +70,7 @@ common = declare_dependency(
 
 executable('dragonblocks-client',
 	sources: [
+		'src/client/action.c',
 		'src/client/camera.c',
 		'src/client/client.c',
 		'src/client/client_auth.c',

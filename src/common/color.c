@@ -38,3 +38,13 @@ v3f32 hsl_to_rgb(v3f32 hsl)
     return rgb;
 }
 
+
+v4f32 color_from_u32(u32 x)
+{
+	return (v4f32) {
+		(f32) ((x >> 16) & 0xff) / (f32) 0xff,
+		(f32) ((x >> 8) & 0xff) / (f32) 0xff,
+		(f32) (x & 0xff) / (f32) 0xff,
+		(f32) ((x >> 24) & 0xff) / (f32) 0xff,
+	};
+}

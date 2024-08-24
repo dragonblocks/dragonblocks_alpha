@@ -10,6 +10,7 @@
 #include "client/frustum.h"
 #include "client/light.h"
 #include "client/shader.h"
+#include "common/color.h"
 #include "common/inventory.h"
 
 // for future use
@@ -26,7 +27,9 @@ static struct {
 
 static struct {
 	GUIElement *root;
+
 	Texture *texture;
+	Texture *texture_hover;
 
 	GUIElement *hands[INV_SIZE_HANDS];
 	GUIElement *main[INV_SIZE_MAIN];
@@ -35,6 +38,8 @@ static struct {
 	GUIElement *selected;
 	v2f32 selected_scale;
 	float selected_time;
+
+	GUIElement *hover;
 
 	atomic_flag synced;
 } menu;
@@ -214,6 +219,59 @@ static void menu_update(float dtime)
 	menu_sync();
 }
 
+static void menu_select()
+{
+	if (menu.hover)
+		menu_slot_click(menu.hover, false);
+}
+
+static GUIElement *menu_hover(MenuDir dir)
+{
+	if (!menu.hover)
+		return menu.main[0];
+
+	InventoryLocation *loc = menu.hover->user;
+	switch (dir) {
+		case MENU_RIGHT: switch (loc->list) {
+			case INVENTORY_MAIN: return (loc->slot + 1) % INV_WIDTH_MAIN == 0
+				? menu.hands[1] : menu.main[loc->slot+1];
+			case INVENTORY_ARMOR: return menu.armor[(loc->slot + 1) % INV_SIZE_ARMOR];
+			case INVENTORY_HANDS: return loc->slot == 0 ? menu.main[0] : menu.hands[0];
+		} break;
+		case MENU_LEFT: switch (loc->list) {
+			case INVENTORY_MAIN: return loc->slot % INV_WIDTH_MAIN == 0
+				? menu.hands[0] : menu.main[loc->slot-1];
+			case INVENTORY_ARMOR: return menu.armor[(loc->slot - 1) % INV_SIZE_ARMOR];
+			case INVENTORY_HANDS: return loc->slot == 1 ? menu.main[INV_WIDTH_MAIN-1] : menu.hands[1];
+		} break;
+		case MENU_UP: switch (loc->list) {
+			case INVENTORY_MAIN: return loc->slot < INV_WIDTH_MAIN
+				? menu.armor[(loc->slot * INV_SIZE_ARMOR) / INV_WIDTH_MAIN]
+				: menu.main[loc->slot - INV_WIDTH_MAIN];
+			case INVENTORY_ARMOR: return
+				menu.main[INV_SIZE_MAIN-INV_WIDTH_MAIN + (loc->slot * INV_WIDTH_MAIN) / INV_SIZE_ARMOR];
+		} break;
+		case MENU_DOWN: switch (loc->list) {
+			case INVENTORY_MAIN: return loc->slot + INV_WIDTH_MAIN < INV_SIZE_MAIN
+				? menu.main[loc->slot + INV_WIDTH_MAIN]
+				: menu.armor[((loc->slot % INV_WIDTH_MAIN) * INV_SIZE_ARMOR) / INV_WIDTH_MAIN];
+			case INVENTORY_ARMOR: return
+				menu.main[(loc->slot * INV_WIDTH_MAIN) / INV_SIZE_ARMOR];
+		} break;
+	}
+
+	return menu.hover;
+}
+
+static void menu_navigate(MenuDir dir)
+{
+	if (menu.hover)
+		menu.hover->def.image = menu.texture;
+
+	menu.hover = menu_hover(dir);
+	menu.hover->def.image = menu.texture_hover;
+}
+
 static void menu_init()
 {
 	const float aspect_ratio = 1.0/0.6;
@@ -225,11 +283,12 @@ static void menu_init()
 		.align = { 0.5, 0.5 },
 		.scale_type = SCALE_RATIO,
 		.ratio = aspect_ratio,
-		.bg_color = { (float) 0x33/0xff, (float) 0x41/0xff, (float) 0x82/0xff, 1.0 },
+		.bg_color = color_from_u32(0xff334182),
 	});
 	menu.root->visible = false;
 
 	menu.texture = texture_load(ASSET_PATH "textures/inventory/slot.png", false);
+	menu.texture_hover = texture_load(ASSET_PATH "textures/inventory/slot_hover.png", false);
 
 	menu_slot_add(INVENTORY_HANDS, 0,
 		0.025+0.05*1.5, 0.675+1.5*0.05*aspect_ratio,
@@ -239,8 +298,8 @@ static void menu_init()
 		0.8+0.025+0.05*1.5, 0.675+1.5*0.05*aspect_ratio,
 		0.15, 0.15 * aspect_ratio);
 
-	for (size_t yi = 0; yi < 4; yi++)
-	for (size_t xi = 0; xi < 6; xi++) {
+	for (size_t yi = 0; yi < INV_HEIGHT_MAIN; yi++)
+	for (size_t xi = 0; xi < INV_WIDTH_MAIN; xi++) {
 		menu_slot_add(INVENTORY_MAIN, yi*6+xi,
 			0.2 + 0.1 * xi + 0.05, 0.3 + (0.1 * yi + 0.05) * aspect_ratio,
 			0.1, 0.1 * aspect_ratio);
@@ -335,6 +394,16 @@ void client_inventory_deinit()
 void client_inventory_set_open(bool open)
 {
 	menu_set_open(open);
+}
+
+void client_inventory_navigate(MenuDir dir)
+{
+	menu_navigate(dir);
+}
+
+void client_inventory_select()
+{
+	menu_select();
 }
 
 void client_inventory_update(float dtime)

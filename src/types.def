@@ -1,6 +1,10 @@
 #define CHUNK_SIZE 16
+
 #define INV_SIZE_HANDS 2
-#define INV_SIZE_MAIN 24
+
+#define INV_WIDTH_MAIN 6
+#define INV_HEIGHT_MAIN 4
+#define INV_SIZE_MAIN (INV_WIDTH_MAIN*INV_HEIGHT_MAIN)
 
 ColorData
 	v3f32 color

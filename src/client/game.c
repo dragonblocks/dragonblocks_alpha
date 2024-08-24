@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <unistd.h>
+#include "client/action.h"
 #include "client/camera.h"
 #include "client/client.h"
 #include "client/client_entity.h"
@@ -79,6 +80,7 @@ static void game_loop()
 		frames++;
 
 		input_tick(dtime);
+		action_tick(dtime);
 		client_player_tick(dtime);
 		interact_tick();
 
@@ -111,6 +113,7 @@ void game(Flag *gfx_init)
 	client_node_init();
 	client_terrain_start();
 	debug_menu_init();
+	action_init();
 	input_init();
 
 	flag_set(gfx_init);

@@ -29,14 +29,23 @@ singleplayer.bat
 
 ## Controls
 
-| Key | Action |
+### Keyboard and mouse
+
+| Input | Action |
 |-|-|
-| W | Move Forward |
-| A | Move Left |
-| S | Move Backward |
-| D | Move Right |
-| Space | Jump / When flying: Move Up |
-| Left Shift | When flying: Move Down |
+| W | Move forward |
+| A | Move left |
+| S | Move backward |
+| D | Move right |
+| Mouse | Move camera |
+| Space | Jump |
+| Left Click | Use left hand |
+| Right Click | Use right hand |
+| Arrow Down | Open action menu |
+| Arrow Keys | Navigate in menus (inventory, action menu) |
+| Enter | Select in menus |
+| Space | Fly up |
+| Left Shift | Fly down |
 | I | Open / close inventory |
 | F | Toggle flight |
 | C | Toggle collision |
@@ -45,6 +54,26 @@ singleplayer.bat
 | F3 | Toggle debug info |
 | F11 | Toggle fullscreen |
 | ESC | Pause / unpause game |
+
+### Controller
+
+| Input | Action |
+|-|-|
+| Left stick | Move player |
+| Right Stick | Move camera |
+| Left Stick Press | Jump |
+| ZL | Use left hand |
+| ZR | Use right hand |
+| D-Pad Down | Open action menu |
+| D-Pad | Navigate in menus (inventory, action menu) |
+| A | Select in menus |
+| L | Fly up |
+| R | Fly down |
+| Y | Open / close inventory |
+| Minus | Take screenshot |
+| B | Pause / unpause game |
+
+Only the Nintendo Switch Pro Controller has been tested so far. Improvements are welcome!
 
 ## System Requirements
 You need a system conforming to the C23 and POSIX 2024 standards. Other systems may be supported as well.
@@ -65,6 +94,7 @@ A PC with at least 4 CPU cores is recommended, but not necessarily required.
 - Loading assets such as textures, models, schematics, shaders and fonts from files
 - Inventory
 - Tools, Breaking blocks
+- First-class controller support
 
 ## Usage
 
@@ -93,14 +123,12 @@ The name "Dragonblocks _Alpha_" does not have anything to do with the game being
 
 ### What Dragonblocks Alpha aims to achieve
 - A voxelgame inspired by Minecraft and Veloren, with the techical side being inspired by Minetest
-- Exciting and feature-rich gameplay with the focus on exploring and adventuring, while still being multi-optional and not too bloated
+- Exciting and feature-rich gameplay with the focus on exploring and adventuring, while still being a sandbox and not too bloated
 - A simple structure and invocation syntax
-- Using modern OpenGL to combine performance with graphics quality on high-end computers
 - Portability between PCs running POSIX systems (focus: Linux, BSD, MacOS, Windows MinGW)
+- Good performance on low-end PCs
 
 ### What Dragonblocks Alpha does not aim to achieve
-- Portability to Phones / Consoles
-- Good performance on low-end PCs
 - A fixed story or lore
 - Cloning Minecraft behavior
 - Replacement for Minecraft and / or Minetest
