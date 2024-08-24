@@ -287,7 +287,7 @@ void input_tick(f64 dtime)
 		if (run_trigger(&trigger_collision))
 			action_toggle_collision();
 		if (run_trigger(&trigger_timelapse))
-			action_quit();
+			action_toggle_timelapse();
 		if (run_trigger(&trigger_debug_menu))
 			action_toggle_debug_menu();
 	}
