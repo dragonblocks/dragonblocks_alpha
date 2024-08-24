@@ -92,6 +92,9 @@ void window_init()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHintString(GLFW_WAYLAND_APP_ID, "dragonblocks_alpha");
+	glfwWindowHintString(GLFW_X11_CLASS_NAME, "dragonblocks_alpha");
+	glfwWindowHintString(GLFW_X11_INSTANCE_NAME, "dragonblocks_alpha");
 
 	window.width = 1250;
 	window.height = 750;
