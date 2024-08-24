@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Dragonblocks Alpha
+Type=Application
+Comment=Multiplayer voxelgame for POSIX systems (Singleplayer Mode)
+Exec=dragonblocks singleplayer singleplayer_world
+Icon=dragonblocks_alpha
+Categories=Game
+StartupWMClass=dragonblocks_alpha
