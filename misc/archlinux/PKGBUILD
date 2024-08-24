@@ -1,7 +1,7 @@
 # Maintainer: Lizzy Fleckenstein <lizzy@vlhl.dev>
 
 pkgname=dragonblocks-git
-pkgver=0.2.2.94.g88943ca
+pkgver=0.2.2.109.g4f8f408
 pkgrel=1
 pkgdesc='A multiplayer voxelgame for POSIX systems.'
 arch=('i686' 'x86_64')
@@ -36,7 +36,9 @@ package() {
 	cd "$srcdir/dragonblocks_alpha"
 	meson install -C build --destdir "$pkgdir"
 
-	install -m 755 "dragonblocks.sh" "$pkgdir/usr/bin/dragonblocks"
+	install -Dm 755 "dragonblocks.sh" "$pkgdir/usr/bin/dragonblocks"
+	install -Dm 644 "assets/dragonblocks.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/dragonblocks_alpha.svg"
+	install -Dm 644 "misc/dragonblocks_alpha.desktop" "$pkgdir/usr/share/applications/dragonblocks_alpha.desktop"
 
 	(cd assets &&
 		find -type f -exec install -Dm 644 "{}" "$pkgdir/usr/share/dragonblocks/{}" \; )
