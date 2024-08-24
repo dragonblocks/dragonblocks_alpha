@@ -1,9 +1,14 @@
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+#include <pthread.h>
 #include "common/interrupt.h"
 
 Flag interrupt;
+
+static bool exit_on_eof = false;
+static pthread_t eoe_thread;
 
 #ifdef _WIN32
 
@@ -48,4 +53,22 @@ void interrupt_init()
 void interrupt_deinit()
 {
 	flag_dst(&interrupt);
+
+	if (exit_on_eof)
+		pthread_cancel(eoe_thread);
+}
+
+static void *eoe_func(void *arg)
+{
+	(void) arg;
+	while (getchar() != EOF)
+		;
+	raise(SIGTERM);
+	return NULL;
+}
+
+void interrupt_exit_on_eof()
+{
+	exit_on_eof = true;
+	pthread_create(&eoe_thread, NULL, eoe_func, NULL);
 }

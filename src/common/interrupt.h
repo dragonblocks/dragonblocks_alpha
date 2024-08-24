@@ -5,6 +5,7 @@
 
 void interrupt_init();
 void interrupt_deinit();
+void interrupt_exit_on_eof();
 
 extern Flag interrupt;
 

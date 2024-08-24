@@ -115,20 +115,25 @@ int main(int argc, char **argv)
 	dragonblocks_init();
 
 	char *config_path = "client.conf";
+	bool exit_on_eof = false;
 
 	struct option long_options[] = {
-		{"config", required_argument, 0, 'c' },
+		{"config",         required_argument, 0, 'c' },
+		{"exit-on-eof",    no_argument,       0, 'e' },
 		{"screenshot-dir", required_argument, 0, 's' },
 		{}
 	};
 
 	int option;
-	while ((option = getopt_long(argc, argv, "c:s:", long_options, NULL)) != -1) {
+	while ((option = getopt_long(argc, argv, "c:es:", long_options, NULL)) != -1) {
 		switch (option) {
 			case 'c': config_path = optarg; break;
+			case 'e': exit_on_eof = true; break;
 			case 's': screenshot_dir = optarg; break;
 		}
 	}
+
+	if (exit_on_eof) interrupt_exit_on_eof();
 
 	client_config_load(config_path);
 

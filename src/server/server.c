@@ -63,24 +63,29 @@ int main(int argc, char **argv)
 	dragonblocks_init();
 
 	char *config_path = "server.conf";
+	bool exit_on_eof = false;
 	char *world_path = ".";
 	bool ipc = false;
 
 	struct option long_options[] = {
-		{"config", required_argument, 0, 'c' },
-		{"world",  required_argument, 0, 'w' },
-		{"ipc",    no_argument,       0, 'i' },
+		{"config",      required_argument, 0, 'c' },
+		{"exit-on-eof", no_argument,       0, 'e' },
+		{"world",       required_argument, 0, 'w' },
+		{"ipc",         no_argument,       0, 'i' },
 		{}
 	};
 
 	int option;
-	while ((option = getopt_long(argc, argv, "c:w:i", long_options, NULL)) != -1) {
+	while ((option = getopt_long(argc, argv, "c:ew:i", long_options, NULL)) != -1) {
 		switch (option) {
 			case 'c': config_path = optarg; break;
+			case 'e': exit_on_eof = true; break;
 			case 'w': world_path = optarg; break;
 			case 'i': ipc = true; break;
 		}
 	}
+
+	if (exit_on_eof) interrupt_exit_on_eof();
 
 	server_config_load(config_path);
 
