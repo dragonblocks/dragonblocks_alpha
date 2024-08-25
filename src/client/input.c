@@ -174,17 +174,17 @@ static bool move(Axis *axis, vec3 dir)
 	return true;
 }
 
-static void update_camera()
+static void update_camera(f64 dtime)
 {
 	ClientEntity *entity = client_player_entity_local();
 	if (!entity)
 		return;
 
-	double delta_x = cursor_delta_x
-		+ get_axis(GLFW_GAMEPAD_AXIS_RIGHT_X) * client_config.gamepad_sensitivity;
-	double delta_y = cursor_delta_y
-		+ get_axis(GLFW_GAMEPAD_AXIS_RIGHT_Y) * client_config.gamepad_sensitivity;
 
+	double sensitivity = dtime * 60.0 * client_config.gamepad_sensitivity;
+
+	double delta_x = cursor_delta_x + get_axis(GLFW_GAMEPAD_AXIS_RIGHT_X) * sensitivity;
+	double delta_y = cursor_delta_y + get_axis(GLFW_GAMEPAD_AXIS_RIGHT_Y) * sensitivity;
 	pthread_rwlock_wrlock(&entity->lock_pos_rot);
 
 	entity->data.rot.y -= (f32) delta_x * M_PI / 180.0f / 8.0f;
@@ -293,7 +293,7 @@ void input_tick(f64 dtime)
 	}
 
 	if (!paused)
-		update_camera();
+		update_camera(dtime);
 	cursor_delta_x = 0.0;
 	cursor_delta_y = 0.0;
 
