@@ -66,7 +66,7 @@ void window_enter_fullscreen()
 	window.fullscreen = true;
 	GLFWmonitor *monitor = glfwGetPrimaryMonitor();
 	const GLFWvidmode *vidmode = glfwGetVideoMode(monitor);
-	glfwSetWindowMonitor(window.handle, monitor, 0, 0, vidmode->width, vidmode->height, 0);
+	glfwSetWindowMonitor(window.handle, monitor, 0, 0, vidmode->width, vidmode->height, vidmode->refreshRate);
 
 	debug_menu_changed(ENTRY_FULLSCREEN);
 }
