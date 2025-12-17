@@ -10,7 +10,7 @@ add_project_arguments([
 
 cc = meson.get_compiler('c')
 
-include = 'src/'
+include = include_directories('src', '.')
 
 deps = [
 	cc.find_library('m', required: false),
