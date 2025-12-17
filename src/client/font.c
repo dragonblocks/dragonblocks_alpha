@@ -98,6 +98,12 @@ void font_delete(Font *font)
 
 void font_render(Font *font)
 {
-	glBindTextureUnit(0, font_atlas.txo); GL_DEBUG
+	#ifdef __APPLE__
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, font_atlas.txo);
+	#else
+		glBindTextureUnit(0, font_atlas.txo);
+	#endif
+	GL_DEBUG
 	mesh_render(&font->mesh);
 }

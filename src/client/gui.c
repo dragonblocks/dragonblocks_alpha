@@ -156,7 +156,13 @@ static void render_element(GUIElement *element)
 	if (element->def.image) {
 		glUseProgram(image_prog); GL_DEBUG
 		glUniformMatrix4fv(image_loc_model, 1, GL_FALSE, element->transform[0]); GL_DEBUG
-		glBindTextureUnit(0, element->def.image->txo); GL_DEBUG
+		#ifdef __APPLE__
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, element->def.image->txo);
+		#else
+			glBindTextureUnit(0, element->def.image->txo);
+		#endif
+		GL_DEBUG
 		mesh_render(&image_mesh);
 	}
 
