@@ -61,13 +61,7 @@ static void render_node(ModelNode *node)
 
 		// bind textures
 		for (GLuint i = 0; i < mesh->num_textures; i++) {
-			#ifdef __APPLE__
-				glActiveTexture(GL_TEXTURE0 + i);
-				glBindTexture(GL_TEXTURE_2D, mesh->textures[i]);
-			#else
-				glBindTextureUnit(i, mesh->textures[i]);
-			#endif
-			GL_DEBUG
+			bind_texture_2d(i, mesh->textures[i]); GL_DEBUG
 		}
 
 		mesh_render(mesh->mesh);
