@@ -92,6 +92,10 @@ void window_init()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#ifdef __APPLE__
+	/* macOS requires forward-compatible core profile for 3.2+. */
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+#endif
 #ifdef GLFW_WAYLAND_APP_ID
 	glfwWindowHintString(GLFW_WAYLAND_APP_ID, "dragonblocks_alpha");
 #endif
