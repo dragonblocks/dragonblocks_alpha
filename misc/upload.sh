@@ -11,7 +11,7 @@ if [[ "$ref" == "" ]]; then
 	release="0"
 fi
 
-curl -f -i -X POST -H "Content-Type: multipart/form-data" \
+curl -L -f -i -X POST -H "Content-Type: multipart/form-data" \
 	-F "secret=$SECRET" \
 	-F "name=$name" \
 	-F "ref=$ref" \
