@@ -60,9 +60,8 @@ static void render_node(ModelNode *node)
 		glUniformMatrix4fv(mesh->shader->loc_transform, 1, GL_FALSE, node->abs[0]); GL_DEBUG
 
 		// bind textures
-		for (GLuint i = 0; i < mesh->num_textures; i++) {
-			glBindTextureUnit(i, mesh->textures[i]); GL_DEBUG
-		}
+		for (GLuint i = 0; i < mesh->num_textures; i++)
+			opengl_bind_texture(GL_TEXTURE_2D, i, mesh->textures[i]);
 
 		mesh_render(mesh->mesh);
 	}

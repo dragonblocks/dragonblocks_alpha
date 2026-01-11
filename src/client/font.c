@@ -98,6 +98,6 @@ void font_delete(Font *font)
 
 void font_render(Font *font)
 {
-	glBindTextureUnit(0, font_atlas.txo); GL_DEBUG
+	opengl_bind_texture(GL_TEXTURE_2D, 0, font_atlas.txo);
 	mesh_render(&font->mesh);
 }

@@ -151,19 +151,19 @@ void sky_render()
 	glUseProgram(skybox_prog); GL_DEBUG
 	glUniformMatrix4fv(skybox_loc_VP, 1, GL_FALSE, vp[0]); GL_DEBUG
 	glUniform1f(skybox_loc_daylight, daylight); GL_DEBUG
-	glBindTextureUnit(0, skybox_texture_day); GL_DEBUG
-	glBindTextureUnit(1, skybox_texture_night); GL_DEBUG
+	opengl_bind_texture(GL_TEXTURE_CUBE_MAP, 0, skybox_texture_day);
+	opengl_bind_texture(GL_TEXTURE_CUBE_MAP, 1, skybox_texture_night);
 	mesh_render(&skybox_mesh);
 
 	glUseProgram(sun_prog); GL_DEBUG
 	glUniformMatrix4fv(sun_loc_MVP, 1, GL_FALSE, mvp[0]); GL_DEBUG
-	glBindTextureUnit(0, sun_texture); GL_DEBUG
+	opengl_bind_texture(GL_TEXTURE_2D, 0, sun_texture);
 	mesh_render(&sun_mesh);
 
 	glUseProgram(clouds_prog); GL_DEBUG
 	glUniformMatrix4fv(clouds_loc_VP, 1, GL_FALSE, vp[0]); GL_DEBUG
 	glUniform1f(clouds_loc_daylight, daylight); GL_DEBUG
-	glBindTextureUnit(0, skybox_texture_day); GL_DEBUG
+	opengl_bind_texture(GL_TEXTURE_CUBE_MAP, 0, skybox_texture_day);
 	mesh_render(&clouds_mesh);
 
 	glDepthFunc(GL_LESS); GL_DEBUG

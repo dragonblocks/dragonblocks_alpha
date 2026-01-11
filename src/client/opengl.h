@@ -17,4 +17,14 @@
 
 void opengl_debug(const char *file, int line);
 
+static inline void opengl_bind_texture(__attribute__((unused)) GLenum target, GLuint unit, GLuint texture)
+{
+#ifdef __APPLE__
+	glActiveTexture(GL_TEXTURE0 + unit); GL_DEBUG
+	glBindTexture(target, texture); GL_DEBUG
+#else
+	glBindTextureUnit(unit, texture); GL_DEBUG
+#endif
+}
+
 #endif
