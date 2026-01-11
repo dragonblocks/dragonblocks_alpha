@@ -8,7 +8,12 @@
 #endif
 
 #include <GL/glew.h>
+
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#else
 #include <GL/gl.h>
+#endif
 
 void opengl_debug(const char *file, int line);
 
