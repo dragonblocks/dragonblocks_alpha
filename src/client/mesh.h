@@ -1,9 +1,8 @@
 #ifndef _MESH_H_
 #define _MESH_H_
 
-#include <GL/glew.h>
-#include <GL/gl.h>
 #include <stdbool.h>
+#include "client/opengl.h"
 #include "types.h"
 
 typedef struct {

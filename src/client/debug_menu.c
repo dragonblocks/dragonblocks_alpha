@@ -1,5 +1,3 @@
-#include <GL/glew.h>
-#include <GL/gl.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>

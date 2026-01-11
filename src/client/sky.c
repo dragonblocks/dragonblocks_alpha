@@ -1,6 +1,4 @@
 #include <stdio.h>
-#include <GL/glew.h>
-#include <GL/gl.h>
 #include "client/camera.h"
 #include "client/client.h"
 #include "client/cube.h"

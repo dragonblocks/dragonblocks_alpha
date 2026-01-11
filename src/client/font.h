@@ -1,8 +1,6 @@
 #ifndef _FONT_H_
 #define _FONT_H_
 
-#include <GL/glew.h>
-#include <GL/gl.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include "client/mesh.h"

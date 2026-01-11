@@ -3,12 +3,11 @@
 
 #include <dragonstd/array.h>
 #include <dragonstd/list.h>
-#include <GL/glew.h>
-#include <GL/gl.h>
 #include <linmath.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include "client/mesh.h"
+#include "client/opengl.h"
 #include "client/texture.h"
 #include "types.h"
 

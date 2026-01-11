@@ -1,7 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <GL/glew.h>
-#include <GL/gl.h>
 #include "client/client_config.h"
 #include "client/debug_menu.h"
 #include "client/game.h"

@@ -1,6 +1,3 @@
-#include <GL/glew.h>
-#include <GL/gl.h>
-#include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <unistd.h>
 #include "client/action.h"
@@ -24,6 +21,7 @@
 #include "client/window.h"
 #include "common/day.h"
 #include "common/interrupt.h"
+#include <GLFW/glfw3.h>
 
 #ifdef _WIN32
 #include <pthread_time.h>
