@@ -58,8 +58,6 @@ timestamp() {
 	date +%Y-%m-%d-%H:%M:%S
 }
 
-
-
 local_version() {
 	[ -x "./dragonblocks-client" ] && echo "$PWD"
 }
