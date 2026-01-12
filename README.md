@@ -1,7 +1,7 @@
 # Dragonblocks Alpha
 
 A multiplayer voxelgame for POSIX systems.
-It has been ported to Linux, Windows, FreeBSD and OpenBSD, but may work on other systems.
+It has been ported to Linux, Windows, MacOS, FreeBSD and OpenBSD, but may work on other systems.
 
 Head to <https://dragonblocks.lizzy.rs> for snapshot and release builds.
 
