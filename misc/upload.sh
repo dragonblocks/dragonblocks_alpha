@@ -18,7 +18,8 @@ for arg; do
 	files="$files -F $arg=$path-$suffix.zip"
 done
 
-curl -L -i -X POST -H "Content-Type: multipart/form-data" \
+curl -L --fail-with-body -i -X POST \
+	-H "Content-Type: multipart/form-data" \
 	-F "secret=$SECRET" \
 	-F "name=$name" \
 	-F "ref=$ref" \
