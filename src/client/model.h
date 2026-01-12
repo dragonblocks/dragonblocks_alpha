@@ -30,6 +30,7 @@ typedef struct ModelNode {
 typedef struct {
 	Mesh *mesh;
 	GLuint *textures;
+	GLenum *texture_targets;
 	GLuint num_textures;
 	ModelShader *shader;
 } ModelMesh;

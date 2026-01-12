@@ -61,7 +61,7 @@ static void render_node(ModelNode *node)
 
 		// bind textures
 		for (GLuint i = 0; i < mesh->num_textures; i++)
-			opengl_bind_texture(GL_TEXTURE_2D, i, mesh->textures[i]);
+			opengl_bind_texture(mesh->texture_targets ? mesh->texture_targets[i] : GL_TEXTURE_2D, i, mesh->textures[i]);
 
 		mesh_render(mesh->mesh);
 	}
@@ -299,10 +299,12 @@ Model *model_load(const char *path, const char *textures_path, Mesh *cube, Model
 					char filepath[strlen(textures_path) + 1 + strlen(texture) + 1];
 					sprintf(filepath, "%s/%s", textures_path, texture);
 					Texture *texture = texture_load_cubemap(filepath, false);
+					static GLenum texture_target = GL_TEXTURE_CUBE_MAP;
 
 					model_node_add_mesh(node, &(ModelMesh) {
 						.mesh = cube,
 						.textures = &texture->txo,
+						.texture_targets = &texture_target,
 						.num_textures = 1,
 						.shader = shader,
 					});
