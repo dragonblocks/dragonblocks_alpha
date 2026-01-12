@@ -14,10 +14,11 @@ if [ "$ref" = "" ]; then
 fi
 
 for arg; do
-	suffix="$(echo "$arg" | tr [:upper:] [:lower:])"
+	suffix="$(echo "$arg" | tr '[:upper:]' '[:lower:]')"
 	files="$files -F $arg=$path-$suffix.zip"
 done
 
+# shellcheck disable=SC2086
 curl -L --fail-with-body -i -X POST \
 	-H "Content-Type: multipart/form-data" \
 	-F "secret=$SECRET" \

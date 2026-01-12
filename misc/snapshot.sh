@@ -20,6 +20,7 @@ case "$1" in
 		;;
 esac
 
+# shellcheck disable=SC2086
 meson setup "snapshots/$build" \
 	-Dbuildtype=release \
 	-Doptimization=2 \

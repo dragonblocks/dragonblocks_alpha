@@ -1,10 +1,11 @@
 #!/bin/sh
 # dragonblocks launcher script
+# shellcheck disable=SC3043
 set -e
 
 script_name="$0"
 
-if [[ "$(uname)" == "Darwin" ]]; then
+if [ "$(uname)" = "Darwin" ]; then
 	: "${DRAGONBLOCKS_DATA:=${HOME}/Library/Application Support/dragonblocks_alpha/data}"
 	: "${DRAGONBLOCKS_CONFIG:=${HOME}/Library/Application Support/dragonblocks_alpha/config}"
 	: "${DRAGONBLOCKS_TMP:=${TMPDIR:-/tmp}/dragonblocks_alpha}"
@@ -64,7 +65,7 @@ default_version() {
 		cat "$default_version_path"
 	elif [ -x "./dragonblocks-client" ]; then
 		echo "$PWD"
-	elif command -v "dragonblocks-client" &>/dev/null; then
+	elif command -v "dragonblocks-client" >/dev/null 2>&1; then
 		echo "system"
 	else
 		>&2 echo "no dragonblocks installation found. use '$script_name version download' to obtain versions"
@@ -73,8 +74,9 @@ default_version() {
 }
 
 get_world() {
-	local world="${1:?missing world (see '$script_name --help' for usage)}"
-	local path="$world_path/$world"
+	local world path
+	world="${1:?"missing world (see '$script_name --help' for usage)"}"
+	path="$world_path/$world"
 	mkdir -p "$path/"
 	if [ ! -f "$path/version" ]; then
 		default_version > "$path/version"
@@ -83,25 +85,30 @@ get_world() {
 }
 
 launch() {
-	local which="$1"
-	local config="$(realpath $DRAGONBLOCKS_CONFIG)/$which.conf"
-	local log="$(realpath $log_path)/$which-$(timestamp).log"
+	local which config log tail_pid
+	which="$1"
+	config="$(realpath "$DRAGONBLOCKS_CONFIG")/$which.conf"
+	log="$(realpath "$log_path")/$which-$(timestamp).log"
 	shift
 
+	touch "$log"
+	tail -f "$log" >&2 &
+	tail_pid="$?"
+
 	cd "$version_working_dir"
-	exec 3> >(tee -i "$log" >&2)
-	"${version_exec_dir}dragonblocks-$which" --config "$config" $@ 2>&3
+	"${version_exec_dir}dragonblocks-$which" --config "$config" "$@" 2> "$log"
+	kill "$tail_pid"
 }
 
 unlaunch() {
-	pkill -g 0 -f dragonblocks-$1
+	pkill -g 0 -f "dragonblocks-$1"
 }
 
 server_ipc() {
-	while read -ra cmd; do
-		case "${cmd[0]}" in
+	while read -r cmd args; do
+		case "${cmd}" in
 			listen)
-				echo "${cmd[@]:1}" > "$1"
+				echo "$args" > "$1"
 				;;
 		esac
 	done
@@ -153,24 +160,24 @@ EOF
 		;;
 
 	singleplayer)
-		world="$(get_world $2)"
-		load_version "$(<$world/version)"
+		world="$(get_world "$2")"
+		load_version "$(cat "$world/version")"
 
-		addrfile="$(realpath $DRAGONBLOCKS_TMP)/address-$(timestamp).fifo"
+		addrfile="$(realpath "$DRAGONBLOCKS_TMP")/address-$(timestamp).fifo"
 		mkfifo "$addrfile"
 
-		trap "unlaunch server" SIGINT SIGTERM
+		trap "unlaunch server" INT TERM
 
 		launch server \
-			--world "$(realpath $world)" \
+			--world "$(realpath "$world")" \
 			--ipc \
 			"${4:-::1:}" \
 			| server_ipc "$addrfile" &
 
 		launch client \
-			--screenshot-dir "$(realpath $screenshot_path)" \
+			--screenshot-dir "$(realpath "$screenshot_path")" \
 			"${3:-singleplayer}" \
-			"$(<$addrfile)"
+			"$(cat "$addrfile")"
 
 		unlaunch server
 		;;
@@ -178,28 +185,28 @@ EOF
 	client)
 		load_version "$(default_version)"
 
-		trap "unlaunch client" SIGINT SIGTERM
+		trap "unlaunch client" INT TERM
 
 		launch client \
-			--screenshot-dir "$(realpath $screenshot_path)" \
-			"${2:?missing player (see '$script_name --help')}" \
-			"${3:?missing address (see '$script_name --help')}"
+			--screenshot-dir "$(realpath "$screenshot_path")" \
+			"${2:?"missing player (see '$script_name --help')"}" \
+			"${3:?"missing address (see '$script_name --help')"}"
 		;;
 
 	server)
-		world="$(get_world $2)"
-		load_version "$(<$world/version)"
+		world="$(get_world "$2")"
+		load_version "$(cat "$world/version")"
 
-		trap "unlaunch server" SIGINT SIGTERM
+		trap "unlaunch server" INT TERM
 
 		launch server \
-			--world "$(realpath $world)" \
-			"${3:?missing address (see '$script_name --help')}"
+			--world "$(realpath "$world")" \
+			"${3:?"missing address (see '$script_name --help')"}"
 		;;
 
 	worlds)
 		for world in "$world_path/"*; do
-			echo "$(basename $world '') on version $(<$world/version) at $(realpath $world)"
+			echo "$(basename "$world" '') on version $(cat "$world/version") at $(realpath "$world")"
 		done
 		;;
 
@@ -210,13 +217,14 @@ EOF
 				;;
 
 			default)
-				echo "${3:?missing version (see '$script_name --help')}" > \
+				echo "${3:?"missing version (see '$script_name --help')"}" > \
 					"$default_version_path"
 				;;
 
 			list)
-				for version in "$version_path/"*; do
-					echo "$(basename $version '')"
+				echo "$version_path"
+				for version in "$version_path"/*; do
+					basename "$version" ''
 				done
 
 				;;
