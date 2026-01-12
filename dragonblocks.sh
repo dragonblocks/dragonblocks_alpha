@@ -77,8 +77,8 @@ get_world() {
 
 launch() {
 	local which="$1"
-	local config="$(realpath $DRAGONBLOCKS_CONFIG/$which.conf)"
-	local log="$(realpath $log_path/$which-$(timestamp).log)"
+	local config="$(realpath $DRAGONBLOCKS_CONFIG)/$which.conf"
+	local log="$(realpath $log_path)/$which-$(timestamp).log"
 	shift
 
 	cd "$version_working_dir"
@@ -149,7 +149,7 @@ EOF
 		world="$(get_world $2)"
 		load_version "$(<$world/version)"
 
-		addrfile="$(realpath $DRAGONBLOCKS_TMP/address-$(timestamp).fifo)"
+		addrfile="$(realpath $DRAGONBLOCKS_TMP)/address-$(timestamp).fifo"
 		mkfifo "$addrfile"
 
 		trap "unlaunch server" SIGINT SIGTERM
