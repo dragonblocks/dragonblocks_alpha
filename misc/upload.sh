@@ -8,7 +8,7 @@ ref="$(git tag --points-at HEAD)"
 release="1"
 files=""
 
-if [ "$ref" == "" ]; then
+if [ "$ref" = "" ]; then
 	ref="$(git rev-parse --short HEAD)"
 	release="0"
 fi
