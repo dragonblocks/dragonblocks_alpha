@@ -4,10 +4,17 @@ set -e
 
 script_name="$0"
 
-: "${DRAGONBLOCKS_DATA:=${XDG_DATA_HOME:-$HOME/.local/share}/dragonblocks_alpha}"
-: "${DRAGONBLOCKS_CONFIG:=${XDG_CONFIG_HOME:-$HOME/.config}/dragonblocks_alpha}"
-: "${DRAGONBLOCKS_TMP:=${XDG_RUNTIME_DIR:-/tmp}/dragonblocks_alpha}"
-: "${DRAGONBLOCKS_STATE:=${XDG_STATE_HOME:-$HOME/.local/state}/dragonblocks_alpha}"
+if [[ "$(uname)" == "Darwin" ]]; then
+	: "${DRAGONBLOCKS_DATA:=${HOME}/Library/Application Support/dragonblocks_alpha/data}"
+	: "${DRAGONBLOCKS_CONFIG:=${HOME}/Library/Application Support/dragonblocks_alpha/config}"
+	: "${DRAGONBLOCKS_TMP:=${TMPDIR:-/tmp}/dragonblocks_alpha}"
+	: "${DRAGONBLOCKS_STATE:=${HOME}/Library/Application Support/dragonblocks_alpha/state}"
+else
+	: "${DRAGONBLOCKS_DATA:=${XDG_DATA_HOME:-$HOME/.local/share}/dragonblocks_alpha}"
+	: "${DRAGONBLOCKS_CONFIG:=${XDG_CONFIG_HOME:-$HOME/.config}/dragonblocks_alpha}"
+	: "${DRAGONBLOCKS_TMP:=${XDG_RUNTIME_DIR:-/tmp}/dragonblocks_alpha}"
+	: "${DRAGONBLOCKS_STATE:=${XDG_STATE_HOME:-$HOME/.local/state}/dragonblocks_alpha}"
+fi
 
 mkdir -p "$DRAGONBLOCKS_DATA/"
 mkdir -p "$DRAGONBLOCKS_CONFIG/"
