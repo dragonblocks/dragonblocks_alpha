@@ -1,26 +1,24 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
 version="$(git describe --tags)"
 
 mkdir -p "snapshots"
 
-build="build"
-snapshot="dragonblocks_alpha-$version"
-dotexe=""
-crossfile=""
-launcher="dragonblocks.sh"
+build="build-$1"
+snapshot="dragonblocks_alpha-$version-$1"
 
-if [[ "$1" != "" ]]; then
-	build="$build-$1"
-	snapshot="$snapshot-$1"
-	toolchain="$1.cmake"
-	dotexe=".exe"
-	launcher="singleplayer.bat"
-	crossfile="--cross-file=misc/$1-toolchain.txt"
-
-	export CFLAGS="$CFLAGS -static"
-fi
+case "$1" in
+	win*)
+		dotexe=".exe"
+		launcher="singleplayer.bat"
+		crossfile="--cross-file=misc/$1-toolchain.txt"
+		export CFLAGS="$CFLAGS -static"
+		;;
+	*)
+		launcher="dragonblocks.sh"
+		;;
+esac
 
 meson setup "snapshots/$build" \
 	-Dbuildtype=release \

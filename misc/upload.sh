@@ -1,22 +1,27 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
+: "${URL:=https://dragonblocks.lizzy.rs/upload.php}"
 name="$(git describe --tags)"
 path="@snapshots/dragonblocks_alpha-$name"
 ref="$(git tag --points-at HEAD)"
 release="1"
+files=""
 
-if [[ "$ref" == "" ]]; then
+if [ "$ref" == "" ]; then
 	ref="$(git rev-parse --short HEAD)"
 	release="0"
 fi
 
-curl -L -f -i -X POST -H "Content-Type: multipart/form-data" \
+for arg; do
+	suffix="$(echo "$arg" | tr [:upper:] [:lower:])"
+	files="$files -F $arg=$path-$suffix.zip"
+done
+
+curl -L -i -X POST -H "Content-Type: multipart/form-data" \
 	-F "secret=$SECRET" \
 	-F "name=$name" \
 	-F "ref=$ref" \
 	-F "release=$release" \
-	-F "Linux=$path.zip" \
-	-F "Win32=$path-win32.zip" \
-	-F "Win64=$path-win64.zip" \
-	https://dragonblocks.lizzy.rs/upload.php
+	$files \
+	"$URL"
