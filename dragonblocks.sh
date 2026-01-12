@@ -58,16 +58,22 @@ timestamp() {
 	date +%Y-%m-%d-%H:%M:%S
 }
 
+
+
+local_version() {
+	[ -x "./dragonblocks-client" ] && echo "$PWD"
+}
+
+system_version() {
+	command -v "dragonblocks-client" >/dev/null 2>&1 && echo "system"
+}
+
 default_version() {
 	if [ -n "$DRAGONBLOCKS_VERSION" ]; then
 		echo "$DRAGONBLOCKS_VERSION"
 	elif [ -f "$default_version_path" ]; then
 		cat "$default_version_path"
-	elif [ -x "./dragonblocks-client" ]; then
-		echo "$PWD"
-	elif command -v "dragonblocks-client" >/dev/null 2>&1; then
-		echo "system"
-	else
+	elif ! local_version && ! system_version; then
 		>&2 echo "no dragonblocks installation found. use '$script_name version download' to obtain versions"
 		return 1
 	fi
@@ -222,9 +228,10 @@ EOF
 				;;
 
 			list)
-				echo "$version_path"
+				local_version || true
+				system_version || true
 				for version in "$version_path"/*; do
-					basename "$version" ''
+					[ -e "$version" ] && basename "$version" ''
 				done
 
 				;;
